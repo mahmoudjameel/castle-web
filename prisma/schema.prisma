@@ -1,0 +1,163 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  name      String
+  email     String   @unique
+  password  String
+  role      String   @default("USER") // USER أو ADMIN
+  approved  Boolean  @default(false)
+  profileImageData Bytes?
+  age       Int?
+  bio       String?
+  socialLinks String? // JSON string
+  categoryId String?
+  category  Category? @relation(fields: [categoryId], references: [id])
+  createdAt DateTime @default(now())
+  portfolioItems PortfolioItem[] // الأعمال
+  workingSchedule String? // جدول ساعات وأيام العمل (JSON)
+  jobTitle String? // المسمى المهني
+  services String? // الخدمات والأسعار (JSON)
+  talentReviews TalentReview[] // التقييمات والمراجعات
+  talentOrders TalentOrder[] @relation("TalentOrdersAsTalent") // طلبات الموهبة
+  clientOrders TalentOrder[] @relation("TalentOrdersAsClient") // طلبات العملاء
+  notifications Notification[]
+  sentMessages Message[] @relation("SentMessages")
+  receivedMessages Message[] @relation("ReceivedMessages")
+  workArea String?
+  canTravelAbroad Boolean?
+  wallet      Wallet?
+  withdrawals Withdrawal[]
+  transactions Transaction[] @relation("Sender")
+  transactionsReceived Transaction[] @relation("Receiver")
+}
+
+model Category {
+  id        String   @id
+  name      String
+  imageUrl  String?
+  imageData Bytes?
+  createdAt DateTime @default(now())
+  users     User[]
+}
+
+model PortfolioItem {
+  id        Int      @id @default(autoincrement())
+  user      User     @relation(fields: [userId], references: [id])
+  userId    Int
+  type      String   // "image" أو "video"
+  title     String?
+  mediaData Bytes?   // الصورة أو الفيديو كـ base64
+  mediaUrl  String?  // في حال رفع فيديو من رابط خارجي (اختياري)
+  createdAt DateTime @default(now())
+}
+
+model TalentReview {
+  id         Int      @id @default(autoincrement())
+  user       User     @relation(fields: [userId], references: [id]) // صاحب الموهبة
+  userId     Int
+  reviewerName String
+  rating     Int
+  comment    String
+  createdAt  DateTime @default(now())
+}
+
+model TalentOrder {
+  id         Int      @id @default(autoincrement())
+  talent     User     @relation("TalentOrdersAsTalent", fields: [talentId], references: [id])
+  talentId   Int
+  client     User     @relation("TalentOrdersAsClient", fields: [clientId], references: [id])
+  clientId   Int
+  services   String   // JSON array of services
+  message    String?
+  date       String?  // موعد الحجز
+  status     String   @default("new") // new, in_progress, completed, rejected
+  createdAt  DateTime @default(now())
+  phone      String?  // رقم هاتف العميل
+  address    String?  // عنوان العميل
+  transactions Transaction[]
+}
+
+model Notification {
+  id      Int      @id @default(autoincrement())
+  user    User     @relation(fields: [userId], references: [id])
+  userId  Int
+  title   String
+  body    String
+  date    DateTime @default(now())
+  read    Boolean  @default(false)
+}
+
+model Message {
+  id         Int      @id @default(autoincrement())
+  sender     User     @relation("SentMessages", fields: [senderId], references: [id])
+  senderId   Int
+  receiver   User     @relation("ReceivedMessages", fields: [receiverId], references: [id])
+  receiverId Int
+  content    String
+  createdAt  DateTime @default(now())
+  isRead     Boolean  @default(false)
+}
+
+model HeroBanner {
+  id        Int      @id @default(autoincrement())
+  title     String
+  subtitle  String
+  imageUrl  String?
+  imageData Bytes?
+  ctaText   String?
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+}
+
+model Wallet {
+  id            Int      @id @default(autoincrement())
+  user          User     @relation(fields: [userId], references: [id])
+  userId        Int      @unique
+  balance       Float    @default(0)
+  totalEarned   Float    @default(0)
+  totalWithdrawn Float   @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model Withdrawal {
+  id          Int      @id @default(autoincrement())
+  user        User     @relation(fields: [userId], references: [id])
+  userId      Int
+  amount      Float
+  bankAccount String?
+  status      String   @default("pending") // pending, approved, rejected
+  notes       String?
+  createdAt   DateTime @default(now())
+  processedAt DateTime?
+}
+
+model Transaction {
+  id          Int      @id @default(autoincrement())
+  type        String   // deposit, withdrawal, earning, fee, etc.
+  amount      Float
+  description String
+  status      String   @default("pending")
+  sender      User?    @relation("Sender", fields: [senderId], references: [id])
+  senderId    Int?
+  receiver    User?    @relation("Receiver", fields: [receiverId], references: [id])
+  receiverId  Int?
+  order       TalentOrder? @relation(fields: [orderId], references: [id])
+  orderId     Int?
+  createdAt   DateTime @default(now())
+  completedAt DateTime?
+  reference   String?
+}
+
+// تم حذف جداول Wallet وTransaction وWithdrawal

@@ -1,0 +1,244 @@
+{
+  "home": "Home",
+  "about": "About Us",
+  "contact": "Contact",
+  "login": "Login",
+  "register": "Register",
+  "logout": "Logout",
+  "profile": "Profile",
+  "services": "Services",
+  "language": "Language",
+  "welcome": "Welcome to our platform!",
+  
+  "hero": {
+    "slide1": {
+      "title": "Discover Exceptional Talents",
+      "subtitle": "Digital platform specialized in managing casting talents for actors, children and youth",
+      "cta": "Start Your Journey Now"
+    },
+    "slide2": {
+      "title": "Professional and Secure Connection",
+      "subtitle": "We connect acting talents with production companies in a legal and secure way",
+      "cta": "Join Us"
+    },
+    "slide3": {
+      "title": "Comprehensive and Integrated Platform",
+      "subtitle": "From application to payment - everything under one control",
+      "cta": "Discover More"
+    },
+    "video": "Watch Video"
+  },
+  
+  "features": {
+    "search": {
+      "title": "Advanced Smart Search",
+      "description": "Advanced filtering to find the right talents for your project"
+    },
+    "database": {
+      "title": "Comprehensive Talent Database",
+      "description": "Thousands of acting talents in Saudi Arabia and the Gulf"
+    },
+    "scheduling": {
+      "title": "Professional Scheduling",
+      "description": "Advanced system for scheduling interviews and casting"
+    },
+    "security": {
+      "title": "Security and Protection",
+      "description": "Secure operations with electronic signature and advanced payment system"
+    },
+    "whyChoose": {
+      "title": "Why Choose",
+      "description": "Integrated platform that brings together everything you need in the world of casting and production"
+    }
+  },
+  
+  "stats": {
+    "talents": "Registered Talents",
+    "companies": "Production Companies",
+    "projects": "Completed Projects",
+    "satisfaction": "Customer Satisfaction Rate"
+  },
+  
+  "testimonials": {
+    "title": "Our Clients' Opinions",
+    "subtitle": "What they say about our platform",
+    "description": "Real experiences from our successful partners"
+  },
+  
+  "categories": {
+    "title": "Browse Categories",
+    "subtitle": "Choose from a diverse range of talents",
+    "noImage": "No Image"
+  },
+  
+  "cta": {
+    "title": "Start Your Journey With Us Today",
+    "subtitle": "Join Tawq Platform and discover the world of talents",
+    "button": "Join Now",
+    "ready": {
+      "title": "Ready to Start Your Journey?",
+      "description": "Join thousands of successful talents and companies on Tawq Platform"
+    },
+    "startAsTalent": "Start as Talent"
+  },
+  
+  "howItWorks": {
+    "title": "How Does the Platform Work?",
+    "description": "Simple and easy process in few steps",
+    "step1": {
+      "title": "Register Your Account",
+      "description": "Create an account as talent or production company and fill your data"
+    },
+    "step2": {
+      "title": "Search and Connect",
+      "description": "Use the advanced search system to find what you're looking for"
+    },
+    "step3": {
+      "title": "Complete the Process",
+      "description": "Sign the contract and receive payment securely through the platform"
+    }
+  },
+  
+  "services": {
+    "title": "Platform Services",
+    "description": "Everything you need to manage casting and talent in one place, with professionalism and security.",
+    "smartSearch": {
+      "title": "Smart Talent Search",
+      "description": "Advanced filtering to find the right talents for any project."
+    },
+    "manageTalents": {
+      "title": "Talent Profile Management",
+      "description": "Upload photos and videos, update profile, track requests."
+    },
+    "scheduleInterviews": {
+      "title": "Interview Scheduling",
+      "description": "Advanced system for booking and organizing casting and interview appointments."
+    },
+    "electronicPayment": {
+      "title": "Electronic Payment and Signing",
+      "description": "Secure payment operations and electronic contract signing with entities."
+    },
+    "reportingTracking": {
+      "title": "Reporting and Tracking System",
+      "description": "Periodic reports, performance tracking, complaint and invoice management."
+    },
+    "invitationsCommunication": {
+      "title": "Invitations and Direct Communication",
+      "description": "Send invitations to talents, internal messages, instant notifications."
+    }
+  },
+  
+  "about": {
+    "title": "About Us",
+    "description": "Tawq Platform is a Saudi platform specialized in connecting acting talents with production and advertising companies in a professional and secure way. Our vision is to be the first choice in Saudi Arabia and the Gulf for casting management and talent development.",
+    "vision": {
+      "title": "Our Vision",
+      "description": "Facilitating access to talents and developing the entertainment and production industry in the region."
+    },
+    "mission": {
+      "title": "Our Mission",
+      "description": "Providing a unified and secure platform that connects talents with production entities and supports their professional growth."
+    },
+    "values": {
+      "title": "Our Values",
+      "description": "Professionalism, security, transparency, support for local talents, innovation."
+    },
+    "team": {
+      "title": "Our Team",
+      "description": "Tawq team includes experts in production, technology, marketing, and customer service, working together to achieve an exceptional experience for every user."
+    }
+  },
+  
+  "contact": {
+    "title": "Contact Us",
+    "description": "For any inquiry or support, you can contact us through the form or the following information.",
+    "email": "info@tawq.sa",
+    "phone": "+966 12 345 6789",
+    "form": {
+      "name": "Name",
+      "namePlaceholder": "Your name",
+      "email": "Email",
+      "emailPlaceholder": "example@email.com",
+      "message": "Your message",
+      "messagePlaceholder": "Write your message here...",
+      "submit": "Send"
+    }
+  },
+  
+  "footer": {
+    "description": "Tawq Platform - The first digital casting platform in Saudi Arabia and the Gulf",
+    "about": {
+      "description": "The leading digital casting platform in the Kingdom of Saudi Arabia and the Gulf"
+    },
+    "quickLinks": {
+      "title": "Quick Links"
+    },
+    "help": "Help",
+    "forTalents": {
+      "title": "For Talents"
+    },
+    "createProfile": "Create Profile",
+    "findWork": "Find Work",
+    "successTips": "Success Tips",
+    "faq": "FAQ",
+    "contactUs": {
+      "title": "Contact Us"
+    },
+    "address": "Riyadh, Saudi Arabia"
+  },
+  
+  "navigation": {
+    "home": "Home",
+    "categories": "Categories",
+    "services": "Services",
+    "about": "About Us",
+    "contact": "Contact",
+    "joinNow": "Join Now",
+    "login": "Login"
+  },
+  
+  "platform": {
+    "name": "Tawq Platform",
+    "tagline": "Digital Casting Platform"
+  },
+  
+  "userType": {
+    "startAs": "Start as",
+    "talent": "Acting Talent",
+    "company": "Company"
+  },
+  
+  "language": {
+    "select": "Select Language",
+    "selectPrompt": "Select Language",
+    "arabic": "العربية",
+    "english": "English",
+    "cancel": "Cancel"
+  },
+  "auth": {
+    "registerTitle": "Create New Account",
+    "loginTitle": "Login",
+    "fullName": "Full Name",
+    "fullNamePlaceholder": "Your full name",
+    "email": "Email",
+    "emailPlaceholder": "example@email.com",
+    "password": "Password",
+    "passwordPlaceholder": "••••••••",
+    "registerBtn": "Register",
+    "loginBtn": "Login",
+    "registering": "Registering...",
+    "loggingIn": "Logging in...",
+    "alreadyHaveAccount": "Already have an account?",
+    "noAccount": "Don't have an account?",
+    "goToLogin": "Login",
+    "goToRegister": "Join Now",
+    "user": "User",
+    "talent": "Talent",
+    "successUser": "Welcome to our community! Your account has been created successfully. You can now log in.",
+    "successTalent": "Talent account created successfully! You will be redirected to the talent dashboard.",
+
+    "error": "An error occurred during registration.",
+    "serverError": "Failed to connect to the server.",
+    "invalidLogin": "Invalid login credentials."
+  }
+} 
