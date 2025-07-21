@@ -114,7 +114,7 @@ const Navbar = () => {
                         ? `data:image/png;base64,${user.profileImageData}`
                         : undefined
                     }
-~                    sx={{ width: 40, height: 40, bgcolor: '#FFD600', color: '#222', fontWeight: 900, fontSize: 22 }}
+                    sx={{ width: 40, height: 40, bgcolor: '#FFD600', color: '#222', fontWeight: 900, fontSize: 22 }}
                 >
                     {user.name ? user.name[0] : 'م'}
                 </Avatar>
