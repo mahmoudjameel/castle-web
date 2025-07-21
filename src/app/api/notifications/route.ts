@@ -15,7 +15,7 @@ export async function GET(req: Request) {
       orderBy: { date: 'desc' },
     });
     return NextResponse.json(notifications);
-  } catch (err) {
+  } catch {
     return NextResponse.json([], { status: 200 });
   }
 } 

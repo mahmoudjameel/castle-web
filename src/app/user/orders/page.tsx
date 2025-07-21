@@ -4,9 +4,18 @@ import React, { useEffect, useState } from "react";
 import { ClipboardList, ArrowRight, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 
+// تعريف الأنواع
+interface Order {
+  id: number;
+  services: string;
+  status: string;
+  date?: string;
+  message?: string;
+}
+
 export default function UserOrdersPage() {
-  const [user, setUser] = useState<any>(null);
-  const [orders, setOrders] = useState<any[]>([]);
+  const [user, setUser] = useState<{id: number; name: string} | null>(null);
+  const [orders, setOrders] = useState<Order[]>([]);
   const router = useRouter();
   const [deleteMsg, setDeleteMsg] = useState("");
 
@@ -63,7 +72,7 @@ export default function UserOrdersPage() {
                 <button onClick={()=>handleDelete(order.id)} title="حذف الطلب" className="absolute top-2 left-2 text-red-400 hover:text-red-600 bg-white/10 rounded-full p-1 transition-all opacity-0 group-hover:opacity-100 focus:opacity-100"><Trash2 size={18}/></button>
                 <div className="flex flex-wrap items-center gap-2 mb-1">
                   <span className="font-bold">الخدمة:</span>
-                  <span className="text-orange-300 font-semibold truncate max-w-[70%]">{(() => { try { return JSON.parse(order.services).map((srv:any)=>srv.name).join('، '); } catch { return '-'; } })()}</span>
+                  <span className="text-orange-300 font-semibold truncate max-w-[70%]">{(() => { try { return JSON.parse(order.services).map((srv: Record<string, unknown>)=>srv.name).join('، '); } catch { return '-'; } })()}</span>
                 </div>
                 <div className="flex flex-wrap items-center gap-2 text-sm mb-1">
                   <span className="text-blue-200">الحالة:</span>
@@ -79,7 +88,7 @@ export default function UserOrdersPage() {
                 </div>
                 <div className="flex flex-wrap items-center gap-2 text-xs text-blue-100 mb-1">
                   <span>بتاريخ:</span>
-                  <span>{order.date ? order.date : '-'}</span>
+                  <span>{order.date || '-'}</span>
                 </div>
                 {order.message && (
                   <div className="text-blue-200 text-xs mt-1 bg-blue-900/30 rounded-lg px-2 py-1 max-h-24 overflow-y-auto whitespace-pre-line break-words" style={{wordBreak:'break-word'}}>

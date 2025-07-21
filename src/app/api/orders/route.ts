@@ -9,7 +9,7 @@ export async function GET(req: Request) {
     const { searchParams } = new URL(req.url!);
     const talentId = searchParams.get('talentId');
     const clientId = searchParams.get('clientId');
-    const where: any = {};
+    const where: Record<string, unknown> = {};
     if (talentId) where.talentId = Number(talentId);
     if (clientId) where.clientId = Number(clientId);
     const orders = await prisma.talentOrder.findMany({
@@ -17,7 +17,7 @@ export async function GET(req: Request) {
       orderBy: { createdAt: 'desc' },
     });
     return NextResponse.json(orders);
-  } catch (err) {
+  } catch {
     return NextResponse.json({ message: 'خطأ في جلب الطلبات.' }, { status: 500 });
   }
 }
@@ -41,7 +41,7 @@ export async function POST(req: Request) {
       },
     });
     return NextResponse.json(order);
-  } catch (err) {
+  } catch  {
     return NextResponse.json({ message: 'خطأ في إضافة الطلب.' }, { status: 500 });
   }
 }
@@ -121,7 +121,7 @@ export async function DELETE(req: Request) {
     }
     await prisma.talentOrder.delete({ where: { id: Number(id) } });
     return NextResponse.json({ message: 'تم حذف الطلب بنجاح.' });
-  } catch (err) {
+  } catch  {
     return NextResponse.json({ message: 'خطأ في حذف الطلب.' }, { status: 500 });
   }
 } 

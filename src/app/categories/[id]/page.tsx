@@ -14,11 +14,11 @@ export default function CategoryTalentsPage() {
   const [loading, setLoading] = useState(true);
   // بحث وفلترة
   const [search, setSearch] = useState("");
-  const [ageFrom, setAgeFrom] = useState("");
-  const [ageTo, setAgeTo] = useState("");
-  // فلاتر إضافية (تصميم فقط)
   const [sort, setSort] = useState("latest");
   const [talentStats, setTalentStats] = useState<any>({});
+  // إضافة متغيرات العمر
+  const [ageFrom, setAgeFrom] = useState("");
+  const [ageTo, setAgeTo] = useState("");
 
   useEffect(() => {
     if (!categoryId) return;

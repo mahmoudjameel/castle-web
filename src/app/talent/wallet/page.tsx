@@ -2,10 +2,28 @@
 import React, { useEffect, useState } from "react";
 import { CreditCard, Loader2 } from "lucide-react";
 
+// تعريف الأنواع
+interface Wallet {
+  id: number;
+  userId: number;
+  balance: number;
+  earned: number;
+  withdrawn: number;
+}
+
+interface Withdrawal {
+  id: number;
+  userId: number;
+  amount: number;
+  status: string;
+  createdAt: string;
+  bankAccount?: string;
+}
+
 export default function TalentWalletPage() {
-  const [user, setUser] = useState<any>(null);
-  const [wallet, setWallet] = useState<any>(null);
-  const [withdrawals, setWithdrawals] = useState<any[]>([]);
+  const [user, setUser] = useState<{id: number; name: string} | null>(null);
+  const [wallet, setWallet] = useState<Wallet | null>(null);
+  const [withdrawals, setWithdrawals] = useState<Withdrawal[]>([]);
   const [loading, setLoading] = useState(true);
   const [amount, setAmount] = useState(0);
   const [bankAccount, setBankAccount] = useState("");
@@ -46,14 +64,14 @@ export default function TalentWalletPage() {
     const res = await fetch("/api/withdrawals", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ userId: user.id, amount, bankAccount }),
+      body: JSON.stringify({ userId: user?.id, amount, bankAccount }),
     });
     if (res.ok) {
       setMessage("تم إرسال طلب السحب بنجاح! سيتم مراجعته من الإدارة.");
       setAmount(0);
       setBankAccount("");
       // تحديث السحوبات
-      fetch(`/api/withdrawals?userId=${user.id}`)
+      fetch(`/api/withdrawals?userId=${user?.id}`)
         .then((res) => res.json())
         .then(setWithdrawals);
     } else {
@@ -81,11 +99,11 @@ export default function TalentWalletPage() {
                 <div className="text-blue-100">الرصيد الحالي</div>
               </div>
               <div className="bg-indigo-800/40 rounded-xl p-6 text-center border border-blue-400/30">
-                <div className="text-2xl font-bold text-green-400 mb-2">{wallet.totalEarned} ر.س</div>
+                <div className="text-2xl font-bold text-green-400 mb-2">{wallet.earned} ر.س</div>
                 <div className="text-blue-100">إجمالي الأرباح</div>
               </div>
               <div className="bg-indigo-800/40 rounded-xl p-6 text-center border border-blue-400/30">
-                <div className="text-2xl font-bold text-red-400 mb-2">{wallet.totalWithdrawn} ر.س</div>
+                <div className="text-2xl font-bold text-red-400 mb-2">{wallet.withdrawn} ر.س</div>
                 <div className="text-blue-100">إجمالي المسحوبات</div>
               </div>
             </div>

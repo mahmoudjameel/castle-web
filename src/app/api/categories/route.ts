@@ -12,7 +12,7 @@ export async function GET() {
       imageData: cat.imageData ? Buffer.from(cat.imageData).toString('base64') : undefined,
     }));
     return NextResponse.json(categoriesWithBase64);
-  } catch (err) {
+  } catch {
     return NextResponse.json({ message: 'خطأ في جلب التصنيفات.' }, { status: 500 });
   }
 }
@@ -23,7 +23,7 @@ export async function POST(req: Request) {
     if (!id || !name) {
       return NextResponse.json({ message: 'الاسم وID مطلوبان.' }, { status: 400 });
     }
-    let imageDataBuffer = undefined;
+    let imageDataBuffer: Buffer | undefined = undefined;
     if (imageData) {
       imageDataBuffer = Buffer.from(imageData, 'base64');
     }

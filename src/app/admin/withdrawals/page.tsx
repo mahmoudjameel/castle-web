@@ -2,9 +2,26 @@
 import React, { useEffect, useState } from "react";
 import { CreditCard, Loader2, CheckCircle, XCircle } from "lucide-react";
 
+// تعريف الأنواع المطلوبة
+interface User {
+  id: number;
+  name: string;
+  // أضف الحقول الأخرى حسب الحاجة
+}
+
+interface Withdrawal {
+  id: number;
+  userId: number;
+  amount: number;
+  status: string;
+  createdAt: string;
+  bankAccount?: string;
+  // أضف الحقول الأخرى حسب الحاجة
+}
+
 export default function AdminWithdrawalsPage() {
-  const [withdrawals, setWithdrawals] = useState<any[]>([]);
-  const [users, setUsers] = useState<any>({});
+  const [withdrawals, setWithdrawals] = useState<Withdrawal[]>([]);
+  const [users, setUsers] = useState<Record<number, User>>({});
   const [loading, setLoading] = useState(true);
   const [updatingId, setUpdatingId] = useState<number|null>(null);
   const [message, setMessage] = useState("");
@@ -15,12 +32,12 @@ export default function AdminWithdrawalsPage() {
       .then(async data => {
         setWithdrawals(data);
         // جلب بيانات المستخدمين المرتبطين
-        const userIds = Array.from(new Set(data.map((w:any)=>w.userId)));
+        const userIds = Array.from(new Set(data.map((w:Withdrawal)=>w.userId)));
         if (userIds.length > 0) {
           const res = await fetch("/api/accounts");
           const allUsers = await res.json();
-          const usersMap:any = {};
-          allUsers.forEach((u:any) => { if (userIds.includes(u.id)) usersMap[u.id] = u; });
+          const usersMap:Record<number, User> = {};
+          allUsers.forEach((u:User) => { if (userIds.includes(u.id)) usersMap[u.id] = u; });
           setUsers(usersMap);
         }
       })

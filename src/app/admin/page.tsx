@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Users, FileText, AlertTriangle, Receipt, BarChart2, FolderPlus, UserCheck, Image as ImageIcon, CreditCard } from 'lucide-react';
+import { FileText, AlertTriangle, Receipt, BarChart2, FolderPlus, UserCheck, Image as ImageIcon, CreditCard } from 'lucide-react';
 import Link from 'next/link';
 
 const adminSections = [

@@ -27,19 +27,11 @@ const Register = () => {
       });
       const data = await res.json();
       if (res.ok) {
-        if (role === 'USER') {
-          setMessage(t('auth.userRegisteredSuccess'));
-          setName(''); setEmail(''); setPassword('');
-          setTimeout(() => {
-            router.push('/login');
-          }, 1200);
-        } else if (role === 'talent') {
-          setMessage(t('auth.talentRegisteredSuccess'));
-          setName(''); setEmail(''); setPassword('');
-          setTimeout(() => {
-            router.push('/talent');
-          }, 1200);
-        }
+        setMessage(role === 'USER' ? t('auth.userRegisteredSuccess') : t('auth.talentRegisteredSuccess'));
+        setName(''); setEmail(''); setPassword('');
+        setTimeout(() => {
+          router.push('/login');
+        }, 1200);
       } else {
         setMessage(data.message || t('auth.registrationError'));
       }

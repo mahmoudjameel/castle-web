@@ -18,7 +18,7 @@ export async function POST(req: Request) {
     }
     // تسجيل دخول ناجح (يمكنك هنا إنشاء session أو JWT)
     return NextResponse.json({ message: 'تم تسجيل الدخول بنجاح.', user: { id: user.id, name: user.name, email: user.email, role: user.role } });
-  } catch (err) {
+  } catch {
     return NextResponse.json({ message: 'حدث خطأ أثناء تسجيل الدخول.' }, { status: 500 });
   }
 } 

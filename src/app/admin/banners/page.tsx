@@ -1,6 +1,7 @@
 "use client";
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState } from "react";
 import { Trash2, Edit2, CheckCircle, XCircle } from 'lucide-react';
+import Image from 'next/image';
 
 interface Banner {
   id?: number;
@@ -17,7 +18,6 @@ export default function AdminBannersPage() {
   const [form, setForm] = useState<Banner>({ title: "", subtitle: "", order: 0 });
   const [editingId, setEditingId] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
   const fetchBanners = async () => {
@@ -37,7 +37,7 @@ export default function AdminBannersPage() {
       }
       const data = JSON.parse(text);
       setBanners(data);
-    } catch (err) {
+    } catch {
       setBanners([]);
     }
     setLoading(false);
@@ -47,18 +47,6 @@ export default function AdminBannersPage() {
 
   const handleInput = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setForm(f => ({ ...f, [e.target.name]: e.target.value }));
-  };
-
-  const handleImage = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = () => {
-        const base64 = (reader.result as string)?.split(",")[1];
-        setForm(f => ({ ...f, imageData: base64, imageUrl: undefined }));
-      };
-      reader.readAsDataURL(file);
-    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -130,7 +118,7 @@ export default function AdminBannersPage() {
           <div>
             <label className="block mb-1 text-blue-100 font-bold">الصورة</label>
             <div className="mt-2 flex gap-4 items-center">
-              {form.imageUrl && <img src={form.imageUrl} alt="صورة البانر" className="w-40 h-24 object-cover rounded-xl border-2 border-orange-400 shadow" />}
+              {form.imageUrl && <Image src={form.imageUrl} alt="صورة البانر" width={160} height={96} className="w-40 h-24 object-cover rounded-xl border-2 border-orange-400 shadow" />}
             </div>
           </div>
           <div className="flex gap-4">
@@ -166,7 +154,7 @@ export default function AdminBannersPage() {
                   <td className="p-3 font-bold text-blue-200">{i+1}</td>
                   <td className="p-3 font-bold text-orange-200">{b.title}</td>
                   <td className="p-3 text-blue-100">{b.subtitle}</td>
-                  <td className="p-3">{b.imageUrl && <img src={b.imageUrl} alt="صورة" className="w-24 h-16 object-cover rounded-xl border-2 border-orange-400 shadow" />}</td>
+                  <td className="p-3">{b.imageUrl && <Image src={b.imageUrl} alt="صورة" width={96} height={64} className="w-24 h-16 object-cover rounded-xl border-2 border-orange-400 shadow" />}</td>
                   <td className="p-3 text-pink-200 font-bold">{b.ctaText}</td>
                   <td className="p-3 text-blue-200">{b.order}</td>
                   <td className="p-3 flex gap-2">

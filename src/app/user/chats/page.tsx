@@ -1,10 +1,11 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 
 export default function UserChats() {
-  const [user, setUser] = useState<any>(null);
-  const [conversations, setConversations] = useState<any[]>([]);
+  const [user, setUser] = useState<Record<string, unknown> | null>(null);
+  const [conversations, setConversations] = useState<Record<string, unknown>[]>([]);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
@@ -38,20 +39,26 @@ export default function UserChats() {
         ) : (
           <div className="space-y-4">
             {conversations.map(conv => (
-              <div key={conv.userId} className="flex items-center justify-between bg-blue-900/40 rounded-lg px-6 py-4 border border-blue-400/20 hover:bg-blue-900/60 transition-all cursor-pointer" onClick={()=>{
-                router.push(`/chat/${conv.userId}?userId=${user.id}`);
+              <div key={String((conv as { userId: string | number }).userId)} className="flex items-center justify-between bg-blue-900/40 rounded-lg px-6 py-4 border border-blue-400/20 hover:bg-blue-900/60 transition-all cursor-pointer" onClick={() => {
+                router.push(`/chat/${(conv as { userId: string | number }).userId}?userId=${user?.id}`);
               }}>
                 <div className="flex items-center gap-4">
-                  <img src={conv.profileImageData ? `data:image/png;base64,${conv.profileImageData}` : "/logo.png"} alt={conv.name} className="w-12 h-12 rounded-full object-cover border-2 border-orange-400" />
+                  <Image
+                    src={(conv as { profileImageData?: string }).profileImageData ? `data:image/png;base64,${(conv as { profileImageData: string }).profileImageData}` : "/logo.png"}
+                    alt={String((conv as { name?: string }).name || '')}
+                    width={48}
+                    height={48}
+                    className="w-12 h-12 rounded-full object-cover border-2 border-orange-400"
+                  />
                   <div>
-                    <div className="font-bold text-lg text-orange-300">{conv.name}</div>
-                    <div className="text-blue-100 text-sm">{conv.lastMessage}</div>
+                    <div className="font-bold text-lg text-orange-300">{String((conv as { name?: string }).name || '')}</div>
+                    <div className="text-blue-100 text-sm">{String((conv as { lastMessage?: string }).lastMessage || '')}</div>
                   </div>
                 </div>
                 <div className="flex flex-col items-end gap-1">
-                  <div className="text-xs text-blue-200">{conv.lastDate}</div>
-                  {conv.unreadCount > 0 && (
-                    <span className="inline-block bg-pink-500 text-white text-xs font-bold rounded-full px-2 py-0.5 mt-1 animate-bounce">{conv.unreadCount}</span>
+                  <div className="text-xs text-blue-200">{String((conv as { lastDate?: string }).lastDate || '')}</div>
+                  {Number((conv as { unreadCount?: number }).unreadCount) > 0 && (
+                    <span className="inline-block bg-pink-500 text-white text-xs font-bold rounded-full px-2 py-0.5 mt-1 animate-bounce">{String((conv as { unreadCount?: number }).unreadCount)}</span>
                   )}
                 </div>
               </div>

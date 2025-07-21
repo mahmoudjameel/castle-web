@@ -7,7 +7,7 @@ const prisma = new PrismaClient();
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url!);
   const userId = searchParams.get('userId');
-  let where: any = {};
+  const where: { userId?: number } = {};
   if (userId) where.userId = Number(userId);
   const withdrawals = await prisma.withdrawal.findMany({ where, orderBy: { createdAt: 'desc' } });
   return NextResponse.json(withdrawals);

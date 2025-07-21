@@ -15,7 +15,7 @@ export default function TalentServices() {
         fetch(`/api/accounts`)
           .then((res) => res.json())
           .then((users) => {
-            const found = users.find((acc: any) => String(acc.id) === String(u.id));
+            const found = users.find((acc: Record<string, unknown>) => String(acc.id) === String(u.id));
             if (found && found.services) {
               setServices(JSON.parse(found.services));
             }

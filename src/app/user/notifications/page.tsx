@@ -4,9 +4,17 @@ import React, { useEffect, useState } from "react";
 import { Bell, ArrowRight } from "lucide-react";
 import { useRouter } from "next/navigation";
 
+// تعريف الأنواع
+interface Notification {
+  id: number;
+  title: string;
+  message: string;
+  createdAt: string;
+}
+
 export default function UserNotificationsPage() {
-  const [user, setUser] = useState<any>(null);
-  const [notifications, setNotifications] = useState<any[]>([]);
+  const [user, setUser] = useState<{id: number; name: string} | null>(null);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
   useEffect(() => {
     const userStr = localStorage.getItem("user");
     if (userStr) {
@@ -40,11 +48,11 @@ export default function UserNotificationsPage() {
           <div className="text-blue-200">لا توجد إشعارات جديدة.</div>
         ) : (
           <ul className="space-y-4">
-            {notifications.map((notif: any) => (
+            {notifications.map((notif) => (
               <li key={notif.id} className="p-4 rounded-xl bg-blue-900/40 border border-blue-400/20 shadow-md">
                 <div className="font-bold text-orange-300 mb-1">{notif.title || "إشعار جديد"}</div>
-                <div className="text-blue-100 text-sm mb-1">{notif.body || notif.message}</div>
-                <div className="text-blue-300 text-xs mt-1">{notif.date ? new Date(notif.date).toLocaleString("ar-EG") : ""}</div>
+                <div className="text-blue-100 text-sm">{notif.message}</div>
+                <div className="text-xs text-blue-300 mt-2">{new Date(notif.createdAt).toLocaleString('ar-EG')}</div>
               </li>
             ))}
           </ul>

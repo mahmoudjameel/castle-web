@@ -3,9 +3,7 @@ import { PrismaClient } from '@prisma/client';
 
 const globalForPrisma = global as unknown as { prisma: PrismaClient };
 
-export const prisma =
-  globalForPrisma.prisma ||
-  new PrismaClient();
+const prisma = globalForPrisma.prisma || new PrismaClient();
 
 if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;
 
@@ -41,7 +39,7 @@ export async function GET(req: NextRequest) {
       orderBy: { createdAt: 'desc' }
     });
     // استخرج المستخدمين الآخرين (clients)
-    const userMap = new Map();
+    const userMap = new Map<number, any>();
     for (const msg of messages) {
       const otherId = msg.senderId == Number(talentId) ? msg.receiverId : msg.senderId;
       if (!userMap.has(otherId)) {
@@ -88,7 +86,7 @@ export async function GET(req: NextRequest) {
       orderBy: { createdAt: 'desc' }
     });
     // استخرج الطرف الآخر (الموهبة)
-    const talentMap = new Map();
+    const talentMap = new Map<number, any>();
     for (const msg of messages) {
       const otherId = msg.senderId == Number(userId) ? msg.receiverId : msg.senderId;
       if (!talentMap.has(otherId)) {

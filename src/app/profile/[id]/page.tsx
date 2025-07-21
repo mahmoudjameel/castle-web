@@ -11,11 +11,12 @@ import FormControlLabel from '@mui/material/FormControlLabel';
 import TextField from '@mui/material/TextField';
 import Button from '@mui/material/Button';
 import { FaInstagram, FaTiktok, FaYoutube, FaTwitter } from "react-icons/fa";
+import Image from 'next/image';
 
 export default function TalentPublicProfile() {
   const { id } = useParams();
-  const [talent, setTalent] = useState<any>(null);
-  const [portfolio, setPortfolio] = useState<any[]>([]);
+  const [talent, setTalent] = useState<Record<string, any> | null>(null);
+  const [portfolio, setPortfolio] = useState<Array<Record<string, any>>>([]);
   const [loading, setLoading] = useState(true);
   const [reviews, setReviews] = useState<any[]>([]);
   const [reviewForm, setReviewForm] = useState({ reviewerName: '', rating: 0, comment: '' });
@@ -97,7 +98,7 @@ export default function TalentPublicProfile() {
   const getAvailableSlots = () => {
     let slots: { label: string, value: string }[] = [];
     try {
-      if (!talent.workingSchedule) return slots;
+      if (!talent?.workingSchedule) return slots;
       const schedule = JSON.parse(talent.workingSchedule);
       const daysAr: Record<string, string> = {
         sunday: 'الأحد', monday: 'الإثنين', tuesday: 'الثلاثاء', wednesday: 'الأربعاء', thursday: 'الخميس', friday: 'الجمعة', saturday: 'السبت',
@@ -122,7 +123,7 @@ export default function TalentPublicProfile() {
       if (!userStr) { setShowLoginMsg(true); setOrderSubmitting(false); return; }
       const user = JSON.parse(userStr);
       let servicesArr = [];
-      try { servicesArr = JSON.parse(talent.services); } catch {}
+      try { servicesArr = JSON.parse(talent?.services || '[]'); } catch {}
       const selectedServices = servicesArr.filter((srv: any) => orderServices.includes(srv.name));
       // إضافة phone و address
       const phone = user.phone || "";
@@ -131,7 +132,7 @@ export default function TalentPublicProfile() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          talentId: talent.id,
+          talentId: talent?.id,
           clientId: user.id,
           services: selectedServices,
           message: orderMessage,
@@ -166,12 +167,12 @@ export default function TalentPublicProfile() {
     return <div className="flex items-center justify-center min-h-[60vh] text-blue-200">جاري تحميل البيانات...</div>;
   }
 
-  let workingSchedule: any = {};
+  let workingSchedule: Record<string, any> = {};
   try { if (talent.workingSchedule) workingSchedule = JSON.parse(talent.workingSchedule); } catch {}
   const daysAr: Record<string, string> = {
     sunday: 'الأحد', monday: 'الإثنين', tuesday: 'الثلاثاء', wednesday: 'الأربعاء', thursday: 'الخميس', friday: 'الجمعة', saturday: 'السبت',
   };
-  let socialLinks: any = {};
+  let socialLinks: Record<string, string> = {};
   try { if (talent.socialLinks) socialLinks = JSON.parse(talent.socialLinks); } catch {}
 
   // حساب متوسط التقييم وعدد التقييمات
@@ -191,8 +192,8 @@ export default function TalentPublicProfile() {
         <div className="w-full max-w-4xl bg-indigo-950/80 rounded-2xl shadow-lg p-8 border border-blue-400/20">
           <div className="flex flex-col items-center mb-6">
             <div className="relative w-32 h-32 mb-2">
-              {talent.profileImageData ? (
-                <img src={`data:image/png;base64,${talent.profileImageData}`} alt={talent.name} className="w-32 h-32 object-cover rounded-full border-4 border-orange-400 shadow-lg bg-indigo-900" />
+              {talent?.profileImageData ? (
+                <Image src={`data:image/png;base64,${talent.profileImageData}`} alt={talent.name as string} width={128} height={128} className="w-32 h-32 object-cover rounded-full border-4 border-orange-400 shadow-lg bg-indigo-900" />
               ) : (
                 <div className="w-32 h-32 rounded-full bg-blue-900/40 flex items-center justify-center text-blue-200 text-5xl border-4 border-blue-400/30">👤</div>
               )}
@@ -231,7 +232,7 @@ export default function TalentPublicProfile() {
                 {portfolio.map(item => (
                   <div key={item.id} className="overflow-hidden rounded-2xl shadow-lg border-2 border-pink-400/30 bg-gradient-to-tr from-indigo-900/60 to-purple-900/60">
                     {item.type === 'image' && item.mediaData && (
-                      <img src={`data:image/png;base64,${item.mediaData}`} alt={item.title || 'عمل'} className="w-full h-48 object-cover" />
+                      <Image src={`data:image/png;base64,${item.mediaData}`} alt={item.title || 'عمل'} width={320} height={192} className="w-full h-48 object-cover" />
                     )}
                     {item.type === 'video' && item.mediaUrl && (
                       <iframe src={item.mediaUrl.replace('watch?v=', 'embed/')} title={item.title || 'فيديو'} className="w-full h-48" allowFullScreen />
@@ -260,7 +261,7 @@ export default function TalentPublicProfile() {
           <div className="mb-8">
             <h3 className="text-2xl font-bold mb-4 text-orange-300 text-center">الخدمات والأسعار</h3>
             <div className="flex flex-col gap-2 items-center">
-              {talent.services && (() => {
+              {talent?.services && (() => {
                 let servicesArr = [];
                 try { servicesArr = JSON.parse(talent.services); } catch {}
                 if (!Array.isArray(servicesArr) || servicesArr.length === 0) {
@@ -309,10 +310,10 @@ export default function TalentPublicProfile() {
           </div>
           {/* Modal الطلب */}
           <Dialog open={showOrderModal} onClose={()=>setShowOrderModal(false)} PaperProps={{style:{borderRadius:20,background:'#1e1b4b',color:'#fff',minWidth:340}}}>
-            <DialogTitle sx={{fontWeight:700, fontSize:'1.3rem', color:'#FFA726', textAlign:'center'}}>طلب خدمة من {talent.name}</DialogTitle>
+            <DialogTitle sx={{fontWeight:700, fontSize:'1.3rem', color:'#FFA726', textAlign:'center'}}>طلب خدمة من {talent?.name}</DialogTitle>
             <DialogContent>
               <div className="mb-4 text-blue-200 font-bold">اختر الخدمات المطلوبة:</div>
-              {talent.services && (() => {
+              {talent?.services && (() => {
                 let servicesArr = [];
                 try { servicesArr = JSON.parse(talent.services); } catch {}
                 if (!Array.isArray(servicesArr) || servicesArr.length === 0) {
@@ -348,7 +349,7 @@ export default function TalentPublicProfile() {
               {/* زر محادثة صاحب الموهبة */}
               <div className="flex justify-center mt-6">
                 <a
-                  href={`/chat/${talent.id}`}
+                  href={`/chat/${talent?.id}`}
                   className="flex items-center gap-2 px-5 py-2 rounded-lg bg-gradient-to-r from-blue-500 to-purple-500 text-white font-bold shadow-lg hover:from-blue-600 hover:to-purple-600 transition-all text-lg"
                   style={{textDecoration:'none'}}
                 >
@@ -386,7 +387,7 @@ export default function TalentPublicProfile() {
                 </div>
                 {paymentError && <div className="text-red-400 text-sm mt-1">{paymentError}</div>}
                 <div className="flex flex-col gap-2 items-center mb-2 mt-2">
-                  {talent.services && (() => {
+                  {talent?.services && (() => {
                     let servicesArr = [];
                     try { servicesArr = JSON.parse(talent.services); } catch {}
                     const selected = servicesArr.filter((srv: any) => orderServices.includes(srv.name));

@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
-import { Search, Star, Users, Calendar, Shield, Play, ChevronRight, Menu, X, Phone, Mail, MapPin, Home as HomeIcon, Grid as GridIcon } from 'lucide-react';
+import { Search, Star, Users, Calendar, Shield, Play, ChevronRight, Menu, X, Phone, Mail, MapPin } from 'lucide-react';
 import Link from 'next/link';
 import Avatar from '@mui/material/Avatar';
 import MuiMenu from '@mui/material/Menu';
@@ -12,10 +12,9 @@ import { useTranslations } from 'next-intl';
 const CastingPlatform = () => {
   const t = useTranslations();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState('talents');
   const [currentSlide, setCurrentSlide] = useState(0);
   const [categories, setCategories] = useState<{id:string,name:string,imageUrl?:string,imageData?:string}[]>([]);
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<Record<string, unknown> | null>(null);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const menuOpen = Boolean(anchorEl);
   const [isMounted, setIsMounted] = useState(false);
@@ -105,7 +104,7 @@ const CastingPlatform = () => {
       setCurrentSlide((prev) => (prev + 1) % heroSlides.length);
     }, 5000);
     return () => clearInterval(timer);
-  }, []);
+  }, [heroSlides.length]);
 
   useEffect(() => {
     fetch('/api/categories')
@@ -119,16 +118,19 @@ const CastingPlatform = () => {
 
   useEffect(() => {
     if (!isMounted) return;
-    if (typeof window !== 'undefined') {
-      const userStr = localStorage.getItem('user');
+    try {
+      const userStr = typeof window !== 'undefined' ? localStorage.getItem('user') : null;
       if (userStr) setUser(JSON.parse(userStr));
       else setUser(null);
-    }
+    } catch { setUser(null); }
   }, [isMounted]);
 
   useEffect(() => {
-    setLang(typeof window !== 'undefined' ? localStorage.getItem('lang') || 'ar' : 'ar');
-  }, []);
+    if (!isMounted) return;
+    try {
+      setLang(typeof window !== 'undefined' ? localStorage.getItem('lang') || 'ar' : 'ar');
+    } catch { setLang('ar'); }
+  }, [isMounted]);
 
   useEffect(() => {
     fetch('/api/hero-banners')
@@ -259,29 +261,31 @@ const CastingPlatform = () => {
                   </button>
                   <button onClick={handleAvatarClick} className="ml-2 focus:outline-none">
                     {user.profileImageData ? (
-                      <img
-                        src={`data:image/png;base64,${user.profileImageData}`}
-                        alt={user.name || 'user'}
+                      <Image
+                        src={`data:image/png;base64,${typeof user.profileImageData === 'string' ? user.profileImageData : ''}`}
+                        alt={typeof user.name === 'string' ? user.name : 'user'}
+                        width={40}
+                        height={40}
                         className="w-10 h-10 rounded-full object-cover border-2 border-blue-400 shadow"
                       />
                     ) : (
                   <Avatar
                         sx={{ width: 40, height: 40, bgcolor: '#FFD600', color: '#222' }}
                   >
-                    {user.name ? user.name[0] : 'م'}
+                    {user && typeof user.name === 'string' ? user.name[0] : 'م'}
                   </Avatar>
                     )}
                   </button>
                   <MuiMenu anchorEl={anchorEl} open={menuOpen} onClose={handleMenuClose} anchorOrigin={{vertical:'bottom',horizontal:'right'}} transformOrigin={{vertical:'top',horizontal:'right'}}>
                     <div className="flex flex-col items-center px-4 pt-4 pb-2">
                       <Avatar
-                        src={user.profileImageData ? `data:image/png;base64,${user.profileImageData}` : undefined}
-                        alt={user.name || 'user'}
+                        src={user && typeof user.profileImageData === 'string' ? `data:image/png;base64,${user.profileImageData}` : undefined}
+                        alt={user && typeof user.name === 'string' ? user.name : 'user'}
                         sx={{ width: 56, height: 56, bgcolor: '#FFD600', color: '#222', mb: 1 }}
                       >
-                        {user.name ? user.name[0] : 'م'}
+                        {user && typeof user.name === 'string' ? user.name[0] : 'م'}
                       </Avatar>
-                      <div className="font-bold text-blue-900 mb-2" style={{fontSize:'1.1rem'}}>{user.name}</div>
+                      <div className="font-bold text-blue-900 mb-2" style={{fontSize:'1.1rem'}}>{user && typeof user.name === 'string' ? user.name : ''}</div>
                     </div>
                     <MuiMenuItem component={Link} href={dashboardLink} onClick={handleMenuClose}>لوحة التحكم</MuiMenuItem>
                     <MuiMenuItem onClick={handleLogout}>تسجيل خروج</MuiMenuItem>
@@ -298,8 +302,8 @@ const CastingPlatform = () => {
           </div>
         </div>
       </nav>
-        {/* Mobile Menu */}
-        {isMenuOpen && (
+      {/* Mobile Menu */}
+      {isMenuOpen && (
         <div className="md:hidden fixed top-20 left-1/2 transform -translate-x-1/2 w-[90vw] max-w-sm bg-indigo-950/95 backdrop-blur-md rounded-2xl shadow-2xl border border-blue-400/20 z-50 animate-fadeIn">
           <div className="flex flex-col items-center px-6 py-8 gap-4">
             <Link href="/#home" className="w-full text-center py-3 rounded-xl font-bold text-lg hover:bg-gradient-to-r hover:from-orange-400 hover:to-pink-500 hover:text-white transition-all">{t('navigation.home')}</Link>
@@ -310,10 +314,10 @@ const CastingPlatform = () => {
             <div className="flex flex-col w-full gap-2 pt-4">
               <Link href="/login" className="w-full py-3 bg-blue-600/30 rounded-xl border border-blue-400/30 text-center font-bold text-white">{t('navigation.login')}</Link>
               <Link href="/register" className="w-full py-3 bg-gradient-to-r from-orange-400 to-pink-500 text-white rounded-xl text-center font-bold">{t('navigation.joinNow')}</Link>
-              </div>
             </div>
           </div>
-        )}
+        </div>
+      )}
 
       {/* Language Selection Modal */}
       {showLangModal && (
@@ -468,9 +472,9 @@ const CastingPlatform = () => {
               {categories.map(cat => (
                 <Link key={cat.id} href={`/categories/${cat.id}?name=${encodeURIComponent(cat.name)}`} className="flex flex-col items-center bg-indigo-800/30 rounded-xl p-4 border border-blue-400/30 shadow-md hover:bg-orange-400/10 transition-all cursor-pointer">
                   {cat.imageData ? (
-                    <img src={`data:image/png;base64,${cat.imageData}`} alt={cat.name} className="w-20 h-20 object-cover rounded-lg border border-blue-400/30 mb-2" />
+                    <Image src={`data:image/png;base64,${cat.imageData}`} alt={cat.name} width={80} height={80} className="w-20 h-20 object-cover rounded-lg border border-blue-400/30 mb-2" />
                   ) : cat.imageUrl ? (
-                    <img src={cat.imageUrl} alt={cat.name} className="w-20 h-20 object-cover rounded-lg border border-blue-400/30 mb-2" />
+                    <Image src={cat.imageUrl} alt={cat.name} width={80} height={80} className="w-20 h-20 object-cover rounded-lg border border-blue-400/30 mb-2" />
                   ) : (
                     <div className="w-20 h-20 rounded-lg bg-blue-900/40 flex items-center justify-center text-blue-200 mb-2">{t('categories.noImage')}</div>
                   )}

@@ -32,7 +32,7 @@ export default function TalentDashboard() {
         fetch(`/api/orders?talentId=${u.id}`)
           .then(res => res.json())
           .then(data => {
-            const newCount = (Array.isArray(data) ? data : []).filter((o:any)=>o.status==='new').length;
+            const newCount = (Array.isArray(data) ? data : []).filter((o: Record<string, unknown>)=>o.status==='new').length;
             setNotifCount(newCount);
           });
       }

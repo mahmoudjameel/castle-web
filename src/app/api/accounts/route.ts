@@ -9,7 +9,7 @@ export async function GET(req: Request) {
     const id = searchParams.get('id');
     const categoryId = searchParams.get('categoryId');
     const role = searchParams.get('role');
-    let where: any = {};
+    const where: any = {};
     if (id) where.id = Number(id);
     if (categoryId) where.categoryId = categoryId;
     if (role) {
@@ -23,7 +23,14 @@ export async function GET(req: Request) {
       where.role = 'talent';
     }
     const users = await prisma.user.findMany({ where });
-    return NextResponse.json(users);
+    // تحويل profileImageData إلى base64 إذا كانت موجودة
+    const usersWithImage = users.map(u => {
+      if (u.profileImageData && typeof u.profileImageData !== 'string') {
+        return { ...u, profileImageData: Buffer.from(u.profileImageData).toString('base64') };
+      }
+      return u;
+    });
+    return NextResponse.json(usersWithImage);
   } catch (err) {
     return NextResponse.json({ message: 'خطأ في جلب الحسابات.' }, { status: 500 });
   }

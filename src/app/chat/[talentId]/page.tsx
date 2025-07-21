@@ -1,6 +1,7 @@
 "use client";
 import React, { useEffect, useRef, useState } from "react";
 import { useParams, useSearchParams } from "next/navigation";
+import Image from "next/image";
 
 export default function ChatPage() {
   const params = useParams();
@@ -117,7 +118,13 @@ export default function ChatPage() {
       <div className="w-full max-w-2xl bg-indigo-950/80 rounded-2xl shadow-lg p-6 border border-blue-400/20 flex flex-col" style={{minHeight:500}}>
         {/* رأس المحادثة */}
         <div className="flex items-center gap-4 mb-6 border-b border-blue-400/20 pb-4">
-          <img src={otherUser?.profileImageData ? `data:image/png;base64,${otherUser.profileImageData}` : "/logo.png"} alt={otherUser?.name} className="w-14 h-14 rounded-full object-cover border-2 border-orange-400" />
+          <Image
+            src={otherUser?.profileImageData ? `data:image/png;base64,${otherUser.profileImageData}` : "/logo.png"}
+            alt={otherUser?.name}
+            width={56}
+            height={56}
+            className="w-14 h-14 rounded-full object-cover border-2 border-orange-400"
+          />
           <div>
             <div className="font-bold text-xl text-orange-300">{otherUser?.name || "..."}</div>
             <div className="text-blue-100 text-sm">محادثة خاصة</div>
@@ -135,7 +142,13 @@ export default function ChatPage() {
               return (
                 <div key={msg.id} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
                   <div className={`max-w-[70%] flex items-end gap-2 ${isMe ? 'flex-row-reverse' : ''}`}>
-                    <img src={(isMe ? myData?.profileImageData : otherData?.profileImageData) ? `data:image/png;base64,${isMe ? myData?.profileImageData : otherData?.profileImageData}` : "/logo.png"} alt={isMe ? myData?.name : otherData?.name} className="w-8 h-8 rounded-full object-cover border-2 border-orange-400" />
+                    <Image
+                      src={(isMe ? myData?.profileImageData : otherData?.profileImageData) ? `data:image/png;base64,${isMe ? myData?.profileImageData : otherData?.profileImageData}` : "/logo.png"}
+                      alt={isMe ? myData?.name : otherData?.name}
+                      width={32}
+                      height={32}
+                      className="w-8 h-8 rounded-full object-cover border-2 border-orange-400"
+                    />
                     <div className={`px-4 py-2 rounded-2xl shadow ${isMe ? 'bg-gradient-to-l from-orange-400 to-pink-500 text-white' : 'bg-blue-900/60 text-blue-100'} font-bold`}>
                       <div className="text-sm mb-1">{isMe ? myData?.name : otherData?.name}</div>
                       <div className="text-base whitespace-pre-line break-words">{msg.content}</div>

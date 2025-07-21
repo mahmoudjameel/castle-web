@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from "react";
+import Image from "next/image";
 
 interface Category {
   id: string;
@@ -174,9 +175,21 @@ export default function AdminCategories() {
             {categories.map((cat) => (
               <div key={cat.id} className="flex flex-col items-center bg-indigo-800/30 rounded-xl p-4 border border-blue-400/30 shadow-md">
                 {cat.imageData ? (
-                  <img src={`data:image/png;base64,${cat.imageData}`} alt={cat.name} className="w-24 h-24 object-cover rounded-lg border border-blue-400/30 mb-3" />
+                  <Image
+                    src={`data:image/png;base64,${cat.imageData}`}
+                    alt={cat.name}
+                    width={96}
+                    height={96}
+                    className="w-24 h-24 object-cover rounded-lg border border-blue-400/30 mb-3"
+                  />
                 ) : cat.imageUrl ? (
-                  <img src={cat.imageUrl} alt={cat.name} className="w-24 h-24 object-cover rounded-lg border border-blue-400/30 mb-3" />
+                  <Image
+                    src={cat.imageUrl}
+                    alt={cat.name}
+                    width={96}
+                    height={96}
+                    className="w-24 h-24 object-cover rounded-lg border border-blue-400/30 mb-3"
+                  />
                 ) : null}
                 {editId === cat.id ? (
                   <form onSubmit={handleEdit} className="flex flex-col items-center gap-2 w-full">

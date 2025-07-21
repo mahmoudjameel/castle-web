@@ -1,6 +1,7 @@
 "use client";
 import React, { useEffect, useRef, useState } from "react";
-import { Plus, Trash2, Loader2, Image as ImageIcon, Video as VideoIcon } from "lucide-react";
+import { Trash2, Loader2, Image as ImageIcon, Video as VideoIcon } from "lucide-react";
+import Image from "next/image";
 
 interface PortfolioItem {
   id: number;
@@ -147,10 +148,21 @@ export default function TalentPortfolio() {
             {items.map(item => (
               <div key={item.id} className="relative bg-indigo-800/30 rounded-xl p-3 border border-blue-400/30 shadow-md flex flex-col items-center">
                 {item.type === 'image' && item.mediaData && (
-                  <img src={`data:image/png;base64,${item.mediaData}`} alt={item.title || 'عمل'} className="w-full h-40 object-cover rounded-lg mb-2" />
+                  <Image
+                    src={`data:image/png;base64,${item.mediaData}`}
+                    alt={item.title || 'عمل'}
+                    width={200}
+                    height={100}
+                    className="w-full h-40 object-cover rounded-lg mb-2"
+                  />
                 )}
                 {item.type === 'video' && item.mediaUrl && (
-                  <iframe src={item.mediaUrl.replace('watch?v=', 'embed/')} title={item.title || 'فيديو'} className="w-full h-40 rounded-lg mb-2" allowFullScreen />
+                  <iframe
+                    src={item.mediaUrl.replace('watch?v=', 'embed/')}
+                    title={item.title || 'فيديو'}
+                    className="w-full h-40 rounded-lg mb-2"
+                    allowFullScreen
+                  />
                 )}
                 <div className="font-bold text-center text-blue-100 mb-1 text-sm truncate w-full">{item.title}</div>
                 <button className="absolute top-2 left-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-all" onClick={() => handleDelete(item.id)} title="حذف العمل"><Trash2 size={18} /></button>

@@ -3,9 +3,10 @@
 import React, { useEffect, useState, useRef } from "react";
 import { User, Camera, Save, ArrowRight } from "lucide-react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 
 export default function UserProfilePage() {
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<Record<string, unknown> | null>(null);
   const [profile, setProfile] = useState({
     name: "",
     phone: "",
@@ -83,7 +84,14 @@ export default function UserProfilePage() {
       <form onSubmit={handleSave} className="w-full max-w-xl bg-indigo-950/80 rounded-2xl shadow-lg p-8 border border-blue-400/20 flex flex-col items-center">
         <div className="relative w-32 h-32 mb-4">
           {profile.profileImageData ? (
-            <img src={`data:image/png;base64,${profile.profileImageData}`} alt="الصورة الشخصية" className="w-32 h-32 object-cover rounded-full border-4 border-orange-400 shadow-lg bg-indigo-900" onError={e => (e.currentTarget.style.display = 'none')} />
+            <Image
+              src={`data:image/png;base64,${profile.profileImageData}`}
+              alt="الصورة الشخصية"
+              width={128}
+              height={128}
+              className="w-32 h-32 object-cover rounded-full border-4 border-orange-400 shadow-lg bg-indigo-900"
+              onError={e => (e.currentTarget.style.display = 'none')}
+            />
           ) : (
             <div className="w-32 h-32 rounded-full bg-blue-900/40 flex items-center justify-center text-blue-200 text-5xl border-4 border-blue-400/30">
               <User size={64} />

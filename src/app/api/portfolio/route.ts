@@ -31,7 +31,7 @@ export async function POST(req: Request) {
     if (!userId || !type || (!mediaData && !mediaUrl)) {
       return NextResponse.json({ message: 'userId, type, mediaData أو mediaUrl مطلوبة.' }, { status: 400 });
     }
-    let mediaDataBuffer = undefined;
+    let mediaDataBuffer: Buffer | undefined = undefined;
     if (mediaData) {
       mediaDataBuffer = Buffer.from(mediaData, 'base64');
     }

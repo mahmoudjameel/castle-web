@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState, useRef } from "react";
 import { Star, User, Camera, Loader2 } from "lucide-react";
+import Image from "next/image";
 
 interface Category {
   id: string;
@@ -206,7 +207,14 @@ export default function TalentProfile() {
         <div className="flex flex-col items-center -mt-20 mb-6">
           <div className="relative w-32 h-32">
             {form.profileImageData ? (
-              <img src={`data:image/png;base64,${form.profileImageData}`} alt="الصورة الشخصية" className="w-32 h-32 object-cover rounded-full border-4 border-orange-400 shadow-lg bg-indigo-900" onError={e => (e.currentTarget.style.display = 'none')} />
+              <Image
+                src={`data:image/png;base64,${form.profileImageData}`}
+                alt="الصورة الشخصية"
+                width={128}
+                height={128}
+                className="w-32 h-32 object-cover rounded-full border-4 border-orange-400 shadow-lg bg-indigo-900"
+                onError={e => (e.currentTarget.style.display = 'none')}
+              />
             ) : (
               <div className="w-32 h-32 rounded-full bg-blue-900/40 flex items-center justify-center text-blue-200 text-5xl border-4 border-blue-400/30">
                 <User size={64} />

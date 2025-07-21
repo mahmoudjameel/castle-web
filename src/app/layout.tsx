@@ -1,12 +1,12 @@
 'use client';
 
 import './globals.css';
-import { NextIntlClientProvider, useMessages } from 'next-intl';
+import { NextIntlClientProvider } from 'next-intl';
 import { useEffect } from 'react';
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   // تحديد اللغة من localStorage أو الافتراضية
-  let lang = typeof window !== 'undefined' ? localStorage.getItem('lang') || 'ar' : 'ar';
+  const lang = typeof window !== 'undefined' ? localStorage.getItem('lang') || 'ar' : 'ar';
   // تحميل الرسائل حسب اللغة
   let messages = {};
   try {
@@ -23,7 +23,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang={lang} dir={lang === 'ar' ? 'rtl' : 'ltr'}>
       <body>
-        <NextIntlClientProvider messages={messages} locale={lang}>
+        <NextIntlClientProvider messages={messages} locale={lang} timeZone="Asia/Riyadh">
           {children}
         </NextIntlClientProvider>
       </body>
