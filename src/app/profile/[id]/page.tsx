@@ -12,6 +12,7 @@ import TextField from '@mui/material/TextField';
 import Button from '@mui/material/Button';
 import { FaInstagram, FaTiktok, FaYoutube, FaTwitter } from "react-icons/fa";
 import Image from 'next/image';
+import Navbar from '@/components/Navbar';
 
 export default function TalentPublicProfile() {
   const { id } = useParams();
@@ -23,19 +24,26 @@ export default function TalentPublicProfile() {
   const [submitting, setSubmitting] = useState(false);
   const [showLoginMsg, setShowLoginMsg] = useState(false);
   const [showOrderModal, setShowOrderModal] = useState(false);
-  const [orderServices, setOrderServices] = useState<string[]>([]);
-  const [orderMessage, setOrderMessage] = useState('');
-  const [orderSubmitting, setOrderSubmitting] = useState(false);
-  const [orderSuccess, setOrderSuccess] = useState(false);
-  const [orderDate, setOrderDate] = useState('');
-  const [showOrderSuccessMsg, setShowOrderSuccessMsg] = useState(false);
+  const [selectedServices, setSelectedServices] = useState<string[]>([]);
   // إضافة state جديد لتواريخ التقييمات كنصوص
   const [reviewDates, setReviewDates] = useState<string[]>([]);
+  const [iframeUrl, setIframeUrl] = useState('');
   const [showPaymentModal, setShowPaymentModal] = useState(false);
-  const [paymentDone, setPaymentDone] = useState(false);
-  const [paymentForm, setPaymentForm] = useState({ name: '', card: '', exp: '', cvv: '' });
-  const [paymentError, setPaymentError] = useState('');
-  const [paymentSuccess, setPaymentSuccess] = useState(false);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [selectedServicesSummary, setSelectedServicesSummary] = useState<any[]>([]);
+  const [selectedTotal, setSelectedTotal] = useState(0);
+  const [orderDate, setOrderDate] = useState('');
+  const [orderMessage, setOrderMessage] = useState('');
+
+  // دالة مساعدة لتنظيف localStorage
+  const clearPendingOrderData = () => {
+    localStorage.removeItem('pendingOrder_talentId');
+    localStorage.removeItem('pendingOrder_clientId');
+    localStorage.removeItem('pendingOrder_date');
+    localStorage.removeItem('pendingOrder_message');
+    localStorage.removeItem('pendingOrder_services');
+    localStorage.removeItem('pendingOrder_address');
+  };
 
   useEffect(() => {
     if (!id) return;
@@ -56,6 +64,8 @@ export default function TalentPublicProfile() {
       });
   }, [id]);
 
+
+
   const handleReviewSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!reviewForm.reviewerName || !reviewForm.rating || !reviewForm.comment) return;
@@ -73,26 +83,96 @@ export default function TalentPublicProfile() {
     setSubmitting(false);
   };
 
-  // دالة التحقق عند الضغط على الزر
-  const handleContactOrBook = () => {
-    try {
-      const userStr = localStorage.getItem("user");
-      if (!userStr) {
-        setShowLoginMsg(true);
-        return;
-      }
-      setShowOrderModal(true);
-    } catch {
-      setShowLoginMsg(true);
-    }
-  };
-
-  const handleOrderServiceChange = (serviceName: string) => {
-    setOrderServices((prev) =>
+  const handleServiceChange = (serviceName: string) => {
+    setSelectedServices((prev) =>
       prev.includes(serviceName)
         ? prev.filter((s) => s !== serviceName)
         : [...prev, serviceName]
     );
+  };
+
+  const handleOrderRequest = async () => {
+    // حساب إجمالي السعر للخدمات المختارة
+    let total = 0;
+    let servicesArr = [];
+    try { servicesArr = JSON.parse(talent?.services || '[]'); } catch {}
+    const selected = servicesArr.filter((srv: any) => selectedServices.includes(srv.name));
+    total = selected.reduce((sum: number, srv: any) => sum + Number(srv.price || 0), 0);
+    setSelectedServicesSummary(selected);
+    setSelectedTotal(total);
+    setShowOrderModal(false); // أغلق مودال اختيار الخدمات مباشرة
+    setShowConfirmModal(true); // افتح مودال ملخص الدفع
+  };
+
+  const handleConfirmAndPay = async () => {
+    setShowConfirmModal(false);
+    try {
+      const userStr = localStorage.getItem("user");
+      if (!userStr) { setShowLoginMsg(true); return; }
+      const user = JSON.parse(userStr);
+      let servicesArr = [];
+      try { servicesArr = JSON.parse(talent?.services || '[]'); } catch {}
+      const selectedServices = selectedServicesSummary;
+      const address = user.address || "";
+      
+      // حفظ تفاصيل الطلب في localStorage كنسخة احتياطية
+      localStorage.setItem('pendingOrder_talentId', talent?.id?.toString() || '');
+      localStorage.setItem('pendingOrder_clientId', user.id?.toString() || '');
+      localStorage.setItem('pendingOrder_date', orderDate || new Date().toISOString());
+      localStorage.setItem('pendingOrder_message', orderMessage || 'طلب جديد');
+      localStorage.setItem('pendingOrder_services', JSON.stringify(selectedServices));
+      localStorage.setItem('pendingOrder_address', address);
+      
+      const res = await fetch('/api/paymob-init', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          amount: selectedTotal,
+          user: {
+            email: talent?.email,
+            firstName: talent?.name?.split(' ')[0] || '',
+            lastName: talent?.name?.split(' ')[1] || '',
+            phone: talent?.phone || ''
+          },
+          metadata: {
+            talentId: talent?.id,
+            clientId: user.id,
+            services: JSON.stringify(selectedServices),
+            message: orderMessage || 'طلب جديد',
+            date: orderDate || new Date().toISOString(),
+            address: user.address || ''
+          }
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        // تنظيف localStorage في حالة فشل عملية الدفع
+        clearPendingOrderData();
+        
+        if (data.error && data.details && data.details.includes('Too many attempts')) {
+          alert('تم حظر الاتصال مؤقتًا من Paymob. يرجى المحاولة بعد 30 دقيقة أو استخدام شبكة مختلفة.');
+          return;
+        }
+        if (data.error && data.details && data.details.includes('incorrect credentials')) {
+          alert('خطأ في بيانات الاعتماد. يرجى التحقق من إعدادات Paymob.');
+          return;
+        }
+        if (data.error && data.details && data.details.includes('استجابة غير صحيحة')) {
+          alert('خطأ في استجابة Paymob. يرجى التحقق من الحساب أو المحاولة لاحقاً.');
+          return;
+        }
+        alert(`خطأ في بوابة الدفع: ${data.error || 'خطأ غير معروف'}\n\nالتفاصيل: ${data.details || 'لا توجد تفاصيل'}`);
+        return;
+      }
+      setIframeUrl(data.iframe);
+      setShowPaymentModal(true);
+    } catch (error) {
+      // تنظيف localStorage في حالة حدوث خطأ
+      clearPendingOrderData();
+      
+      console.error('Payment error:', error);
+      alert('خطأ في الاتصال مع بوابة الدفع. يرجى المحاولة مرة أخرى.\n\nالتفاصيل: ' + (error instanceof Error ? error.message : 'خطأ غير معروف'));
+    }
   };
 
   const getAvailableSlots = () => {
@@ -115,54 +195,6 @@ export default function TalentPublicProfile() {
     return slots;
   };
 
-  const handleOrderSubmit = async () => {
-    setOrderSubmitting(true);
-    setOrderSuccess(false);
-    try {
-      const userStr = localStorage.getItem("user");
-      if (!userStr) { setShowLoginMsg(true); setOrderSubmitting(false); return; }
-      const user = JSON.parse(userStr);
-      let servicesArr = [];
-      try { servicesArr = JSON.parse(talent?.services || '[]'); } catch {}
-      const selectedServices = servicesArr.filter((srv: any) => orderServices.includes(srv.name));
-      // إضافة phone و address
-      const phone = user.phone || "";
-      const address = user.address || "";
-      const res = await fetch('/api/orders', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          talentId: talent?.id,
-          clientId: user.id,
-          services: selectedServices,
-          message: orderMessage,
-          date: orderDate,
-          phone,
-          address,
-        }),
-      });
-      if (res.ok) {
-        setOrderSuccess(true);
-        setOrderServices([]);
-        setOrderMessage('');
-        setOrderDate('');
-        setShowOrderModal(false);
-        setShowOrderSuccessMsg(true);
-        setTimeout(()=>setShowOrderSuccessMsg(false), 7000);
-      }
-    } catch {}
-    setOrderSubmitting(false);
-  };
-
-  const handleOrderRequest = () => {
-    // قبل تنفيذ الطلب، تحقق من الدفع
-    if (!paymentDone) {
-      setShowPaymentModal(true);
-      return;
-    }
-    handleOrderSubmit();
-  };
-
   if (loading || !talent) {
     return <div className="flex items-center justify-center min-h-[60vh] text-blue-200">جاري تحميل البيانات...</div>;
   }
@@ -181,13 +213,8 @@ export default function TalentPublicProfile() {
 
   return (
     <>
-      {/* رسالة نجاح إرسال الطلب */}
-      {showOrderSuccessMsg && (
-        <div className="fixed top-8 left-1/2 -translate-x-1/2 z-50 bg-green-600/95 text-white px-6 py-4 rounded-xl shadow-lg border-2 border-green-300 text-lg font-bold flex flex-col items-center animate-fade-in">
-          <span>✅ تم إرسال الطلب بنجاح!</span>
-          <span className="text-sm mt-1">يمكنك متابعة حالة الطلب من <a href="/user/orders" className="underline text-orange-200 hover:text-orange-400">لوحة التحكم &rarr; طلباتي</a></span>
-        </div>
-      )}
+      <Navbar />
+
       <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-blue-900 to-purple-900 text-white py-10 px-2 flex justify-center">
         <div className="w-full max-w-4xl bg-indigo-950/80 rounded-2xl shadow-lg p-8 border border-blue-400/20">
           <div className="flex flex-col items-center mb-6">
@@ -277,7 +304,18 @@ export default function TalentPublicProfile() {
             </div>
             {/* زر تواصل أو احجز الآن */}
             <div className="flex flex-col items-center mt-6">
-              <button onClick={handleContactOrBook} className="px-6 py-3 bg-gradient-to-r from-orange-400 to-pink-500 rounded-lg text-white font-bold text-lg shadow-lg hover:from-orange-500 hover:to-pink-600 transition-all">تواصل أو احجز الآن</button>
+                <button onClick={() => {
+                  try {
+                    const userStr = localStorage.getItem("user");
+                    if (!userStr) {
+                      setShowLoginMsg(true);
+                      return;
+                    }
+                    setShowOrderModal(true);
+                  } catch {
+                    setShowLoginMsg(true);
+                  }
+                }} className="px-6 py-3 bg-gradient-to-r from-orange-400 to-pink-500 rounded-lg text-white font-bold text-lg shadow-lg hover:from-orange-500 hover:to-pink-600 transition-all">تواصل أو احجز الآن</button>
               {showLoginMsg && (
                 <div className="mt-4 bg-blue-900/60 text-orange-300 px-4 py-2 rounded-lg border border-orange-400/30 text-center max-w-xs">
                   يجب تسجيل الدخول أولاً للاستفادة من هذه الميزة.<br/> <a href="/login" className="underline text-orange-400 hover:text-pink-400">سجّل الدخول الآن</a>
@@ -322,18 +360,20 @@ export default function TalentPublicProfile() {
                 return servicesArr.map((srv: any, idx: number) => (
                   <FormControlLabel
                     key={idx}
-                    control={<Checkbox checked={orderServices.includes(srv.name)} onChange={()=>handleOrderServiceChange(srv.name)} sx={{color:'#FFA726','&.Mui-checked':{color:'#FFA726'}}} />}
+                    control={<Checkbox checked={selectedServices.includes(srv.name)} onChange={()=>handleServiceChange(srv.name)} sx={{color:'#FFA726','&.Mui-checked':{color:'#FFA726'}}} />}
                     label={<span className="text-white">{srv.name} <span className="text-orange-400 font-bold">({srv.price} ر.س)</span></span>}
                   />
                 ));
               })()}
               <div className="mt-4 mb-2 text-blue-200 font-bold">اختر الموعد المتاح:</div>
+              
               <select value={orderDate} onChange={e=>setOrderDate(e.target.value)} className="w-full px-3 py-2 rounded-lg bg-blue-900/40 border border-blue-400/20 text-white mb-4">
                 <option value="">اختر موعداً...</option>
                 {getAvailableSlots().map(slot => (
                   <option key={slot.value} value={slot.value}>{slot.label}</option>
                 ))}
               </select>
+
               <TextField
                 label="رسالتك (اختياري)"
                 multiline
@@ -360,62 +400,81 @@ export default function TalentPublicProfile() {
             </DialogContent>
             <DialogActions sx={{justifyContent:'center',pb:2}}>
               <Button onClick={()=>setShowOrderModal(false)} color="secondary" sx={{fontWeight:700}}>إلغاء</Button>
-              <Button onClick={handleOrderRequest} color="warning" variant="contained" sx={{fontWeight:700}} disabled={orderSubmitting || orderServices.length === 0 || !orderDate}>
-                {orderSubmitting ? 'جاري الإرسال...' : 'إرسال الطلب'}
+                              <Button onClick={handleOrderRequest} color="warning" variant="contained" sx={{fontWeight:700}} disabled={selectedServices.length === 0 || !orderDate}>
+                                  احجز الآن
               </Button>
             </DialogActions>
           </Dialog>
-          {/* مودال الدفع الوهمي */}
-          <Dialog open={showPaymentModal} onClose={()=>setShowPaymentModal(false)} PaperProps={{style:{borderRadius:20,background:'#1e1b4b',color:'#fff',minWidth:340}}}>
-            <DialogTitle sx={{fontWeight:700, fontSize:'1.3rem', color:'#FFA726', textAlign:'center'}}>بوابة الدفع</DialogTitle>
-            <DialogContent>
-              <div className="mb-4 text-blue-200 font-bold text-center">يرجى إدخال بيانات البطاقة لإتمام الدفع</div>
-              <form onSubmit={e=>{e.preventDefault(); setPaymentError('');
-                if (!paymentForm.name || !paymentForm.card || !paymentForm.exp || !paymentForm.cvv) {
-                  setPaymentError('يرجى تعبئة جميع الحقول'); return;
-                }
-                setPaymentSuccess(true);
-                setTimeout(()=>{
-                  setPaymentDone(true); setShowPaymentModal(false); setPaymentSuccess(false); setPaymentForm({ name: '', card: '', exp: '', cvv: '' }); handleOrderSubmit();
-                }, 1200);
-              }} className="flex flex-col gap-3 items-center">
-                <input type="text" placeholder="اسم حامل البطاقة" className="w-full max-w-xs px-4 py-2 rounded-lg bg-blue-900/40 border border-blue-400/20 text-white" value={paymentForm.name} onChange={e=>setPaymentForm(f=>({...f, name: e.target.value}))} />
-                <input type="text" placeholder="رقم البطاقة (16 رقم)" maxLength={16} className="w-full max-w-xs px-4 py-2 rounded-lg bg-blue-900/40 border border-blue-400/20 text-white" value={paymentForm.card} onChange={e=>setPaymentForm(f=>({...f, card: e.target.value.replace(/[^0-9]/g,'')}))} />
-                <div className="flex gap-2 w-full max-w-xs">
-                  <input type="text" placeholder="MM/YY" maxLength={5} className="flex-1 px-4 py-2 rounded-lg bg-blue-900/40 border border-blue-400/20 text-white" value={paymentForm.exp} onChange={e=>setPaymentForm(f=>({...f, exp: e.target.value}))} />
-                  <input type="text" placeholder="CVV" maxLength={4} className="w-20 px-4 py-2 rounded-lg bg-blue-900/40 border border-blue-400/20 text-white" value={paymentForm.cvv} onChange={e=>setPaymentForm(f=>({...f, cvv: e.target.value.replace(/[^0-9]/g,'')}))} />
+          {/* حسّن تصميم نافذة الدفع: */}
+          {showPaymentModal && iframeUrl && (
+            <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+              <div className="bg-white rounded-2xl shadow-2xl p-6 relative w-[95vw] max-w-lg flex flex-col items-center">
+                {/* زر إغلاق */}
+                <button
+                  onClick={() => {
+                    // تنظيف localStorage عند إغلاق مودال الدفع
+                    clearPendingOrderData();
+                    setShowPaymentModal(false);
+                  }}
+                  className="absolute top-3 left-3 text-red-500 font-bold text-xl"
+                  aria-label="إغلاق"
+                >×</button>
+                {/* شعار الموقع */}
+                <Image src="/logo.png" alt="شعار الموقع" width={60} height={60} className="mb-2" />
+                {/* عنوان الدفع */}
+                <h2 className="text-2xl font-bold text-blue-900 mb-2">
+                  إتمام عملية الدفع
+                </h2>
+                {/* معلومات Paymob للديباغ */}
+                <div className="text-xs text-blue-400 mb-2">
+                  Integration ID: {process.env.NEXT_PUBLIC_PAYMOB_INTEGRATION_ID || '13184'} | Iframe ID: {process.env.NEXT_PUBLIC_PAYMOB_IFRAME_ID || '9083'}
+                  <br/>
+                  <span className="text-[10px] text-blue-300">(هذه المعلومات تظهر فقط للديباغ ويمكن إزالتها لاحقاً)</span>
                 </div>
-                {paymentError && <div className="text-red-400 text-sm mt-1">{paymentError}</div>}
-                <div className="flex flex-col gap-2 items-center mb-2 mt-2">
-                  {talent?.services && (() => {
-                    let servicesArr = [];
-                    try { servicesArr = JSON.parse(talent.services); } catch {}
-                    const selected = servicesArr.filter((srv: any) => orderServices.includes(srv.name));
-                    if (!selected.length) return <div className="text-blue-400">لم يتم اختيار خدمات.</div>;
-                    const total = selected.reduce((sum: number, srv: any) => sum + Number(srv.price || 0), 0);
-                    return <>
-                      {selected.map((srv: any, idx: number) => (
-                        <div key={idx} className="flex justify-between w-full max-w-xs">
-                          <span>{srv.name}</span>
-                          <span className="text-orange-400 font-bold">{srv.price} ر.س</span>
-                        </div>
-                      ))}
-                      <div className="flex justify-between w-full max-w-xs mt-2 border-t border-orange-400 pt-2">
-                        <span className="font-bold">الإجمالي</span>
-                        <span className="text-orange-400 font-bold">{total} ر.س</span>
-                      </div>
-                    </>;
-                  })()}
+                {/* مجموع المبلغ */}
+                <div className="text-lg font-bold text-orange-500 mb-4">
+                  المبلغ الإجمالي: <span>{selectedTotal} ر.س</span>
                 </div>
-                <div className="text-center text-blue-300 text-sm mb-2">هذه بوابة دفع وهمية للتجربة فقط</div>
-                <button type="submit" className="w-full max-w-xs py-3 bg-gradient-to-r from-green-400 to-blue-500 rounded-lg font-bold text-lg text-white hover:from-green-500 hover:to-blue-600 transition-all mt-2">ادفع الآن</button>
-                {paymentSuccess && <div className="text-green-400 text-center mt-2">تم الدفع بنجاح!</div>}
-              </form>
-            </DialogContent>
-            <DialogActions sx={{justifyContent:'center',pb:2}}>
-              <Button onClick={()=>setShowPaymentModal(false)} color="secondary" sx={{fontWeight:700}}>إلغاء</Button>
-            </DialogActions>
-          </Dialog>
+                {/* تعليمات */}
+                <div className="text-blue-700 mb-4 text-center">
+                  يرجى إتمام عملية الدفع عبر بوابة Paymob الآمنة أدناه.
+                </div>
+                {/* iframe الدفع */}
+                <iframe
+                  src={iframeUrl}
+                  className="w-full h-[400px]"
+                  style={{ border: 0, borderRadius: 16, boxShadow: '0 2px 16px #0002' }}
+                  allowFullScreen
+                  onLoad={(e) => {
+                    console.log('Payment iframe loaded');
+                    // محاولة اكتشاف نجاح الدفع من URL
+                    const iframe = e.target as HTMLIFrameElement;
+                    try {
+                      const iframeUrl = iframe.contentWindow?.location.href;
+                                                    if (iframeUrl && (iframeUrl.includes('success=true') || iframeUrl.includes('approved'))) {
+                                console.log('Payment success detected from iframe URL');
+                                // تنظيف localStorage عند نجاح الدفع
+                                clearPendingOrderData();
+                              } else if (iframeUrl && iframeUrl.includes('error')) {
+                        console.log('Payment error detected from iframe URL');
+                        // تنظيف localStorage عند فشل الدفع
+                        clearPendingOrderData();
+                        setShowPaymentModal(false);
+                        window.location.href = '/payment-failed?error=فشلت عملية الدفع';
+                      }
+                    } catch (error) {
+                      // تجاهل أخطاء CORS
+                      console.log('Cannot access iframe URL due to CORS');
+                    }
+                  }}
+                />
+                {/* ملاحظة: سيتم التوجيه التلقائي بعد الدفع */}
+                <div className="text-xs text-gray-500 mt-2 text-center">
+                  بعد إتمام الدفع، سيتم توجيهك تلقائياً لصفحة النجاح
+                </div>
+              </div>
+            </div>
+          )}
           {/* قسم التقييمات */}
           <div className="mb-10 mt-10">
             <h3 className="text-2xl font-bold mb-4 text-orange-300 text-center">التقييمات</h3>
@@ -457,6 +516,68 @@ export default function TalentPublicProfile() {
           </div>
         </div>
       </div>
+      {showConfirmModal && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+          <div className="relative w-[95vw] max-w-md rounded-3xl shadow-2xl border-2 border-blue-400/30 bg-gradient-to-br from-indigo-900 via-blue-900 to-purple-900 p-0 overflow-hidden">
+            {/* رأس المودال */}
+            <div className="flex flex-col items-center py-6 px-6 bg-gradient-to-r from-orange-400 to-pink-500 rounded-t-3xl shadow">
+              <Image src="/logo.png" alt="شعار الموقع" width={48} height={48} className="mb-2" />
+              <h2 className="text-2xl font-bold text-white mb-1 drop-shadow">تأكيد تفاصيل الدفع</h2>
+              <div className="text-blue-50 text-center mb-2 text-base">يرجى مراجعة تفاصيل الخدمات والمبلغ قبل إتمام الطلب</div>
+            </div>
+            {/* جدول الخدمات */}
+            <div className="w-full bg-white/90 rounded-b-3xl px-6 py-6">
+              <table className="w-full text-right mb-4">
+                <thead>
+                  <tr className="text-orange-400 text-lg">
+                    <th className="py-2 font-bold">الخدمة</th>
+                    <th className="py-2 font-bold">السعر</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {selectedServicesSummary.map((srv, idx) => (
+                    <tr key={idx} className="text-blue-900">
+                      <td className="py-1 font-semibold flex items-center gap-2">
+                        <svg width="18" height="18" fill="none" viewBox="0 0 24 24">
+                          <circle cx="12" cy="12" r="10" fill="#FFA726"/>
+                          <path d="M8 12l2 2 4-4" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
+                        {srv.name}
+                      </td>
+                      <td className="py-1 font-bold text-orange-500">{srv.price} ر.س</td>
+                    </tr>
+                  ))}
+                </tbody>
+                <tfoot>
+                  <tr className="font-bold text-lg border-t border-blue-200">
+                    <td className="py-2">الإجمالي</td>
+                    <td className="py-2 text-orange-600">{selectedTotal} ر.س</td>
+                  </tr>
+                </tfoot>
+              </table>
+              {/* زر التأكيد */}
+              <button
+                onClick={handleConfirmAndPay}
+                className="w-full mt-2 px-8 py-3 bg-gradient-to-r from-orange-400 to-pink-500 text-white rounded-xl font-bold text-lg shadow-lg hover:from-orange-500 hover:to-pink-600 transition-all"
+              >
+                <span className="flex items-center justify-center gap-2">
+                  <svg width="22" height="22" fill="none" viewBox="0 0 24 24">
+                    <rect width="24" height="24" rx="12" fill="#1A9F29"/>
+                    <path d="M8 12l2 2 4-4" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                  تأكيد والدفع
+                </span>
+              </button>
+              {/* زر إغلاق دائري أعلى اليسار */}
+              <button
+                onClick={() => setShowConfirmModal(false)}
+                className="absolute top-3 left-3 bg-white/80 hover:bg-red-100 text-red-500 font-bold text-xl w-10 h-10 rounded-full flex items-center justify-center shadow"
+                aria-label="إغلاق"
+              >×</button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 } 

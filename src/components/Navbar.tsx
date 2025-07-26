@@ -77,7 +77,13 @@ const Navbar = () => {
         <div className="flex items-center gap-3">
           <Link href="/" className="flex items-center gap-2">
             <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center shadow-lg border-2 border-orange-400 overflow-hidden">
-              <Image alt="شعار طوق" src="/logo.png" className="object-contain w-10 h-10" />
+              <Image 
+                alt="شعار طوق" 
+                src="/logo.png" 
+                width={40}
+                height={40}
+                className="object-contain w-10 h-10" 
+              />
             </div>
             <span className="hidden sm:block text-lg font-extrabold bg-gradient-to-r from-orange-400 via-pink-400 to-blue-400 bg-clip-text text-transparent tracking-tight">منصة الكاستينج الرقمية</span>
           </Link>

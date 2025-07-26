@@ -3,6 +3,7 @@
 import './globals.css';
 import { NextIntlClientProvider } from 'next-intl';
 import { useEffect } from 'react';
+import ThemeRegistry from '@/components/ThemeRegistry';
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   // تحديد اللغة من localStorage أو الافتراضية
@@ -23,9 +24,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang={lang} dir={lang === 'ar' ? 'rtl' : 'ltr'}>
       <body>
-        <NextIntlClientProvider messages={messages} locale={lang} timeZone="Asia/Riyadh">
-          {children}
-        </NextIntlClientProvider>
+        <ThemeRegistry>
+          <NextIntlClientProvider messages={messages} locale={lang} timeZone="Asia/Riyadh">
+            {children}
+          </NextIntlClientProvider>
+        </ThemeRegistry>
       </body>
     </html>
   );

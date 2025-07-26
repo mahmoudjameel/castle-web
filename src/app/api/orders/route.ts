@@ -1,34 +1,91 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
-// جلب الطلبات لموهبة أو عميل
-export async function GET(req: Request) {
+export async function GET(req: NextRequest) {
   try {
-    const { searchParams } = new URL(req.url!);
+    const { searchParams } = new URL(req.url);
+    const id = searchParams.get('id');
     const talentId = searchParams.get('talentId');
     const clientId = searchParams.get('clientId');
-    const where: Record<string, unknown> = {};
+
+    if (id) {
+      // Get specific order by ID
+      const order = await prisma.talentOrder.findUnique({
+        where: { id: Number(id) },
+        include: {
+          talent: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              jobTitle: true
+            }
+          },
+          client: {
+            select: {
+              id: true,
+              name: true,
+              email: true
+            }
+          }
+        }
+      });
+
+      if (!order) {
+        return NextResponse.json({ error: 'الطلب غير موجود' }, { status: 404 });
+      }
+
+      return NextResponse.json(order);
+    }
+
+    // Build where clause based on parameters
+    const where: any = {};
     if (talentId) where.talentId = Number(talentId);
     if (clientId) where.clientId = Number(clientId);
+
+    // Get orders with filters
     const orders = await prisma.talentOrder.findMany({
       where,
-      orderBy: { createdAt: 'desc' },
+      include: {
+        talent: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            jobTitle: true
+          }
+        },
+        client: {
+          select: {
+            id: true,
+            name: true,
+            email: true
+          }
+        }
+      },
+      orderBy: {
+        createdAt: 'desc'
+      }
     });
+
     return NextResponse.json(orders);
-  } catch {
-    return NextResponse.json({ message: 'خطأ في جلب الطلبات.' }, { status: 500 });
+  } catch (error) {
+    console.error('Error fetching orders:', error);
+    return NextResponse.json({ error: 'خطأ في جلب الطلبات' }, { status: 500 });
   }
 }
 
-// إضافة طلب جديد
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   try {
-    const { talentId, clientId, services, message, date, phone, address } = await req.json();
+    const body = await req.json();
+    const { talentId, clientId, services, message, date, address } = body;
+
     if (!talentId || !clientId || !services) {
-      return NextResponse.json({ message: 'جميع الحقول مطلوبة.' }, { status: 400 });
+      return NextResponse.json({ error: 'بيانات الطلب غير مكتملة' }, { status: 400 });
     }
+
     const order = await prisma.talentOrder.create({
       data: {
         talentId: Number(talentId),
@@ -36,13 +93,31 @@ export async function POST(req: Request) {
         services: JSON.stringify(services),
         message: message || '',
         date: date || null,
-        phone: phone || null,
         address: address || null,
       },
+      include: {
+        talent: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            jobTitle: true
+          }
+        },
+        client: {
+          select: {
+            id: true,
+            name: true,
+            email: true
+          }
+        }
+      }
     });
+
     return NextResponse.json(order);
-  } catch  {
-    return NextResponse.json({ message: 'خطأ في إضافة الطلب.' }, { status: 500 });
+  } catch (error) {
+    console.error('Error creating order:', error);
+    return NextResponse.json({ error: 'خطأ في إنشاء الطلب' }, { status: 500 });
   }
 }
 

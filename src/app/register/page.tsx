@@ -28,10 +28,10 @@ const Register = () => {
       const data = await res.json();
       if (res.ok) {
         setMessage(role === 'USER' ? t('auth.userRegisteredSuccess') : t('auth.talentRegisteredSuccess'));
-        setName(''); setEmail(''); setPassword('');
-        setTimeout(() => {
-          router.push('/login');
-        }, 1200);
+          setName(''); setEmail(''); setPassword('');
+          setTimeout(() => {
+            router.push('/login');
+          }, 1200);
       } else {
         setMessage(data.message || t('auth.registrationError'));
       }

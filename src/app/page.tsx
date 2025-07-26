@@ -128,24 +128,22 @@ const CastingPlatform = () => {
   useEffect(() => {
     if (!isMounted) return;
     try {
-      setLang(typeof window !== 'undefined' ? localStorage.getItem('lang') || 'ar' : 'ar');
+    setLang(typeof window !== 'undefined' ? localStorage.getItem('lang') || 'ar' : 'ar');
     } catch { setLang('ar'); }
   }, [isMounted]);
 
   useEffect(() => {
+    // جلب بيانات البانر الرئيسي
     fetch('/api/hero-banners')
       .then(res => res.json())
       .then(data => {
-        if (Array.isArray(data) && data.length > 0) {
-          setHeroSlides(data.map(slide => ({
-            title: slide.title,
-            subtitle: slide.subtitle,
-            image: slide.imageUrl || (slide.imageData ? `data:image/png;base64,${slide.imageData}` : undefined),
-            cta: slide.ctaText || ''
-          })));
-        }
+        setHeroSlides(Array.isArray(data) ? data : []);
+      })
+      .catch(error => {
+        console.error('Error fetching hero banners:', error);
+        setHeroSlides([]);
       });
-  }, [t]);
+  }, []);
 
   const toggleLang = () => {
     setShowLangModal(!showLangModal);
@@ -302,8 +300,8 @@ const CastingPlatform = () => {
           </div>
         </div>
       </nav>
-      {/* Mobile Menu */}
-      {isMenuOpen && (
+        {/* Mobile Menu */}
+        {isMenuOpen && (
         <div className="md:hidden fixed top-20 left-1/2 transform -translate-x-1/2 w-[90vw] max-w-sm bg-indigo-950/95 backdrop-blur-md rounded-2xl shadow-2xl border border-blue-400/20 z-50 animate-fadeIn">
           <div className="flex flex-col items-center px-6 py-8 gap-4">
             <Link href="/#home" className="w-full text-center py-3 rounded-xl font-bold text-lg hover:bg-gradient-to-r hover:from-orange-400 hover:to-pink-500 hover:text-white transition-all">{t('navigation.home')}</Link>
@@ -314,10 +312,10 @@ const CastingPlatform = () => {
             <div className="flex flex-col w-full gap-2 pt-4">
               <Link href="/login" className="w-full py-3 bg-blue-600/30 rounded-xl border border-blue-400/30 text-center font-bold text-white">{t('navigation.login')}</Link>
               <Link href="/register" className="w-full py-3 bg-gradient-to-r from-orange-400 to-pink-500 text-white rounded-xl text-center font-bold">{t('navigation.joinNow')}</Link>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
 
       {/* Language Selection Modal */}
       {showLangModal && (
@@ -380,20 +378,20 @@ const CastingPlatform = () => {
         <div className="absolute inset-0 overflow-hidden">
           {heroSlides.map((slide, index) => (
             (slide && slide.title && slide.image) ? (
-              <div
-                key={index}
-                className={`absolute inset-0 transition-opacity duration-1000 ${
-                  index === currentSlide ? 'opacity-100' : 'opacity-0'
-                }`}
-              >
-                <Image
-                  src={slide.image}
-                  alt={slide.title}
-                  fill
-                  className="object-cover"
+            <div
+              key={index}
+              className={`absolute inset-0 transition-opacity duration-1000 ${
+                index === currentSlide ? 'opacity-100' : 'opacity-0'
+              }`}
+            >
+              <Image
+                src={slide.image}
+                alt={slide.title}
+                fill
+                className="object-cover"
                   priority={index === currentSlide}
-                />
-              </div>
+              />
+            </div>
             ) : null
           ))}
         </div>
@@ -402,10 +400,10 @@ const CastingPlatform = () => {
           <div className="w-full md:w-1/2 flex flex-col items-center md:items-start text-center md:text-right space-y-6 md:space-y-8 py-12 md:py-0">
             <h1 className="text-3xl xs:text-4xl md:text-5xl lg:text-6xl font-bold leading-tight mb-2 md:mb-4 bg-gradient-to-r from-orange-400 via-pink-400 to-blue-400 bg-clip-text text-transparent">
               {heroSlides[currentSlide]?.title || 'عنوان السلايدر'}
-            </h1>
+              </h1>
             <p className="text-lg xs:text-xl md:text-2xl text-blue-100 leading-relaxed mb-2 md:mb-4 max-w-xl">
               {heroSlides[currentSlide]?.subtitle || 'وصف السلايدر'}
-            </p>
+              </p>
             <div className="flex flex-col sm:flex-row items-center w-full gap-4 md:gap-6 mb-2 md:mb-6">
               <button className="w-full sm:w-auto px-8 py-4 bg-gradient-to-r from-orange-400 to-pink-500 text-white font-semibold rounded-lg hover:from-orange-500 hover:to-pink-600 transition-all transform hover:scale-105 text-lg md:text-xl shadow-lg">
                 {heroSlides[currentSlide]?.cta || 'ابدأ الآن'}
@@ -416,7 +414,7 @@ const CastingPlatform = () => {
               </button>
             </div>
             {/* User Type Selection */}
-          </div>
+              </div>
           {/* صورة البانر على الديسكتوب فقط */}
           <div className="hidden md:block w-1/2 h-[400px] lg:h-[500px] relative">
             <div className="absolute inset-0 rounded-3xl shadow-2xl border-4 border-blue-400/20 overflow-hidden">
