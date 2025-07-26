@@ -161,6 +161,14 @@ export default function TalentPublicProfile() {
           alert('خطأ في استجابة Paymob. يرجى التحقق من الحساب أو المحاولة لاحقاً.');
           return;
         }
+        if (data.error && data.details && data.details.includes('unrelated payment integration')) {
+          alert('خطأ في إعدادات Integration. يرجى التواصل مع الدعم الفني.');
+          return;
+        }
+        if (data.error && data.details && data.details.includes('إعدادات Integration')) {
+          alert('خطأ في إعدادات Integration. يرجى التواصل مع الدعم الفني.');
+          return;
+        }
         alert(`خطأ في بوابة الدفع: ${data.error || 'خطأ غير معروف'}\n\nالتفاصيل: ${data.details || 'لا توجد تفاصيل'}`);
         return;
       }

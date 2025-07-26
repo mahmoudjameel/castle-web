@@ -6,17 +6,17 @@ export const PAYMOB_CONFIG = {
   SECRET_KEY: process.env.PAYMOB_SECRET_KEY || '',
   PUBLIC_KEY: process.env.PAYMOB_PUBLIC_KEY || '',
 
-  // Integration IDs
+  // Integration IDs - Use environment variables
   INTEGRATIONS: {
     APPLE_PAY: {
-      ID: 13183,
+      ID: Number(process.env.PAYMOB_INTEGRATION_ID) || 13184,
       NAME: 'Apple pay payment link',
-      IFRAME_ID: '9083'
+      IFRAME_ID: process.env.PAYMOB_IFRAME_ID || '9083'
     },
     CARD_PAYMENT: {
-      ID: 14214,
+      ID: Number(process.env.PAYMOB_INTEGRATION_ID) || 13184,
       NAME: 'MIGS-online Payment link',
-      IFRAME_ID: '9589'
+      IFRAME_ID: process.env.PAYMOB_IFRAME_ID || '9083'
     }
   },
 

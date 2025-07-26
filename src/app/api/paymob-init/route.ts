@@ -198,12 +198,8 @@ export async function POST(req: Request) {
       lock_order_when_paid: false,
       
       // إضافة callback URLs للتوجيه بعد الدفع
-      redirection_url: `${origin}/payment-success`, // صفحة النجاح
-      webhook_url: `${origin}/api/paymob-webhook`, // webhook للتحقق من الدفع
-      
-      // يمكنك أيضاً استخدام PAYMOB_CONFIG.CALLBACKS إذا كانت محددة
-      // redirection_url: PAYMOB_CONFIG.CALLBACKS.SUCCESS_URL,
-      // webhook_url: PAYMOB_CONFIG.CALLBACKS.TRANSACTION_CALLBACK,
+      redirection_url: `${origin}/payment-success`,
+      webhook_url: `${origin}/api/paymob-callback`,
       
       ...(metadata ? { metadata } : {})
     };
@@ -231,6 +227,23 @@ export async function POST(req: Request) {
     if (!paymentKeyRes.ok) {
       const errorText = await paymentKeyRes.text();
       console.error('Payment key request failed:', errorText);
+      
+      // معالجة خاصة لخطأ "unrelated payment integration"
+      if (errorText.includes('unrelated payment integration')) {
+        return NextResponse.json({ 
+          error: 'خطأ في إعدادات Integration',
+          details: 'Integration ID غير صحيح أو غير متوافق مع الحساب. يرجى التحقق من إعدادات Paymob Dashboard.'
+        }, { status: 400 });
+      }
+      
+      // معالجة خاصة لخطأ 401 (Unauthorized)
+      if (paymentKeyRes.status === 401) {
+        return NextResponse.json({ 
+          error: 'خطأ في بيانات الاعتماد',
+          details: 'API Key أو Integration ID غير صحيح. يرجى التحقق من إعدادات Paymob.'
+        }, { status: 401 });
+      }
+      
       return NextResponse.json({ 
         error: 'فشل في إنشاء مفتاح الدفع',
         details: `HTTP ${paymentKeyRes.status}: ${errorText}`
