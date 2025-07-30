@@ -68,10 +68,10 @@ const Navbar = () => {
   if (user?.role === 'admin') dashboardLink = '/admin';
   else if (user?.role === 'talent') dashboardLink = '/talent';
   else if (user?.role === 'company') dashboardLink = '/company';
-  else if (user?.role === 'user') dashboardLink = '/';
+  else if (user?.role === 'user') dashboardLink = '/user';
 
   return (
-    <AppBar position="sticky" elevation={2} sx={{ background: 'linear-gradient(90deg, #1e293b 0%, #6366f1 100%)', boxShadow: '0 2px 16px 0 rgba(99,102,241,0.10)' }}>
+    <AppBar position="sticky" elevation={2} sx={{ background: 'rgba(255,255,255,0.90)', boxShadow: '0 2px 16px 0 rgba(96,165,250,0.10)', borderBottom: '1.5px solid #60a5fa' }}>
       <Toolbar className="!px-2 md:!px-8 flex items-center justify-between h-16">
         {/* Logo & Brand */}
         <div className="flex items-center gap-3">
@@ -91,7 +91,7 @@ const Navbar = () => {
         {/* Desktop Nav */}
         <div className="hidden md:flex items-center gap-2 lg:gap-6">
           {navLinks.map(link => (
-            <Link key={link.href} href={link.href} className="text-white font-bold text-base px-3 py-1 rounded-lg hover:bg-gradient-to-r hover:from-orange-400 hover:to-pink-500 hover:text-white transition-all">
+            <Link key={link.href} href={link.href} className="text-blue-900 font-bold text-base px-3 py-1 rounded-lg hover:bg-gradient-to-r hover:from-orange-400 hover:to-pink-500 hover:text-white transition-all">
               {link.label}
             </Link>
           ))}
@@ -99,14 +99,14 @@ const Navbar = () => {
         {/* Actions */}
         <div className="flex items-center gap-2">
           {/* Language Switcher */}
-          <IconButton onClick={toggleLang} sx={{ bgcolor: '#1e293b', color: '#fff', border: '2px solid #6366f1', mr: 1, '&:hover': { bgcolor: '#6366f1', color: '#fff' } }}>
+          <IconButton onClick={toggleLang} sx={{ bgcolor: 'rgba(96,165,250,0.10)', color: '#1e293b', border: '2px solid #60a5fa', mr: 1, '&:hover': { bgcolor: '#60a5fa', color: '#fff' } }}>
             <TranslateIcon />
             <span className="hidden sm:inline text-sm font-bold ml-1">{lang === 'ar' ? 'EN' : 'ع'}</span>
           </IconButton>
           {/* User Auth */}
           {!user ? (
             <>
-              <Button component={Link} href="/login" variant="outlined" sx={{ borderRadius: 999, borderColor: '#f59e42', color: '#fff', fontWeight: 700, px: 2, ml: 1, background: 'linear-gradient(90deg,#f59e42 0%,#f472b6 100%)', border: 0, '&:hover': { background: 'linear-gradient(90deg,#f472b6 0%,#f59e42 100%)', color: '#fff' } }}>دخول</Button>
+              <Button component={Link} href="/login" variant="outlined" sx={{ borderRadius: 999, borderColor: '#f59e42', color: '#f59e42', fontWeight: 700, px: 2, ml: 1, background: 'rgba(255,255,255,0.80)', border: '2px solid #f59e42', '&:hover': { background: '#f59e42', color: '#fff' } }}>دخول</Button>
               <Button component={Link} href="/register" variant="contained" sx={{ borderRadius: 999, fontWeight: 700, px: 2, background: 'linear-gradient(90deg,#6366f1 0%,#f472b6 100%)', color: '#fff', ml: 1, '&:hover': { background: 'linear-gradient(90deg,#f472b6 0%,#6366f1 100%)', color: '#fff' } }}>تسجيل</Button>
             </>
           ) : (
@@ -126,20 +126,20 @@ const Navbar = () => {
                 </Avatar>
               </IconButton>
               <Menu anchorEl={anchorEl} open={menuOpen} onClose={handleMenuClose} anchorOrigin={{vertical:'bottom',horizontal:'right'}} transformOrigin={{vertical:'top',horizontal:'right'}}>
-                <MenuItem component={Link} href={dashboardLink} onClick={handleMenuClose}>لوحة التحكم</MenuItem>
+                <MenuItem onClick={() => { handleMenuClose(); router.push(dashboardLink); }}>لوحة التحكم</MenuItem>
                 <MenuItem onClick={handleLogout}>تسجيل خروج</MenuItem>
               </Menu>
             </>
           )}
           {/* Hamburger for mobile */}
-          <IconButton className="md:!hidden" onClick={() => setDrawerOpen(true)} sx={{ color: '#fff', ml: 1 }}>
+          <IconButton className="md:!hidden" onClick={() => setDrawerOpen(true)} sx={{ color: '#1e293b', ml: 1 }}>
             <MenuIcon fontSize="large" />
           </IconButton>
         </div>
         {/* Drawer for mobile nav */}
         <Drawer anchor="right" open={drawerOpen} onClose={() => setDrawerOpen(false)}>
-          <Box sx={{ width: 260, bgcolor: '#1e293b', height: '100%', color: '#fff', display: 'flex', flexDirection: 'column' }}>
-            <Box className="flex items-center gap-2 p-4 border-b border-blue-900">
+          <Box sx={{ width: 260, bgcolor: 'rgba(255,255,255,0.98)', height: '100%', color: '#1e293b', display: 'flex', flexDirection: 'column', borderLeft: '2px solid #60a5fa' }}>
+            <Box className="flex items-center gap-2 p-4 border-b border-blue-200">
               <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow border-2 border-orange-400 overflow-hidden">
                 <Image alt="شعار طوق" src="/logo.png" className="object-contain w-8 h-8" />
               </div>
@@ -148,17 +148,17 @@ const Navbar = () => {
             <List>
               {navLinks.map(link => (
                 <ListItem key={link.href} disablePadding>
-                  <ListItemButton component={Link} href={link.href} onClick={()=>setDrawerOpen(false)}>
-                    <ListItemText primary={link.label} primaryTypographyProps={{fontWeight:700, fontSize: '1.1rem', color:'#fff'}} />
+                  <ListItemButton component={Link} href={link.href} onClick={()=>setDrawerOpen(false)} sx={{ '&:hover': { background: 'linear-gradient(90deg,#f59e42 0%,#f472b6 100%)', color: '#fff' } }}>
+                    <ListItemText primary={link.label} primaryTypographyProps={{fontWeight:700, fontSize: '1.1rem', color:'#1e293b'}} />
                   </ListItemButton>
                 </ListItem>
               ))}
             </List>
-            <Divider sx={{ bgcolor: '#6366f1', my: 1 }} />
+            <Divider sx={{ bgcolor: '#60a5fa', my: 1 }} />
             <Box className="flex flex-col gap-2 px-4 pb-4 mt-auto">
               {!user ? (
                 <>
-                  <Button component={Link} href="/login" variant="outlined" sx={{ borderRadius: 999, borderColor: '#f59e42', color: '#fff', fontWeight: 700, px: 2, background: 'linear-gradient(90deg,#f59e42 0%,#f472b6 100%)', border: 0, '&:hover': { background: 'linear-gradient(90deg,#f472b6 0%,#f59e42 100%)', color: '#fff' } }}>دخول</Button>
+                  <Button component={Link} href="/login" variant="outlined" sx={{ borderRadius: 999, borderColor: '#f59e42', color: '#f59e42', fontWeight: 700, px: 2, background: 'rgba(255,255,255,0.80)', border: '2px solid #f59e42', '&:hover': { background: '#f59e42', color: '#fff' } }}>دخول</Button>
                   <Button component={Link} href="/register" variant="contained" sx={{ borderRadius: 999, fontWeight: 700, px: 2, background: 'linear-gradient(90deg,#6366f1 0%,#f472b6 100%)', color: '#fff', '&:hover': { background: 'linear-gradient(90deg,#f472b6 0%,#6366f1 100%)', color: '#fff' } }}>تسجيل</Button>
                 </>
               ) : (

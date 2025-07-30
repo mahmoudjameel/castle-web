@@ -1,22 +1,22 @@
 import { NextResponse } from 'next/server';
 
 export const PAYMOB_CONFIG = {
-  // API Keys - Use environment variables
-  API_KEY: process.env.PAYMOB_API_KEY || '',
-  SECRET_KEY: process.env.PAYMOB_SECRET_KEY || '',
-  PUBLIC_KEY: process.env.PAYMOB_PUBLIC_KEY || '',
+  // API Keys
+  API_KEY: 'ZXlKaGJHY2lPaUpJVXpVeE1pSXNJblI1Y0NJNklrcFhWQ0o5LmV5SmpiR0Z6Y3lJNklrMWxjbU5vWVc1MElpd2ljSEp2Wm1sc1pWOXdheUk2TVRBME16TXNJbTVoYldVaU9pSnBibWwwYVdGc0luMC5rd3I2YlM0WHJRd1hYX2tCWlNiZlh5MVkyVHFfNzlnNmJfY2NYRzhVX3dYRzNKRURDcEVSbk1FaXA3MzI3OVNobEI4cHdIaXpEVlVQeGRFUHF4YXNjZw==',
+  SECRET_KEY: 'sau_sk_live_6c5848fbf0a834222f734e44dd0a7b3f55602fb9df1b147384cdf4ff3954ee44',
+  PUBLIC_KEY: 'sau_pk_live_ostMDWRcxwzRQe54pyITE5oERHFczuVC',
 
-  // Integration IDs - Use environment variables
+  // Integration IDs
   INTEGRATIONS: {
     APPLE_PAY: {
-      ID: Number(process.env.PAYMOB_INTEGRATION_ID) || 13184,
+      ID: 13183,
       NAME: 'Apple pay payment link',
-      IFRAME_ID: process.env.PAYMOB_IFRAME_ID || '9083'
+      IFRAME_ID: '9083'
     },
     CARD_PAYMENT: {
-      ID: Number(process.env.PAYMOB_INTEGRATION_ID) || 13184,
+      ID: 14214,
       NAME: 'MIGS-online Payment link',
-      IFRAME_ID: process.env.PAYMOB_IFRAME_ID || '9083'
+      IFRAME_ID: '9589'
     }
   },
 
@@ -31,10 +31,10 @@ export const PAYMOB_CONFIG = {
 
   // Callbacks - Updated to production URLs
   CALLBACKS: {
-    SUCCESS_URL: 'https://toqtalent.com/payment-success',
-    FAILED_URL: 'https://toqtalent.com/payment-failed',
-    TRANSACTION_CALLBACK: 'https://toqtalent.com/api/paymob-callback',
-    RESPONSE_CALLBACK: 'https://toqtalent.com/api/paymob-callback'
+    SUCCESS_URL: 'http://localhost:3000/payment-success',
+    FAILED_URL: 'http://localhost:3000/payment-failed',
+    TRANSACTION_CALLBACK: 'http://localhost:3000/api/paymob-callback',
+    RESPONSE_CALLBACK: 'http://localhost:3000/api/paymob-callback'
   }
 };
 

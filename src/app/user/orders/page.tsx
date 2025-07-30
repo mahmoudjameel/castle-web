@@ -3,6 +3,13 @@
 import React, { useEffect, useState } from "react";
 import { ClipboardList, ArrowRight, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import Dialog from '@mui/material/Dialog';
+import DialogTitle from '@mui/material/DialogTitle';
+import DialogContent from '@mui/material/DialogContent';
+import DialogActions from '@mui/material/DialogActions';
+import TextField from '@mui/material/TextField';
+import Button from '@mui/material/Button';
+import { Star } from 'lucide-react';
 
 // تعريف الأنواع
 interface Order {
@@ -11,6 +18,9 @@ interface Order {
   status: string;
   date?: string;
   message?: string;
+  userConfirmed?: boolean;
+  talentId?: number;
+  talentName?: string;
 }
 
 export default function UserOrdersPage() {
@@ -18,6 +28,10 @@ export default function UserOrdersPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const router = useRouter();
   const [deleteMsg, setDeleteMsg] = useState("");
+  const [reviewModalOrder, setReviewModalOrder] = useState<Order|null>(null);
+  const [reviewForm, setReviewForm] = useState({ reviewerName: '', rating: 0, comment: '' });
+  const [reviewSubmitting, setReviewSubmitting] = useState(false);
+  const [reviewSuccess, setReviewSuccess] = useState(false);
 
   useEffect(() => {
     const userStr = localStorage.getItem("user");
@@ -41,6 +55,47 @@ export default function UserOrdersPage() {
       setOrders(orders.filter(o => o.id !== id));
       setDeleteMsg("تم حذف الطلب بنجاح.");
       setTimeout(()=>setDeleteMsg(""), 4000);
+    }
+  };
+
+  const handleConfirm = async (id: number) => {
+    const order = orders.find(o => o.id === id);
+    const res = await fetch('/api/orders', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, userConfirmed: true }),
+    });
+    if (res.ok && order) {
+      setOrders(orders => orders.map(o => o.id === id ? { ...o, status: 'completed', userConfirmed: true } : o));
+      setDeleteMsg('تم تأكيد اكتمال الطلب بنجاح.');
+      setTimeout(()=>setDeleteMsg(''), 4000);
+      // Show review modal
+      setReviewForm({ reviewerName: user?.name || '', rating: 0, comment: '' });
+      setReviewModalOrder(order);
+    }
+  };
+
+  const handleReviewSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!reviewModalOrder) return;
+    setReviewSubmitting(true);
+    const res = await fetch('/api/reviews', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        userId: reviewModalOrder.talentId,
+        reviewerName: reviewForm.reviewerName,
+        rating: reviewForm.rating,
+        comment: reviewForm.comment
+      }),
+    });
+    setReviewSubmitting(false);
+    if (res.ok) {
+      setReviewSuccess(true);
+      setTimeout(()=>{
+        setReviewModalOrder(null);
+        setReviewSuccess(false);
+      }, 2000);
     }
   };
 
@@ -82,6 +137,7 @@ export default function UserOrdersPage() {
                       if (order.status === 'in_progress') return 'قيد التنفيذ';
                       if (order.status === 'completed') return 'مكتمل';
                       if (order.status === 'rejected') return 'مرفوض';
+                      if (order.status === 'awaiting_user_confirmation') return 'بانتظار موافقة المستخدم';
                       return order.status || 'جديد';
                     })()
                   }</span>
@@ -95,11 +151,67 @@ export default function UserOrdersPage() {
                     <span className="font-bold text-orange-300">رسالة:</span> {order.message}
                   </div>
                 )}
+                {/* زر تأكيد اكتمال الطلب */}
+                {order.status === 'awaiting_user_confirmation' && !order.userConfirmed && (
+                  <button onClick={()=>handleConfirm(order.id)} className="mt-2 px-4 py-2 bg-gradient-to-r from-green-500 to-blue-500 text-white rounded-lg font-bold shadow hover:from-blue-500 hover:to-green-500 transition-all">تأكيد اكتمال الطلب</button>
+                )}
+                {order.status === 'awaiting_user_confirmation' && order.userConfirmed && (
+                  <div className="mt-2 text-green-400 font-bold">تم تأكيد اكتمال الطلب.</div>
+                )}
               </div>
             ))}
           </div>
         )}
       </div>
+      {/* Review Modal */}
+      <Dialog open={!!reviewModalOrder} onClose={()=>setReviewModalOrder(null)} PaperProps={{ style: { borderRadius: 20, minWidth: 320, maxWidth: 400 } }}>
+        <DialogTitle sx={{ fontWeight: 700, fontSize: '1.2rem', textAlign: 'center', background: 'linear-gradient(45deg, #fbbf24, #f59e0b)', color:'#fff' }}>
+          تقييم صاحب الموهبة
+        </DialogTitle>
+        <form onSubmit={handleReviewSubmit}>
+          <DialogContent sx={{ p: 3 }}>
+            <div className="mb-3 text-center font-bold text-blue-900">{reviewModalOrder?.talentName || 'صاحب الموهبة'}</div>
+            <TextField
+              label="اسمك"
+              value={reviewForm.reviewerName}
+              onChange={e=>setReviewForm({...reviewForm, reviewerName: e.target.value})}
+              fullWidth
+              required
+              sx={{ mb: 2 }}
+            />
+            <div className="flex items-center justify-center gap-2 mb-2">
+              <span className="text-blue-900 font-medium">التقييم:</span>
+              {[1,2,3,4,5].map(i => (
+                <button
+                  type="button"
+                  key={i}
+                  onClick={()=>setReviewForm({...reviewForm, rating: i})}
+                  className={`transition-colors ${reviewForm.rating >= i ? 'text-yellow-400' : 'text-gray-300 hover:text-yellow-400'}`}
+                >
+                  <Star size={22} className={reviewForm.rating >= i ? 'fill-current' : ''} />
+                </button>
+              ))}
+            </div>
+            <TextField
+              label="تعليقك"
+              value={reviewForm.comment}
+              onChange={e=>setReviewForm({...reviewForm, comment: e.target.value})}
+              fullWidth
+              required
+              multiline
+              minRows={3}
+              sx={{ mb: 2 }}
+            />
+            {reviewSuccess && <div className="text-green-600 font-bold text-center mb-2">تم إرسال التقييم بنجاح!</div>}
+          </DialogContent>
+          <DialogActions sx={{ justifyContent: 'center', pb: 2 }}>
+            <Button onClick={()=>setReviewModalOrder(null)} color="secondary">إغلاق</Button>
+            <Button type="submit" variant="contained" color="primary" disabled={reviewSubmitting || !reviewForm.rating || !reviewForm.reviewerName || !reviewForm.comment}>
+              {reviewSubmitting ? 'جاري الإرسال...' : 'إرسال التقييم'}
+            </Button>
+          </DialogActions>
+        </form>
+      </Dialog>
     </div>
   );
 } 

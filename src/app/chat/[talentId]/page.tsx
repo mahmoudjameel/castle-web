@@ -120,7 +120,7 @@ export default function ChatPage() {
         <div className="flex items-center gap-4 mb-6 border-b border-blue-400/20 pb-4">
           <Image
             src={otherUser?.profileImageData ? `data:image/png;base64,${otherUser.profileImageData}` : "/logo.png"}
-            alt={otherUser?.name}
+            alt={otherUser?.name || 'صورة المستخدم'}
             width={56}
             height={56}
             className="w-14 h-14 rounded-full object-cover border-2 border-orange-400"
@@ -144,7 +144,7 @@ export default function ChatPage() {
                   <div className={`max-w-[70%] flex items-end gap-2 ${isMe ? 'flex-row-reverse' : ''}`}>
                     <Image
                       src={(isMe ? myData?.profileImageData : otherData?.profileImageData) ? `data:image/png;base64,${isMe ? myData?.profileImageData : otherData?.profileImageData}` : "/logo.png"}
-                      alt={isMe ? myData?.name : otherData?.name}
+                      alt={(isMe ? myData?.name : otherData?.name) || 'صورة المستخدم'}
                       width={32}
                       height={32}
                       className="w-8 h-8 rounded-full object-cover border-2 border-orange-400"

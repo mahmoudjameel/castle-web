@@ -13,14 +13,21 @@ export async function GET(req: Request) {
     if (id) where.id = Number(id);
     if (categoryId) where.categoryId = categoryId;
     if (role) {
-      if (role.includes(',')) {
-        where.role = { in: role.split(',').map(r => r.trim()) };
+      // Expand role(s) to include both upper and lower case
+      const roles = role.split(',').map(r => r.trim());
+      const expandedRoles = roles.flatMap(r => {
+        if (r.toUpperCase() === 'USER') return ['USER', 'user'];
+        if (r.toUpperCase() === 'TALENT') return ['TALENT', 'talent'];
+        return [r];
+      });
+      if (expandedRoles.length > 1) {
+        where.role = { in: expandedRoles };
       } else {
-        where.role = role;
+        where.role = expandedRoles[0];
       }
     } else {
       // الافتراضي: جلب المواهب فقط
-      where.role = 'talent';
+      where.role = { in: ['TALENT', 'talent'] };
     }
     const users = await prisma.user.findMany({ where });
     // تحويل profileImageData إلى base64 إذا كانت موجودة

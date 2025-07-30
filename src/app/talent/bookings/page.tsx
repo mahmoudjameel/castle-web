@@ -9,6 +9,7 @@ export default function TalentBookings() {
   const [clients, setClients] = useState<any>({});
   const [updatingId, setUpdatingId] = useState<number|null>(null);
   const [socialLinks, setSocialLinks] = useState<any>({});
+  const [infoMsg, setInfoMsg] = useState('');
 
   useEffect(() => {
     // جلب بيانات المستخدم من localStorage
@@ -55,6 +56,10 @@ export default function TalentBookings() {
     });
     setOrders(orders => orders.map(o => o.id === id ? { ...o, status } : o));
     setUpdatingId(null);
+    if (status === 'completed') {
+      setInfoMsg('سيتم اعتماد اكتمال الطلب بعد موافقة المستخدم على إنهاء الطلب.');
+      setTimeout(()=>setInfoMsg(''), 6000);
+    }
   };
 
   // دالة لتحويل قيمة الموعد إلى نص عربي واضح
@@ -75,6 +80,7 @@ export default function TalentBookings() {
     <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-blue-900 to-purple-900 text-white py-12 px-4">
       <div className="max-w-5xl mx-auto bg-indigo-950/80 rounded-2xl shadow-lg p-6 md:p-10 border border-blue-400/20">
         <h2 className="text-3xl font-bold mb-8 text-center bg-gradient-to-r from-orange-400 via-pink-400 to-blue-400 bg-clip-text text-transparent">الحجوزات الواردة</h2>
+        {infoMsg && <div className="mb-4 bg-blue-800/80 text-orange-300 px-4 py-2 rounded-lg text-center font-bold">{infoMsg}</div>}
         {loading ? (
           <div className="text-blue-100 text-center">جاري التحميل...</div>
         ) : orders.length === 0 ? (

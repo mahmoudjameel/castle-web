@@ -1,7 +1,7 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import { Star } from "lucide-react";
+import { Star, MapPin, Globe, Calendar, Clock, MessageCircle, Camera, Video, Award, Users } from "lucide-react";
 import Dialog from '@mui/material/Dialog';
 import DialogTitle from '@mui/material/DialogTitle';
 import DialogContent from '@mui/material/DialogContent';
@@ -12,7 +12,6 @@ import TextField from '@mui/material/TextField';
 import Button from '@mui/material/Button';
 import { FaInstagram, FaTiktok, FaYoutube, FaTwitter } from "react-icons/fa";
 import Image from 'next/image';
-import Navbar from '@/components/Navbar';
 
 export default function TalentPublicProfile() {
   const { id } = useParams();
@@ -25,7 +24,6 @@ export default function TalentPublicProfile() {
   const [showLoginMsg, setShowLoginMsg] = useState(false);
   const [showOrderModal, setShowOrderModal] = useState(false);
   const [selectedServices, setSelectedServices] = useState<string[]>([]);
-  // إضافة state جديد لتواريخ التقييمات كنصوص
   const [reviewDates, setReviewDates] = useState<string[]>([]);
   const [iframeUrl, setIframeUrl] = useState('');
   const [showPaymentModal, setShowPaymentModal] = useState(false);
@@ -34,8 +32,8 @@ export default function TalentPublicProfile() {
   const [selectedTotal, setSelectedTotal] = useState(0);
   const [orderDate, setOrderDate] = useState('');
   const [orderMessage, setOrderMessage] = useState('');
+  const [lang, setLang] = useState('ar');
 
-  // دالة مساعدة لتنظيف localStorage
   const clearPendingOrderData = () => {
     localStorage.removeItem('pendingOrder_talentId');
     localStorage.removeItem('pendingOrder_clientId');
@@ -59,12 +57,21 @@ export default function TalentPublicProfile() {
       .then(res => res.json())
       .then(data => {
         setReviews(Array.isArray(data) ? data : []);
-        // معالجة التواريخ
         setReviewDates(Array.isArray(data) ? data.map(r => r.createdAt ? new Date(r.createdAt).toLocaleDateString('ar-EG') : '') : []);
       });
   }, [id]);
 
+  useEffect(() => {
+    if (showPaymentModal) {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }, [showPaymentModal]);
 
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setLang(localStorage.getItem('lang') || document.documentElement.lang || 'ar');
+    }
+  }, []);
 
   const handleReviewSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -92,7 +99,6 @@ export default function TalentPublicProfile() {
   };
 
   const handleOrderRequest = async () => {
-    // حساب إجمالي السعر للخدمات المختارة
     let total = 0;
     let servicesArr = [];
     try { servicesArr = JSON.parse(talent?.services || '[]'); } catch {}
@@ -100,8 +106,8 @@ export default function TalentPublicProfile() {
     total = selected.reduce((sum: number, srv: any) => sum + Number(srv.price || 0), 0);
     setSelectedServicesSummary(selected);
     setSelectedTotal(total);
-    setShowOrderModal(false); // أغلق مودال اختيار الخدمات مباشرة
-    setShowConfirmModal(true); // افتح مودال ملخص الدفع
+    setShowOrderModal(false);
+    setShowConfirmModal(true);
   };
 
   const handleConfirmAndPay = async () => {
@@ -110,12 +116,9 @@ export default function TalentPublicProfile() {
       const userStr = localStorage.getItem("user");
       if (!userStr) { setShowLoginMsg(true); return; }
       const user = JSON.parse(userStr);
-      let servicesArr = [];
-      try { servicesArr = JSON.parse(talent?.services || '[]'); } catch {}
       const selectedServices = selectedServicesSummary;
       const address = user.address || "";
       
-      // حفظ تفاصيل الطلب في localStorage كنسخة احتياطية
       localStorage.setItem('pendingOrder_talentId', talent?.id?.toString() || '');
       localStorage.setItem('pendingOrder_clientId', user.id?.toString() || '');
       localStorage.setItem('pendingOrder_date', orderDate || new Date().toISOString());
@@ -127,7 +130,7 @@ export default function TalentPublicProfile() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          amount: selectedTotal,
+          amount: totalWithTax,
           user: {
             email: talent?.email,
             firstName: talent?.name?.split(' ')[0] || '',
@@ -146,27 +149,10 @@ export default function TalentPublicProfile() {
       });
       const data = await res.json();
       if (!res.ok) {
-        // تنظيف localStorage في حالة فشل عملية الدفع
         clearPendingOrderData();
         
         if (data.error && data.details && data.details.includes('Too many attempts')) {
           alert('تم حظر الاتصال مؤقتًا من Paymob. يرجى المحاولة بعد 30 دقيقة أو استخدام شبكة مختلفة.');
-          return;
-        }
-        if (data.error && data.details && data.details.includes('incorrect credentials')) {
-          alert('خطأ في بيانات الاعتماد. يرجى التحقق من إعدادات Paymob.');
-          return;
-        }
-        if (data.error && data.details && data.details.includes('استجابة غير صحيحة')) {
-          alert('خطأ في استجابة Paymob. يرجى التحقق من الحساب أو المحاولة لاحقاً.');
-          return;
-        }
-        if (data.error && data.details && data.details.includes('unrelated payment integration')) {
-          alert('خطأ في إعدادات Integration. يرجى التواصل مع الدعم الفني.');
-          return;
-        }
-        if (data.error && data.details && data.details.includes('إعدادات Integration')) {
-          alert('خطأ في إعدادات Integration. يرجى التواصل مع الدعم الفني.');
           return;
         }
         alert(`خطأ في بوابة الدفع: ${data.error || 'خطأ غير معروف'}\n\nالتفاصيل: ${data.details || 'لا توجد تفاصيل'}`);
@@ -175,11 +161,9 @@ export default function TalentPublicProfile() {
       setIframeUrl(data.iframe);
       setShowPaymentModal(true);
     } catch (error) {
-      // تنظيف localStorage في حالة حدوث خطأ
       clearPendingOrderData();
-      
       console.error('Payment error:', error);
-      alert('خطأ في الاتصال مع بوابة الدفع. يرجى المحاولة مرة أخرى.\n\nالتفاصيل: ' + (error instanceof Error ? error.message : 'خطأ غير معروف'));
+      alert('خطأ في الاتصال مع بوابة الدفع. يرجى المحاولة مرة أخرى.');
     }
   };
 
@@ -204,7 +188,14 @@ export default function TalentPublicProfile() {
   };
 
   if (loading || !talent) {
-    return <div className="flex items-center justify-center min-h-[60vh] text-blue-200">جاري تحميل البيانات...</div>;
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center">
+        <div className="bg-white rounded-3xl shadow-xl p-12 text-center border border-blue-100">
+          <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-slate-600 text-lg font-medium">جاري تحميل البيانات...</p>
+        </div>
+      </div>
+    );
   }
 
   let workingSchedule: Record<string, any> = {};
@@ -215,104 +206,100 @@ export default function TalentPublicProfile() {
   let socialLinks: Record<string, string> = {};
   try { if (talent.socialLinks) socialLinks = JSON.parse(talent.socialLinks); } catch {}
 
-  // حساب متوسط التقييم وعدد التقييمات
   const reviewsCount = reviews.length;
   const avgRating = reviewsCount > 0 ? (reviews.reduce((sum, r) => sum + (r.rating || 0), 0) / reviewsCount).toFixed(1) : null;
 
-  return (
-    <>
-      <Navbar />
+  // Ensure servicesArr is typed as any[] to avoid TS 'never' error
+  const servicesArr: any[] = selectedServices.map(name => {
+    if (!talent?.services) return null;
+    let arr = [];
+    try { arr = JSON.parse(talent.services); } catch {}
+    return arr.find((srv:any) => srv.name === name);
+  }).filter(Boolean);
+  const subtotal = servicesArr.reduce((sum, srv: any) => srv ? sum + Number(srv.price || 0) : sum, 0);
+  const tax = Math.round(subtotal * 0.15);
+  const totalWithTax = subtotal + tax;
 
-      <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-blue-900 to-purple-900 text-white py-10 px-2 flex justify-center">
-        <div className="w-full max-w-4xl bg-indigo-950/80 rounded-2xl shadow-lg p-8 border border-blue-400/20">
-          <div className="flex flex-col items-center mb-6">
-            <div className="relative w-32 h-32 mb-2">
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+      {/* Hero Section */}
+      <div className="relative bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-700 pb-16 sm:pb-20 md:pb-32">
+        <div className="absolute inset-0 bg-black/20"></div>
+        <div className="relative container mx-auto px-4 pt-8 sm:pt-12 md:pt-16 pb-12 sm:pb-16 md:pb-20">
+          <div className="max-w-4xl mx-auto text-center">
+            {/* Profile Image */}
+            <div className="relative inline-block mb-6 sm:mb-8">
+              <div className="w-24 h-24 sm:w-32 sm:h-32 md:w-40 md:h-40 mx-auto rounded-full ring-4 sm:ring-8 ring-white/30 shadow-2xl overflow-hidden bg-white">
               {talent?.profileImageData ? (
-                <Image src={`data:image/png;base64,${talent.profileImageData}`} alt={talent.name as string} width={128} height={128} className="w-32 h-32 object-cover rounded-full border-4 border-orange-400 shadow-lg bg-indigo-900" />
-              ) : (
-                <div className="w-32 h-32 rounded-full bg-blue-900/40 flex items-center justify-center text-blue-200 text-5xl border-4 border-blue-400/30">👤</div>
-              )}
+                  <Image 
+                    src={`data:image/png;base64,${talent.profileImageData}`} 
+                    alt={talent.name as string} 
+                    width={160} 
+                    height={160} 
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white text-3xl sm:text-4xl md:text-6xl">
+                    👤
+                  </div>
+                )}
+              </div>
+              {/* Online Status */}
+              <div className="absolute bottom-2 right-2 sm:bottom-4 sm:right-4 w-4 h-4 sm:w-6 sm:h-6 bg-green-400 rounded-full border-2 sm:border-4 border-white shadow-lg"></div>
             </div>
-            <div className="text-2xl md:text-3xl font-bold text-center text-blue-100 mb-1">{talent.name}</div>
-            <div className="text-orange-300 font-bold text-center mb-1">{talent.jobTitle}</div>
-            {/* منطقة العمل وإمكانية السفر */}
+
+            {/* Name & Title */}
+            <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-2 sm:mb-3 drop-shadow-lg px-4">
+              {talent.name}
+            </h1>
+            <p className="text-lg sm:text-xl md:text-2xl text-blue-100 font-medium mb-4 sm:mb-6 px-4">
+              {talent.jobTitle}
+            </p>
+
+            {/* Stats */}
+            <div className="flex flex-wrap justify-center gap-3 sm:gap-4 md:gap-6 mb-6 sm:mb-8 px-4">
+              <div className="bg-white/20 backdrop-blur-sm rounded-xl sm:rounded-2xl px-3 sm:px-4 md:px-6 py-2 sm:py-3 md:py-4 border border-white/30">
+                <div className="flex items-center gap-1 sm:gap-2 text-white">
+                  <Star className="w-4 h-4 sm:w-5 sm:h-5 text-yellow-300 fill-current" />
+                  <span className="font-bold text-sm sm:text-base md:text-lg">{avgRating || '0.0'}</span>
+                  <span className="text-blue-100 text-xs sm:text-sm md:text-base">({reviewsCount} تقييم)</span>
+                </div>
+              </div>
+              <div className="bg-white/20 backdrop-blur-sm rounded-xl sm:rounded-2xl px-3 sm:px-4 md:px-6 py-2 sm:py-3 md:py-4 border border-white/30">
+                <div className="flex items-center gap-1 sm:gap-2 text-white">
+                  <Users className="w-4 h-4 sm:w-5 sm:h-5 text-blue-300" />
+                  <span className="font-bold text-sm sm:text-base md:text-lg">{portfolio.length}</span>
+                  <span className="text-blue-100 text-xs sm:text-sm md:text-base">عمل</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Location & Travel */}
             {(talent.workArea || talent.canTravelAbroad) && (
-              <div className="flex flex-col md:flex-row gap-2 items-center justify-center mb-2">
+              <div className="flex flex-wrap justify-center gap-2 sm:gap-3 md:gap-4 mb-6 sm:mb-8 px-4">
                 {talent.workArea && (
-                  <span className="bg-blue-900/40 text-blue-200 px-3 py-1 rounded-lg border border-blue-400/20 font-bold">منطقة العمل: {talent.workArea}</span>
+                  <div className="bg-white/20 backdrop-blur-sm rounded-full px-3 sm:px-4 py-1 sm:py-2 border border-white/30">
+                    <div className="flex items-center gap-1 sm:gap-2 text-white">
+                      <MapPin className="w-3 h-3 sm:w-4 sm:h-4" />
+                      <span className="font-medium text-xs sm:text-sm md:text-base">{talent.workArea}</span>
+                    </div>
+                  </div>
                 )}
                 {talent.canTravelAbroad && (
-                  <span className="bg-green-900/40 text-green-200 px-3 py-1 rounded-lg border border-green-400/20 font-bold flex items-center gap-1">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="inline-block"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
-                    بإمكاني السفر خارج المملكة
-                  </span>
+                  <div className="bg-green-500/30 backdrop-blur-sm rounded-full px-3 sm:px-4 py-1 sm:py-2 border border-green-300/50">
+                    <div className="flex items-center gap-1 sm:gap-2 text-white">
+                      <Globe className="w-3 h-3 sm:w-4 sm:h-4" />
+                      <span className="font-medium text-xs sm:text-sm md:text-base">يمكنني السفر خارج المملكة</span>
+                    </div>
+                  </div>
                 )}
               </div>
             )}
-            {/* bio بتصميم مرتب */}
-            {talent.bio && (
-              <div className="text-blue-200 text-center mb-4 max-w-xl mx-auto bg-blue-900/30 rounded-lg px-4 py-3 shadow border border-blue-400/10 whitespace-pre-line break-words" style={{fontSize:'1.1rem', lineHeight:'1.8'}}>
-                {talent.bio}
-              </div>
-            )}
-          </div>
-          <div className="text-lg text-center text-blue-100 mb-6">{talent.intro || ""}</div>
-          {/* معرض الأعمال */}
-          <div className="mb-10">
-            <h3 className="text-2xl font-bold mb-4 text-orange-300 text-center">معرض الأعمال</h3>
-            {portfolio.length === 0 ? (
-              <div className="text-blue-200 text-center">لا يوجد أعمال بعد.</div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {portfolio.map(item => (
-                  <div key={item.id} className="overflow-hidden rounded-2xl shadow-lg border-2 border-pink-400/30 bg-gradient-to-tr from-indigo-900/60 to-purple-900/60">
-                    {item.type === 'image' && item.mediaData && (
-                      <Image src={`data:image/png;base64,${item.mediaData}`} alt={item.title || 'عمل'} width={320} height={192} className="w-full h-48 object-cover" />
-                    )}
-                    {item.type === 'video' && item.mediaUrl && (
-                      <iframe src={item.mediaUrl.replace('watch?v=', 'embed/')} title={item.title || 'فيديو'} className="w-full h-48" allowFullScreen />
-                    )}
-                    <div className="font-bold text-center text-blue-100 mb-2 text-base p-2 truncate w-full bg-blue-900/30">{item.title}</div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-          {/* جدول المواعيد */}
-          <div className="mb-8">
-            <h3 className="text-2xl font-bold mb-4 text-orange-300 text-center">جدول المواعيد المتاحة</h3>
-            <div className="flex flex-col md:flex-row gap-4 justify-center">
-              {Object.keys(daysAr).map(day => (
-                workingSchedule[day]?.active ? (
-                  <div key={day} className="bg-blue-900/40 rounded-lg px-4 py-2 flex items-center gap-2 border border-blue-400/20 text-blue-100 font-bold">
-                    <span>{daysAr[day]}:</span>
-                    <span>{workingSchedule[day].from} - {workingSchedule[day].to}</span>
-                  </div>
-                ) : null
-              ))}
-            </div>
-          </div>
-          {/* الخدمات والأسعار */}
-          <div className="mb-8">
-            <h3 className="text-2xl font-bold mb-4 text-orange-300 text-center">الخدمات والأسعار</h3>
-            <div className="flex flex-col gap-2 items-center">
-              {talent?.services && (() => {
-                let servicesArr = [];
-                try { servicesArr = JSON.parse(talent.services); } catch {}
-                if (!Array.isArray(servicesArr) || servicesArr.length === 0) {
-                  return <div className="text-blue-200 text-center">لا يوجد خدمات مضافة بعد.</div>;
-                }
-                return servicesArr.map((srv: any, idx: number) => (
-                  <div key={idx} className="w-full md:w-1/2 bg-blue-900/40 rounded-lg px-4 py-2 flex justify-between items-center border border-blue-400/20 mb-2">
-                    <span>{srv.name}</span>
-                    <span className="text-orange-400 font-bold">{srv.price} ر.س</span>
-                  </div>
-                ));
-              })()}
-            </div>
-            {/* زر تواصل أو احجز الآن */}
-            <div className="flex flex-col items-center mt-6">
-                <button onClick={() => {
+
+            {/* Action Buttons */}
+            <div className="flex flex-col sm:flex-row flex-wrap justify-center gap-3 sm:gap-4 px-4">
+              <button 
+                onClick={() => {
                   try {
                     const userStr = localStorage.getItem("user");
                     if (!userStr) {
@@ -323,269 +310,553 @@ export default function TalentPublicProfile() {
                   } catch {
                     setShowLoginMsg(true);
                   }
-                }} className="px-6 py-3 bg-gradient-to-r from-orange-400 to-pink-500 rounded-lg text-white font-bold text-lg shadow-lg hover:from-orange-500 hover:to-pink-600 transition-all">تواصل أو احجز الآن</button>
+                }}
+                className="bg-gradient-to-r from-orange-500 to-pink-500 hover:from-orange-600 hover:to-pink-600 text-white px-6 sm:px-8 py-3 sm:py-4 rounded-xl sm:rounded-2xl font-bold text-base sm:text-lg shadow-xl hover:shadow-2xl transform hover:-translate-y-1 transition-all duration-300 w-full sm:w-auto"
+              >
+                احجز الآن
+              </button>
+              <a
+                href={`/chat/${talent?.id}`}
+                className="bg-white/20 backdrop-blur-sm hover:bg-white/30 text-white border-2 border-white/30 px-6 sm:px-8 py-3 sm:py-4 rounded-xl sm:rounded-2xl font-bold text-base sm:text-lg shadow-xl hover:shadow-2xl transform hover:-translate-y-1 transition-all duration-300 flex items-center justify-center gap-2 w-full sm:w-auto"
+              >
+                <MessageCircle className="w-4 h-4 sm:w-5 sm:h-5" />
+                محادثة
+              </a>
+            </div>
+
               {showLoginMsg && (
-                <div className="mt-4 bg-blue-900/60 text-orange-300 px-4 py-2 rounded-lg border border-orange-400/30 text-center max-w-xs">
-                  يجب تسجيل الدخول أولاً للاستفادة من هذه الميزة.<br/> <a href="/login" className="underline text-orange-400 hover:text-pink-400">سجّل الدخول الآن</a>
+              <div className="mt-4 sm:mt-6 bg-white/90 backdrop-blur-sm text-red-600 px-4 sm:px-6 py-3 sm:py-4 rounded-xl sm:rounded-2xl border border-red-200 max-w-sm sm:max-w-md mx-auto">
+                <p className="font-medium mb-2 text-sm sm:text-base">يجب تسجيل الدخول أولاً للاستفادة من هذه الميزة</p>
+                <a href="/login" className="text-blue-600 hover:text-blue-800 font-bold underline text-sm sm:text-base">
+                  سجّل الدخول الآن
+                </a>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="container mx-auto px-4 -mt-8 sm:-mt-12 md:-mt-20 relative z-10">
+        <div className="max-w-7xl mx-auto">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
+            {/* Left Column */}
+            <div className="lg:col-span-2 space-y-6 lg:space-y-8">
+              {/* About Section */}
+              {talent.bio && (
+                <div className="bg-white rounded-2xl sm:rounded-3xl shadow-xl p-4 sm:p-6 lg:p-8 border border-gray-100">
+                  <h2 className="text-xl sm:text-2xl font-bold text-gray-800 mb-4 sm:mb-6 flex items-center gap-2 sm:gap-3">
+                    <div className="w-6 h-6 sm:w-8 sm:h-8 bg-gradient-to-r from-blue-500 to-purple-500 rounded-md sm:rounded-lg"></div>
+                    نبذة عني
+                  </h2>
+                  <div className="prose prose-gray max-w-none">
+                    <p className="text-gray-600 leading-relaxed text-sm sm:text-base lg:text-lg whitespace-pre-wrap break-words overflow-hidden">
+                      {talent.bio}
+                    </p>
+                  </div>
                 </div>
               )}
+
+              {/* Portfolio Section */}
+              <div className="bg-white rounded-2xl sm:rounded-3xl shadow-xl p-4 sm:p-6 lg:p-8 border border-gray-100">
+                <h2 className="text-xl sm:text-2xl font-bold text-gray-800 mb-4 sm:mb-6 flex items-center gap-2 sm:gap-3 flex-wrap">
+                  <div className="w-6 h-6 sm:w-8 sm:h-8 bg-gradient-to-r from-green-500 to-blue-500 rounded-md sm:rounded-lg"></div>
+                  <span>معرض الأعمال</span>
+                  <span className="bg-gray-100 text-gray-600 px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-medium">
+                    {portfolio.length} عمل
+                  </span>
+                </h2>
+                
+                {portfolio.length === 0 ? (
+                  <div className="text-center py-8 sm:py-12">
+                    <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <Camera className="w-8 h-8 sm:w-10 sm:h-10 text-gray-400" />
+                    </div>
+                    <p className="text-gray-500 text-base sm:text-lg">لا يوجد أعمال بعد</p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+                    {portfolio.map(item => (
+                      <div key={item.id} className="group relative overflow-hidden rounded-xl sm:rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 sm:hover:-translate-y-2">
+                        <div className="aspect-video bg-gradient-to-br from-gray-100 to-gray-200">
+                          {item.type === 'image' && item.mediaData && (
+                            <Image 
+                              src={`data:image/png;base64,${item.mediaData}`} 
+                              alt={item.title || 'عمل'} 
+                              width={400} 
+                              height={225} 
+                              className="w-full h-full object-cover"
+                            />
+                          )}
+                          {item.type === 'video' && item.mediaUrl && (
+                            <iframe 
+                              src={item.mediaUrl.replace('watch?v=', 'embed/')} 
+                              title={item.title || 'فيديو'} 
+                              className="w-full h-full" 
+                              allowFullScreen 
+                            />
+                          )}
+                        </div>
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                          <div className="absolute bottom-3 sm:bottom-4 left-3 sm:left-4 right-3 sm:right-4">
+                            <h3 className="text-white font-bold text-sm sm:text-base lg:text-lg mb-1">{item.title}</h3>
+                            <div className="flex items-center gap-2">
+                              {item.type === 'image' ? (
+                                <Camera className="w-3 h-3 sm:w-4 sm:h-4 text-white/80" />
+                              ) : (
+                                <Video className="w-3 h-3 sm:w-4 sm:h-4 text-white/80" />
+                              )}
+                              <span className="text-white/80 text-xs sm:text-sm capitalize">{item.type}</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Reviews Section */}
+              <div className="bg-white rounded-2xl sm:rounded-3xl shadow-xl p-4 sm:p-6 lg:p-8 border border-gray-100">
+                <h2 className="text-xl sm:text-2xl font-bold text-gray-800 mb-4 sm:mb-6 flex items-center gap-2 sm:gap-3 flex-wrap">
+                  <div className="w-6 h-6 sm:w-8 sm:h-8 bg-gradient-to-r from-yellow-500 to-orange-500 rounded-md sm:rounded-lg"></div>
+                  <span>التقييمات</span>
+                  <span className="bg-gray-100 text-gray-600 px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-medium">
+                    {reviewsCount} تقييم
+                  </span>
+                </h2>
+
+                {reviews.length === 0 ? (
+                  <div className="text-center py-8 sm:py-12">
+                    <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <Star className="w-8 h-8 sm:w-10 sm:h-10 text-gray-400" />
+                    </div>
+                    <p className="text-gray-500 text-base sm:text-lg">لا يوجد تقييمات بعد</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4 sm:space-y-6 mb-6 sm:mb-8">
+                    {reviews.map((rev, idx) => (
+                      <div key={idx} className="bg-gray-50 rounded-xl sm:rounded-2xl p-4 sm:p-6 border border-gray-100">
+                        <div className="flex items-start gap-3 sm:gap-4">
+                          <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full flex items-center justify-center text-white font-bold text-sm sm:text-lg flex-shrink-0">
+                            {rev.reviewerName.charAt(0)}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 mb-2">
+                              <h4 className="font-bold text-gray-800 text-sm sm:text-base">{rev.reviewerName}</h4>
+                              <div className="flex items-center gap-1">
+                                {[1,2,3,4,5].map(i => (
+                                  <Star 
+                                    key={i} 
+                                    size={14} 
+                                    className={`sm:w-4 sm:h-4 ${i <= rev.rating ? 'text-yellow-400 fill-current' : 'text-gray-300'}`} 
+                                  />
+                                ))}
+                              </div>
+                              <span className="text-gray-500 text-xs sm:text-sm">{reviewDates[idx]}</span>
+                            </div>
+                            <p className="text-gray-600 leading-relaxed text-sm sm:text-base break-words">{rev.comment}</p>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {/* تم حذف فورم إضافة التقييم */}
+              </div>
             </div>
-            {/* أيقونات السوشيال ميديا بشكل مميز */}
-            <div className="flex gap-4 justify-center mt-6">
+
+            {/* Right Column */}
+            <div className="space-y-6 lg:space-y-8">
+              {/* Services & Pricing */}
+              <div className="bg-white rounded-2xl sm:rounded-3xl shadow-xl p-4 sm:p-6 lg:p-8 border border-gray-100 lg:sticky lg:top-8">
+                <h2 className="text-xl sm:text-2xl font-bold text-gray-800 mb-4 sm:mb-6 flex items-center gap-2 sm:gap-3 flex-wrap">
+                  <div className="w-6 h-6 sm:w-8 sm:h-8 bg-gradient-to-r from-purple-500 to-pink-500 rounded-md sm:rounded-lg"></div>
+                  <span>الخدمات والأسعار</span>
+                </h2>
+                
+                <div className="space-y-3 sm:space-y-4 mb-4 sm:mb-6">
+                  {talent?.services && (() => {
+                    let servicesArr = [];
+                    try { servicesArr = JSON.parse(talent.services); } catch {}
+                    if (!Array.isArray(servicesArr) || servicesArr.length === 0) {
+                      return (
+                        <div className="text-center py-6 sm:py-8">
+                          <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
+                            <Award className="w-6 h-6 sm:w-8 sm:h-8 text-gray-400" />
+                          </div>
+                          <p className="text-gray-500 text-sm sm:text-base">لا يوجد خدمات مضافة بعد</p>
+                        </div>
+                      );
+                    }
+                    return servicesArr.map((srv: any, idx: number) => (
+                      <div key={idx} className="bg-gradient-to-r from-gray-50 to-blue-50 rounded-xl sm:rounded-2xl p-3 sm:p-4 border border-gray-100 hover:shadow-md transition-shadow">
+                        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
+                          <h3 className="font-semibold text-gray-800 text-sm sm:text-base">{srv.name}</h3>
+                          <span className="bg-gradient-to-r from-green-500 to-blue-500 text-white px-2 sm:px-3 py-1 rounded-full font-bold text-xs sm:text-sm self-start sm:self-auto">
+                            {srv.price} ر.س
+                          </span>
+                        </div>
+                      </div>
+                    ));
+                  })()}
+                </div>
+              </div>
+
+              {/* Schedule */}
+              <div className="bg-white rounded-2xl sm:rounded-3xl shadow-xl p-4 sm:p-6 lg:p-8 border border-gray-100">
+                <h2 className="text-xl sm:text-2xl font-bold text-gray-800 mb-4 sm:mb-6 flex items-center gap-2 sm:gap-3 flex-wrap">
+                  <div className="w-6 h-6 sm:w-8 sm:h-8 bg-gradient-to-r from-indigo-500 to-blue-500 rounded-md sm:rounded-lg"></div>
+                  <span>المواعيد المتاحة</span>
+                </h2>
+                
+                <div className="space-y-2 sm:space-y-3">
+                  {Object.keys(daysAr).map(day => (
+                    workingSchedule[day]?.active ? (
+                      <div key={day} className="bg-gradient-to-r from-green-50 to-blue-50 rounded-lg sm:rounded-xl p-3 sm:p-4 border border-green-100">
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                          <div className="flex items-center gap-2 sm:gap-3">
+                            <Calendar className="w-4 h-4 sm:w-5 sm:h-5 text-green-600" />
+                            <span className="font-semibold text-gray-800 text-sm sm:text-base">{daysAr[day]}</span>
+                          </div>
+                          <div className="flex items-center gap-2 text-gray-600 mr-6 sm:mr-0">
+                            <Clock className="w-3 h-3 sm:w-4 sm:h-4" />
+                            <span className="font-medium text-xs sm:text-sm">
+                              {workingSchedule[day].from} - {workingSchedule[day].to}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    ) : null
+                  ))}
+                </div>
+              </div>
+
+              {/* Social Media */}
+              {(socialLinks.instagram || socialLinks.tiktok || socialLinks.youtube || socialLinks.twitter) && (
+                <div className="bg-white rounded-2xl sm:rounded-3xl shadow-xl p-4 sm:p-6 lg:p-8 border border-gray-100">
+                  <h2 className="text-xl sm:text-2xl font-bold text-gray-800 mb-4 sm:mb-6 flex items-center gap-2 sm:gap-3 flex-wrap">
+                    <div className="w-6 h-6 sm:w-8 sm:h-8 bg-gradient-to-r from-pink-500 to-red-500 rounded-md sm:rounded-lg"></div>
+                    <span>تابعني على</span>
+                  </h2>
+                  
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
               {socialLinks.instagram && (
-                <a href={socialLinks.instagram} target="_blank" rel="noopener noreferrer" className="rounded-full bg-gradient-to-br from-pink-500 to-orange-400 shadow-lg w-12 h-12 flex items-center justify-center hover:scale-110 transition-transform">
-                  <FaInstagram size={28} className="text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.3)]" />
+                      <a 
+                        href={socialLinks.instagram} 
+                        target="_blank" 
+                        rel="noopener noreferrer" 
+                        className="group bg-gradient-to-br from-pink-500 to-orange-400 rounded-xl sm:rounded-2xl p-3 sm:p-4 text-white hover:shadow-lg transform hover:-translate-y-1 transition-all duration-300"
+                      >
+                        <div className="flex items-center gap-2 sm:gap-3">
+                          <FaInstagram size={20} className="sm:w-6 sm:h-6" />
+                          <span className="font-semibold text-sm sm:text-base">Instagram</span>
+                        </div>
                 </a>
               )}
               {socialLinks.tiktok && (
-                <a href={socialLinks.tiktok} target="_blank" rel="noopener noreferrer" className="rounded-full bg-gradient-to-br from-black to-gray-700 shadow-lg w-12 h-12 flex items-center justify-center hover:scale-110 transition-transform">
-                  <FaTiktok size={28} className="text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.3)]" />
+                      <a 
+                        href={socialLinks.tiktok} 
+                        target="_blank" 
+                        rel="noopener noreferrer" 
+                        className="group bg-gradient-to-br from-black to-gray-700 rounded-xl sm:rounded-2xl p-3 sm:p-4 text-white hover:shadow-lg transform hover:-translate-y-1 transition-all duration-300"
+                      >
+                        <div className="flex items-center gap-2 sm:gap-3">
+                          <FaTiktok size={20} className="sm:w-6 sm:h-6" />
+                          <span className="font-semibold text-sm sm:text-base">TikTok</span>
+                        </div>
                 </a>
               )}
               {socialLinks.youtube && (
-                <a href={socialLinks.youtube} target="_blank" rel="noopener noreferrer" className="rounded-full bg-gradient-to-br from-red-600 to-pink-500 shadow-lg w-12 h-12 flex items-center justify-center hover:scale-110 transition-transform">
-                  <FaYoutube size={28} className="text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.3)]" />
+                      <a 
+                        href={socialLinks.youtube} 
+                        target="_blank" 
+                        rel="noopener noreferrer" 
+                        className="group bg-gradient-to-br from-red-600 to-pink-500 rounded-xl sm:rounded-2xl p-3 sm:p-4 text-white hover:shadow-lg transform hover:-translate-y-1 transition-all duration-300"
+                      >
+                        <div className="flex items-center gap-2 sm:gap-3">
+                          <FaYoutube size={20} className="sm:w-6 sm:h-6" />
+                          <span className="font-semibold text-sm sm:text-base">YouTube</span>
+                        </div>
                 </a>
               )}
               {socialLinks.twitter && (
-                <a href={socialLinks.twitter} target="_blank" rel="noopener noreferrer" className="rounded-full bg-gradient-to-br from-blue-400 to-blue-700 shadow-lg w-12 h-12 flex items-center justify-center hover:scale-110 transition-transform">
-                  <FaTwitter size={28} className="text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.3)]" />
-                </a>
+                      <a 
+                        href={socialLinks.twitter} 
+                        target="_blank" 
+                        rel="noopener noreferrer" 
+                        className="group bg-gradient-to-br from-blue-400 to-blue-700 rounded-xl sm:rounded-2xl p-3 sm:p-4 text-white hover:shadow-lg transform hover:-translate-y-1 transition-all duration-300"
+                      >
+                        <div className="flex items-center gap-2 sm:gap-3">
+                          <FaTwitter size={20} className="sm:w-6 sm:h-6" />
+                          <span className="font-semibold text-sm sm:text-base">Twitter</span>
+                        </div>
+                      </a>
+                    )}
+                  </div>
+                </div>
               )}
             </div>
           </div>
-          {/* Modal الطلب */}
-          <Dialog open={showOrderModal} onClose={()=>setShowOrderModal(false)} PaperProps={{style:{borderRadius:20,background:'#1e1b4b',color:'#fff',minWidth:340}}}>
-            <DialogTitle sx={{fontWeight:700, fontSize:'1.3rem', color:'#FFA726', textAlign:'center'}}>طلب خدمة من {talent?.name}</DialogTitle>
-            <DialogContent>
-              <div className="mb-4 text-blue-200 font-bold">اختر الخدمات المطلوبة:</div>
+        </div>
+      </div>
+
+      {/* Order Modal */}
+      <Dialog open={showOrderModal} onClose={()=>setShowOrderModal(false)} PaperProps={{
+        style: {
+          borderRadius: 24,
+          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+          color: '#fff',
+          minWidth: 280,
+          maxWidth: 380,
+          margin: '16px'
+        }
+      }}>
+        <DialogTitle sx={{
+          fontWeight: 700, 
+          fontSize: { xs: '1.25rem', sm: '1.5rem' }, 
+          color: '#fff', 
+          textAlign: 'center',
+          background: 'linear-gradient(45deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05))',
+          backdropFilter: 'blur(10px)',
+          borderBottom: '1px solid rgba(255,255,255,0.1)',
+          padding: { xs: '16px', sm: '24px' }
+        }}>
+          طلب خدمة من {talent?.name}
+        </DialogTitle>
+        <DialogContent sx={{ padding: { xs: '16px', sm: '24px' } }}>
+          <div className="mb-4 sm:mb-6">
+            <h3 className="text-base sm:text-lg font-bold mb-3 sm:mb-4 text-white">اختر الخدمات المطلوبة:</h3>
+            <div className="space-y-2 sm:space-y-3 max-h-60 overflow-y-auto">
               {talent?.services && (() => {
                 let servicesArr = [];
                 try { servicesArr = JSON.parse(talent.services); } catch {}
                 if (!Array.isArray(servicesArr) || servicesArr.length === 0) {
-                  return <div className="text-blue-400 mb-2">لا يوجد خدمات متاحة حالياً.</div>;
+                  return <div className="text-blue-200 text-center py-4 text-sm sm:text-base">لا يوجد خدمات متاحة حالياً.</div>;
                 }
                 return servicesArr.map((srv: any, idx: number) => (
+                  <div key={idx} className="bg-white/10 backdrop-blur-sm rounded-lg sm:rounded-xl p-2 sm:p-3 border border-white/20">
                   <FormControlLabel
-                    key={idx}
-                    control={<Checkbox checked={selectedServices.includes(srv.name)} onChange={()=>handleServiceChange(srv.name)} sx={{color:'#FFA726','&.Mui-checked':{color:'#FFA726'}}} />}
-                    label={<span className="text-white">{srv.name} <span className="text-orange-400 font-bold">({srv.price} ر.س)</span></span>}
-                  />
+                      control={
+                        <Checkbox 
+                          checked={selectedServices.includes(srv.name)} 
+                          onChange={()=>handleServiceChange(srv.name)} 
+                          sx={{
+                            color: '#fff',
+                            '&.Mui-checked': { color: '#fbbf24' },
+                            padding: { xs: '4px', sm: '9px' }
+                          }} 
+                        />
+                      }
+                      label={
+                        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center w-full gap-1 sm:gap-0">
+                          <span className="text-white font-medium text-sm sm:text-base">{srv.name}</span>
+                          <span className="text-yellow-300 font-bold text-xs sm:text-sm">({srv.price} ر.س)</span>
+                        </div>
+                      }
+                      sx={{ margin: 0, width: '100%' }}
+                    />
+                  </div>
                 ));
               })()}
-              <div className="mt-4 mb-2 text-blue-200 font-bold">اختر الموعد المتاح:</div>
-              
-              <select value={orderDate} onChange={e=>setOrderDate(e.target.value)} className="w-full px-3 py-2 rounded-lg bg-blue-900/40 border border-blue-400/20 text-white mb-4">
-                <option value="">اختر موعداً...</option>
+            </div>
+          </div>
+
+          <div className="mb-4 sm:mb-6">
+            <h3 className="text-base sm:text-lg font-bold mb-3 sm:mb-4 text-white">اختر الموعد المتاح:</h3>
+            <select 
+              value={orderDate} 
+              onChange={e=>setOrderDate(e.target.value)} 
+              className="w-full px-3 sm:px-4 py-2 sm:py-3 rounded-lg sm:rounded-xl bg-white/10 backdrop-blur-sm border border-white/20 text-white focus:border-yellow-400 focus:ring-2 focus:ring-yellow-400/50 outline-none text-sm sm:text-base"
+            >
+              <option value="" className="text-gray-800">اختر موعداً...</option>
                 {getAvailableSlots().map(slot => (
-                  <option key={slot.value} value={slot.value}>{slot.label}</option>
+                <option key={slot.value} value={slot.value} className="text-gray-800">
+                  {slot.label}
+                </option>
                 ))}
               </select>
+          </div>
 
+          <div className="mb-4 sm:mb-6">
               <TextField
                 label="رسالتك (اختياري)"
                 multiline
-                minRows={2}
+              minRows={3}
                 fullWidth
                 value={orderMessage}
                 onChange={e => setOrderMessage(e.target.value)}
-                className="mt-2"
-                InputProps={{style:{color:'#fff'}}}
-                InputLabelProps={{style:{color:'#FFA726'}}}
-                sx={{'& .MuiOutlinedInput-root':{ '& fieldset':{borderColor:'#FFA726'},'&:hover fieldset':{borderColor:'#FFA726'},'&.Mui-focused fieldset':{borderColor:'#FFA726'}}}}
-              />
-              {/* زر محادثة صاحب الموهبة */}
-              <div className="flex justify-center mt-6">
+              InputProps={{
+                style: { 
+                  color: '#fff',
+                  background: 'rgba(255,255,255,0.1)',
+                  backdropFilter: 'blur(10px)',
+                  borderRadius: '12px',
+                  fontSize: window.innerWidth < 640 ? '14px' : '16px'
+                }
+              }}
+              InputLabelProps={{ 
+                style: { 
+                  color: '#fbbf24',
+                  fontSize: window.innerWidth < 640 ? '14px' : '16px'
+                } 
+              }}
+              sx={{
+                '& .MuiOutlinedInput-root': { 
+                  '& fieldset': { borderColor: 'rgba(255,255,255,0.3)' },
+                  '&:hover fieldset': { borderColor: '#fbbf24' },
+                  '&.Mui-focused fieldset': { borderColor: '#fbbf24' }
+                }
+              }}
+            />
+          </div>
+
+          <div className="text-center">
                 <a
                   href={`/chat/${talent?.id}`}
-                  className="flex items-center gap-2 px-5 py-2 rounded-lg bg-gradient-to-r from-blue-500 to-purple-500 text-white font-bold shadow-lg hover:from-blue-600 hover:to-purple-600 transition-all text-lg"
+              className="inline-flex items-center gap-2 sm:gap-3 px-4 sm:px-6 py-2 sm:py-3 bg-white/20 backdrop-blur-sm border border-white/30 rounded-lg sm:rounded-xl text-white font-bold hover:bg-white/30 transition-all duration-300 transform hover:-translate-y-0.5 text-sm sm:text-base"
                   style={{textDecoration:'none'}}
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="none" viewBox="0 0 24 24"><path fill="#fff" d="M2 21l1.65-4.95A8.001 8.001 0 1 1 10 18h-.13L2 21zm8-7a6 6 0 1 0 0-12 6 6 0 0 0 0 12z"/></svg>
+              <MessageCircle className="w-4 h-4 sm:w-5 sm:h-5" />
                   محادثة صاحب الموهبة
                 </a>
               </div>
             </DialogContent>
-            <DialogActions sx={{justifyContent:'center',pb:2}}>
-              <Button onClick={()=>setShowOrderModal(false)} color="secondary" sx={{fontWeight:700}}>إلغاء</Button>
-                              <Button onClick={handleOrderRequest} color="warning" variant="contained" sx={{fontWeight:700}} disabled={selectedServices.length === 0 || !orderDate}>
+        <DialogActions sx={{justifyContent:'center', padding: { xs: '0 16px 16px', sm: '0 24px 24px' }}}>
+          <Button 
+            onClick={()=>setShowOrderModal(false)} 
+            sx={{ 
+              color: '#fff', 
+              fontWeight: 700,
+              background: 'rgba(255,255,255,0.1)',
+              backdropFilter: 'blur(10px)',
+              borderRadius: '12px',
+              padding: { xs: '8px 16px', sm: '12px 24px' },
+              fontSize: { xs: '14px', sm: '16px' },
+              '&:hover': { background: 'rgba(255,255,255,0.2)' }
+            }}
+          >
+            إلغاء
+          </Button>
+          <Button 
+            onClick={handleOrderRequest} 
+            disabled={selectedServices.length === 0 || !orderDate}
+            sx={{ 
+              background: 'linear-gradient(45deg, #fbbf24, #f59e0b)',
+              color: '#fff',
+              fontWeight: 700,
+              borderRadius: '12px',
+              padding: { xs: '8px 16px', sm: '12px 24px' },
+              fontSize: { xs: '14px', sm: '16px' },
+              '&:hover': { 
+                background: 'linear-gradient(45deg, #f59e0b, #d97706)',
+                transform: 'translateY(-2px)'
+              },
+              '&:disabled': { 
+                background: 'rgba(255,255,255,0.1)',
+                color: 'rgba(255,255,255,0.5)'
+              }
+            }}
+          >
                                   احجز الآن
               </Button>
             </DialogActions>
           </Dialog>
-          {/* حسّن تصميم نافذة الدفع: */}
+
+      {/* Payment Modal */}
           {showPaymentModal && iframeUrl && (
-            <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
-              <div className="bg-white rounded-2xl shadow-2xl p-6 relative w-[95vw] max-w-lg flex flex-col items-center">
-                {/* زر إغلاق */}
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-2 sm:p-4">
+          <div className="bg-white rounded-2xl sm:rounded-3xl shadow-2xl w-full max-w-2xl max-h-[95vh] sm:max-h-[90vh] overflow-hidden">
+            <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-4 sm:p-6 text-white relative">
                 <button
                   onClick={() => {
-                    // تنظيف localStorage عند إغلاق مودال الدفع
                     clearPendingOrderData();
                     setShowPaymentModal(false);
                   }}
-                  className="absolute top-3 left-3 text-red-500 font-bold text-xl"
-                  aria-label="إغلاق"
-                >×</button>
-                {/* شعار الموقع */}
-                <Image src="/logo.png" alt="شعار الموقع" width={60} height={60} className="mb-2" />
-                {/* عنوان الدفع */}
-                <h2 className="text-2xl font-bold text-blue-900 mb-2">
-                  إتمام عملية الدفع
-                </h2>
-                {/* معلومات Paymob للديباغ */}
-                <div className="text-xs text-blue-400 mb-2">
-                  Integration ID: {process.env.NEXT_PUBLIC_PAYMOB_INTEGRATION_ID || '13184'} | Iframe ID: {process.env.NEXT_PUBLIC_PAYMOB_IFRAME_ID || '9083'}
-                  <br/>
-                  <span className="text-[10px] text-blue-300">(هذه المعلومات تظهر فقط للديباغ ويمكن إزالتها لاحقاً)</span>
+                className="absolute top-2 sm:top-4 left-2 sm:left-4 w-8 h-8 sm:w-10 sm:h-10 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center text-white font-bold text-lg sm:text-xl transition-all"
+              >
+                ×
+              </button>
+              <div className="text-center">
+                <h2 className="text-lg sm:text-2xl font-bold mb-1 sm:mb-2">إتمام عملية الدفع</h2>
+                <p className="text-blue-100 text-sm sm:text-base">المبلغ الإجمالي: <span className="font-bold text-yellow-300">{totalWithTax} ر.س</span></p>
                 </div>
-                {/* مجموع المبلغ */}
-                <div className="text-lg font-bold text-orange-500 mb-4">
-                  المبلغ الإجمالي: <span>{selectedTotal} ر.س</span>
                 </div>
-                {/* تعليمات */}
-                <div className="text-blue-700 mb-4 text-center">
-                  يرجى إتمام عملية الدفع عبر بوابة Paymob الآمنة أدناه.
-                </div>
-                {/* iframe الدفع */}
+            <div className="p-3 sm:p-6">
                 <iframe
                   src={iframeUrl}
-                  className="w-full h-[400px]"
-                  style={{ border: 0, borderRadius: 16, boxShadow: '0 2px 16px #0002' }}
+                className="w-full h-[400px] sm:h-[500px] rounded-xl sm:rounded-2xl border-0"
                   allowFullScreen
                   onLoad={(e) => {
-                    console.log('Payment iframe loaded');
-                    // محاولة اكتشاف نجاح الدفع من URL
+                  try {
                     const iframe = e.target as HTMLIFrameElement;
-                    try {
                       const iframeUrl = iframe.contentWindow?.location.href;
                                                     if (iframeUrl && (iframeUrl.includes('success=true') || iframeUrl.includes('approved'))) {
-                                console.log('Payment success detected from iframe URL');
-                                // تنظيف localStorage عند نجاح الدفع
                                 clearPendingOrderData();
                               } else if (iframeUrl && iframeUrl.includes('error')) {
-                        console.log('Payment error detected from iframe URL');
-                        // تنظيف localStorage عند فشل الدفع
                         clearPendingOrderData();
                         setShowPaymentModal(false);
-                        window.location.href = '/payment-failed?error=فشلت عملية الدفع';
-                      }
-                    } catch (error) {
-                      // تجاهل أخطاء CORS
-                      console.log('Cannot access iframe URL due to CORS');
                     }
+                  } catch {}
                   }}
                 />
-                {/* ملاحظة: سيتم التوجيه التلقائي بعد الدفع */}
-                <div className="text-xs text-gray-500 mt-2 text-center">
-                  بعد إتمام الدفع، سيتم توجيهك تلقائياً لصفحة النجاح
-                </div>
-              </div>
             </div>
-          )}
-          {/* قسم التقييمات */}
-          <div className="mb-10 mt-10">
-            <h3 className="text-2xl font-bold mb-4 text-orange-300 text-center">التقييمات</h3>
-            {reviews.length === 0 ? (
-              <div className="text-blue-200 text-center mb-4">لا يوجد تقييمات بعد.</div>
-            ) : (
-              <div className="flex flex-col gap-4 mb-6">
-                {reviews.map((rev, idx) => (
-                  <div key={idx} className="bg-blue-900/40 rounded-xl border border-blue-400/20 shadow-md p-4">
-                    <div className="flex items-center gap-2 mb-1">
-                      {[1,2,3,4,5].map(i => (
-                        <Star key={i} size={18} className={i <= rev.rating ? 'text-orange-400 fill-current' : 'text-blue-400'} />
-                      ))}
-                      <span className="font-bold text-orange-300 ml-2">{rev.reviewerName}</span>
-                      <span className="text-xs text-blue-200 ml-2">{reviewDates[idx]}</span>
-                    </div>
-                    <div className="text-blue-100 text-sm mt-1 whitespace-pre-line">{rev.comment}</div>
-                  </div>
-                ))}
-              </div>
-            )}
-            {/* نموذج إضافة تقييم جديد */}
-            <form onSubmit={handleReviewSubmit} className="bg-blue-900/30 rounded-xl p-6 border border-blue-400/10 max-w-xl mx-auto flex flex-col gap-4">
-              <div className="flex flex-col md:flex-row gap-4 items-center">
-                <input type="text" placeholder="اسمك" className="flex-1 px-4 py-2 rounded-lg bg-blue-900/40 border border-blue-400/20 text-white" value={reviewForm.reviewerName} onChange={e=>setReviewForm({...reviewForm, reviewerName: e.target.value})} required />
-                <div className="flex items-center gap-1">
-                  {[1,2,3,4,5].map(i => (
-                    <button type="button" key={i} onClick={()=>setReviewForm({...reviewForm, rating: i})} className={reviewForm.rating >= i ? 'text-orange-400' : 'text-blue-400'}>
-                      <Star size={22} className={reviewForm.rating >= i ? 'fill-current' : ''} />
-                    </button>
-                  ))}
-                </div>
-              </div>
-              <textarea placeholder="تعليقك..." className="px-4 py-2 rounded-lg bg-blue-900/40 border border-blue-400/20 text-white min-h-[60px]" value={reviewForm.comment} onChange={e=>setReviewForm({...reviewForm, comment: e.target.value})} required />
-              <button type="submit" disabled={submitting} className="px-6 py-2 bg-gradient-to-r from-orange-400 to-pink-500 rounded-lg text-white font-bold text-lg shadow-lg hover:from-orange-500 hover:to-pink-600 transition-all disabled:opacity-60 disabled:cursor-not-allowed">
-                {submitting ? 'جاري الإرسال...' : 'إضافة تقييم'}
-              </button>
-            </form>
           </div>
-        </div>
-      </div>
+                </div>
+      )}
+
+      {/* Confirmation Modal */}
       {showConfirmModal && (
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
-          <div className="relative w-[95vw] max-w-md rounded-3xl shadow-2xl border-2 border-blue-400/30 bg-gradient-to-br from-indigo-900 via-blue-900 to-purple-900 p-0 overflow-hidden">
-            {/* رأس المودال */}
-            <div className="flex flex-col items-center py-6 px-6 bg-gradient-to-r from-orange-400 to-pink-500 rounded-t-3xl shadow">
-              <Image src="/logo.png" alt="شعار الموقع" width={48} height={48} className="mb-2" />
-              <h2 className="text-2xl font-bold text-white mb-1 drop-shadow">تأكيد تفاصيل الدفع</h2>
-              <div className="text-blue-50 text-center mb-2 text-base">يرجى مراجعة تفاصيل الخدمات والمبلغ قبل إتمام الطلب</div>
-            </div>
-            {/* جدول الخدمات */}
-            <div className="w-full bg-white/90 rounded-b-3xl px-6 py-6">
-              <table className="w-full text-right mb-4">
-                <thead>
-                  <tr className="text-orange-400 text-lg">
-                    <th className="py-2 font-bold">الخدمة</th>
-                    <th className="py-2 font-bold">السعر</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {selectedServicesSummary.map((srv, idx) => (
-                    <tr key={idx} className="text-blue-900">
-                      <td className="py-1 font-semibold flex items-center gap-2">
-                        <svg width="18" height="18" fill="none" viewBox="0 0 24 24">
-                          <circle cx="12" cy="12" r="10" fill="#FFA726"/>
-                          <path d="M8 12l2 2 4-4" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                        </svg>
-                        {srv.name}
-                      </td>
-                      <td className="py-1 font-bold text-orange-500">{srv.price} ر.س</td>
-                    </tr>
-                  ))}
-                </tbody>
-                <tfoot>
-                  <tr className="font-bold text-lg border-t border-blue-200">
-                    <td className="py-2">الإجمالي</td>
-                    <td className="py-2 text-orange-600">{selectedTotal} ر.س</td>
-                  </tr>
-                </tfoot>
-              </table>
-              {/* زر التأكيد */}
-              <button
-                onClick={handleConfirmAndPay}
-                className="w-full mt-2 px-8 py-3 bg-gradient-to-r from-orange-400 to-pink-500 text-white rounded-xl font-bold text-lg shadow-lg hover:from-orange-500 hover:to-pink-600 transition-all"
-              >
-                <span className="flex items-center justify-center gap-2">
-                  <svg width="22" height="22" fill="none" viewBox="0 0 24 24">
-                    <rect width="24" height="24" rx="12" fill="#1A9F29"/>
-                    <path d="M8 12l2 2 4-4" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
-                  تأكيد والدفع
-                </span>
-              </button>
-              {/* زر إغلاق دائري أعلى اليسار */}
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-2 sm:p-4">
+          <div className="bg-white rounded-2xl sm:rounded-3xl shadow-2xl w-full max-w-md overflow-hidden">
+            <div className="bg-gradient-to-r from-green-500 to-blue-500 p-4 sm:p-6 text-white relative">
               <button
                 onClick={() => setShowConfirmModal(false)}
-                className="absolute top-3 left-3 bg-white/80 hover:bg-red-100 text-red-500 font-bold text-xl w-10 h-10 rounded-full flex items-center justify-center shadow"
-                aria-label="إغلاق"
-              >×</button>
+                className="absolute top-2 sm:top-4 left-2 sm:left-4 w-6 h-6 sm:w-8 sm:h-8 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center text-white font-bold text-sm sm:text-lg transition-all"
+              >
+                ×
+              </button>
+              <div className="text-center">
+                <h2 className="text-lg sm:text-xl font-bold mb-1 sm:mb-2">تأكيد تفاصيل الطلب</h2>
+                <p className="text-green-100 text-sm sm:text-base">مراجعة الخدمات والمبلغ</p>
+              </div>
+            </div>
+            <div className="p-4 sm:p-6">
+              <div className="space-y-3 sm:space-y-4 mb-4 sm:mb-6 max-h-60 overflow-y-auto">
+                {selectedServicesSummary.map((srv, idx) => (
+                  <div key={idx} className="flex justify-between items-center py-2 sm:py-3 border-b border-gray-100 last:border-b-0">
+                    <div className="flex items-center gap-2 sm:gap-3">
+                      <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                      <span className="font-medium text-gray-800 text-sm sm:text-base">{srv.name}</span>
+                    </div>
+                    <span className="font-bold text-green-600 text-sm sm:text-base">{srv.price} ر.س</span>
+                  </div>
+                ))}
+                <div className="bg-gray-50 rounded-xl sm:rounded-2xl p-3 sm:p-4 mt-3 sm:mt-4">
+                  <div className="flex justify-between items-center text-base sm:text-lg">
+                    <span className="font-bold text-gray-800">المجموع قبل الضريبة:</span>
+                    <span className="font-bold text-gray-800">{subtotal} ر.س</span>
+                  </div>
+                  <div className="flex justify-between items-center text-xs sm:text-sm text-gray-600 mt-1">
+                    <span>الضريبة (15%):</span>
+                    <span>{tax} ر.س</span>
+                  </div>
+                  <div className="flex justify-between items-center text-lg sm:text-xl font-bold text-green-600 mt-2 sm:mt-3 pt-2 sm:pt-3 border-t border-gray-200">
+                    <span>الإجمالي:</span>
+                    <span>{totalWithTax} ر.س</span>
+              </div>
+                </div>
+              </div>
+              <button
+                onClick={handleConfirmAndPay}
+                className="w-full bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 text-white py-3 sm:py-4 rounded-xl sm:rounded-2xl font-bold text-base sm:text-lg shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300"
+              >
+                  تأكيد والدفع
+              </button>
             </div>
           </div>
         </div>
       )}
-    </>
+    </div>
   );
 } 

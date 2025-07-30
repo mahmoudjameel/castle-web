@@ -75,8 +75,8 @@ export default function AdminAccounts() {
   const filtered = users.filter(u => {
     if (search && !u.name.toLowerCase().includes(search.toLowerCase()) && !u.email.toLowerCase().includes(search.toLowerCase())) return false;
     if (filter === 'pending') return !u.approved;
-    if (filter === 'talent') return u.role === 'talent';
-    if (filter === 'user') return u.role === 'USER';
+    if (filter === 'talent') return u.role === 'talent' || u.role === 'TALENT';
+    if (filter === 'user') return u.role === 'USER' || u.role === 'user';
     return true;
   });
 

@@ -1,11 +1,11 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { CheckCircle, Assignment, Person, Schedule } from '@mui/icons-material';
 import Image from 'next/image';
 
-export default function PaymentSuccess() {
+function PaymentSuccessContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [countdown, setCountdown] = useState(5);
@@ -121,6 +121,35 @@ export default function PaymentSuccess() {
 
   useEffect(() => {
     if (orderConfirmed && orderDetails && orderDetails.talentId) {
+      // إنشاء الفاتورة مباشرة في بيئة التطوير فقط
+      if (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || process.env.NODE_ENV !== 'production')) {
+        const createInvoice = async () => {
+          try {
+            const servicesArr = orderDetails.services ? JSON.parse(orderDetails.services) : [];
+            const totalAmount = servicesArr.reduce((sum, s) => sum + Number(s.price || 0), 0);
+            const res = await fetch('/api/invoices', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                talentId: orderDetails.talentId,
+                clientId: orderDetails.clientId,
+                services: servicesArr,
+                amount: totalAmount,
+                orderId: orderDetails.id,
+                message: orderDetails.message || ''
+              })
+            });
+            if (res.ok) {
+              console.log('تم إنشاء الفاتورة مباشرة من الواجهة (تجريبيًا)');
+            } else {
+              console.error('فشل في إنشاء الفاتورة:', await res.text());
+            }
+          } catch (err) {
+            console.error('خطأ في إنشاء الفاتورة:', err);
+          }
+        };
+        createInvoice();
+      }
       const sendNotification = async () => {
         try {
           const totalAmount = orderDetails.services 
@@ -208,5 +237,20 @@ export default function PaymentSuccess() {
         <div className="mt-6 text-xs text-gray-400">© Payment is powered by Paymob</div>
       </div>
     </div>
+  );
+}
+
+export default function PaymentSuccess() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50 flex items-center justify-center p-4">
+        <div className="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-500 mx-auto mb-4"></div>
+          <p className="text-gray-600">جاري التحميل...</p>
+        </div>
+      </div>
+    }>
+      <PaymentSuccessContent />
+    </Suspense>
   );
 } 

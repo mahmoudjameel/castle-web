@@ -8,11 +8,13 @@ import Avatar from '@mui/material/Avatar';
 import MuiMenu from '@mui/material/Menu';
 import MuiMenuItem from '@mui/material/MenuItem';
 import { useTranslations } from 'next-intl';
+import { useRouter } from 'next/navigation';
+import { FaWhatsapp } from 'react-icons/fa';
 
 const CastingPlatform = () => {
   const t = useTranslations();
+  const router = useRouter();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [currentSlide, setCurrentSlide] = useState(0);
   const [categories, setCategories] = useState<{id:string,name:string,imageUrl?:string,imageData?:string}[]>([]);
   const [user, setUser] = useState<Record<string, unknown> | null>(null);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
@@ -43,7 +45,7 @@ const CastingPlatform = () => {
     }
   ];
   // الحالة الجديدة
-  const [heroSlides, setHeroSlides] = useState<any[]>(defaultHeroSlides);
+  // const [heroSlides, setHeroSlides] = useState<any[]>(defaultHeroSlides);
 
   const features = [
     {
@@ -101,10 +103,10 @@ const CastingPlatform = () => {
 
   useEffect(() => {
     const timer = setInterval(() => {
-      setCurrentSlide((prev) => (prev + 1) % heroSlides.length);
+      // setCurrentSlide((prev) => (prev + 1) % heroSlides.length);
     }, 5000);
     return () => clearInterval(timer);
-  }, [heroSlides.length]);
+  }, []);
 
   useEffect(() => {
     fetch('/api/categories')
@@ -134,15 +136,15 @@ const CastingPlatform = () => {
 
   useEffect(() => {
     // جلب بيانات البانر الرئيسي
-    fetch('/api/hero-banners')
-      .then(res => res.json())
-      .then(data => {
-        setHeroSlides(Array.isArray(data) ? data : []);
-      })
-      .catch(error => {
-        console.error('Error fetching hero banners:', error);
-        setHeroSlides([]);
-      });
+    // fetch('/api/hero-banners')
+    //   .then(res => res.json())
+    //   .then(data => {
+    //     setHeroSlides(Array.isArray(data) ? data : []);
+    //   })
+    //   .catch(error => {
+    //     console.error('Error fetching hero banners:', error);
+    //     setHeroSlides([]);
+    //   });
   }, []);
 
   const toggleLang = () => {
@@ -165,11 +167,14 @@ const CastingPlatform = () => {
     setAnchorEl(null);
     window.location.reload();
   };
-  let dashboardLink = '/';
+  let dashboardLink = '/user'; // Default to user dashboard if role is missing
   if (user?.role === 'admin') dashboardLink = '/admin';
   else if (user?.role === 'talent') dashboardLink = '/talent';
   else if (user?.role === 'company') dashboardLink = '/company';
   else if (user?.role === 'user') dashboardLink = '/user';
+
+  // Banner is now static
+  const heroSlide = defaultHeroSlides[0];
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-blue-900 to-purple-900 text-white overflow-hidden">
@@ -285,7 +290,7 @@ const CastingPlatform = () => {
                       </Avatar>
                       <div className="font-bold text-blue-900 mb-2" style={{fontSize:'1.1rem'}}>{user && typeof user.name === 'string' ? user.name : ''}</div>
                     </div>
-                    <MuiMenuItem component={Link} href={dashboardLink} onClick={handleMenuClose}>لوحة التحكم</MuiMenuItem>
+                    <MuiMenuItem onClick={() => { handleMenuClose(); router.push(dashboardLink); }}>لوحة التحكم</MuiMenuItem>
                     <MuiMenuItem onClick={handleLogout}>تسجيل خروج</MuiMenuItem>
                   </MuiMenu>
                 </>
@@ -374,39 +379,30 @@ const CastingPlatform = () => {
       {/* Hero Section */}
       <section id="home" className="relative min-h-[90vh] flex items-center">
         <div className="absolute inset-0 bg-gradient-to-r from-black/60 to-transparent z-10"></div>
-        {/* Background Image Slider */}
+        {/* Background Image Static */}
         <div className="absolute inset-0 overflow-hidden">
-          {heroSlides.map((slide, index) => (
-            (slide && slide.title && slide.image) ? (
-            <div
-              key={index}
-              className={`absolute inset-0 transition-opacity duration-1000 ${
-                index === currentSlide ? 'opacity-100' : 'opacity-0'
-              }`}
-            >
-              <Image
-                src={slide.image}
-                alt={slide.title}
-                fill
-                className="object-cover"
-                  priority={index === currentSlide}
-              />
-            </div>
-            ) : null
-          ))}
+          <div className="absolute inset-0">
+            <Image
+              src={heroSlide.image}
+              alt={heroSlide.title}
+              fill
+              className="object-cover"
+              priority
+            />
+          </div>
         </div>
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-20 flex flex-col md:flex-row items-center justify-between min-h-[70vh]">
           {/* النصوص والأزرار */}
           <div className="w-full md:w-1/2 flex flex-col items-center md:items-start text-center md:text-right space-y-6 md:space-y-8 py-12 md:py-0">
             <h1 className="text-3xl xs:text-4xl md:text-5xl lg:text-6xl font-bold leading-tight mb-2 md:mb-4 bg-gradient-to-r from-orange-400 via-pink-400 to-blue-400 bg-clip-text text-transparent">
-              {heroSlides[currentSlide]?.title || 'عنوان السلايدر'}
-              </h1>
+              {heroSlide.title}
+            </h1>
             <p className="text-lg xs:text-xl md:text-2xl text-blue-100 leading-relaxed mb-2 md:mb-4 max-w-xl">
-              {heroSlides[currentSlide]?.subtitle || 'وصف السلايدر'}
-              </p>
+              {heroSlide.subtitle}
+            </p>
             <div className="flex flex-col sm:flex-row items-center w-full gap-4 md:gap-6 mb-2 md:mb-6">
               <button className="w-full sm:w-auto px-8 py-4 bg-gradient-to-r from-orange-400 to-pink-500 text-white font-semibold rounded-lg hover:from-orange-500 hover:to-pink-600 transition-all transform hover:scale-105 text-lg md:text-xl shadow-lg">
-                {heroSlides[currentSlide]?.cta || 'ابدأ الآن'}
+                {heroSlide.cta}
               </button>
               <button className="w-full sm:w-auto px-8 py-4 bg-blue-600/30 backdrop-blur-sm border border-blue-400/30 rounded-lg hover:bg-blue-600/50 transition-all flex items-center justify-center gap-2 text-lg md:text-xl shadow-lg">
                 <Play className="w-5 h-5" />
@@ -418,10 +414,10 @@ const CastingPlatform = () => {
           {/* صورة البانر على الديسكتوب فقط */}
           <div className="hidden md:block w-1/2 h-[400px] lg:h-[500px] relative">
             <div className="absolute inset-0 rounded-3xl shadow-2xl border-4 border-blue-400/20 overflow-hidden">
-              {heroSlides[currentSlide]?.image ? (
+              {heroSlide?.image ? (
                 <Image
-                  src={heroSlides[currentSlide].image}
-                  alt={heroSlides[currentSlide]?.title || 'سلايدر'}
+                  src={heroSlide.image}
+                  alt={heroSlide?.title || 'سلايدر'}
                   fill
                   className="object-cover"
                   priority
@@ -433,15 +429,7 @@ const CastingPlatform = () => {
         </div>
         {/* Slide Indicators */}
         <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 flex space-x-2 z-20">
-          {heroSlides.map((slide, index) => (
-            <button
-              key={index}
-              onClick={() => setCurrentSlide(index)}
-              className={`w-3 h-3 rounded-full transition-all ${
-                index === currentSlide ? 'bg-orange-400' : 'bg-blue-300/50'
-              }`}
-            />
-          ))}
+          {/* Removed heroSlides.map as heroSlides is no longer used */}
         </div>
       </section>
 
@@ -489,7 +477,7 @@ const CastingPlatform = () => {
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-bold mb-6">
-              {t('features.whyChoose.title')} <span className="bg-gradient-to-r from-orange-400 via-pink-400 to-blue-400 bg-clip-text text-transparent">طوق</span>?
+              {t('features.whyChoose.title')} <span className="bg-gradient-to-r from-orange-400 via-pink-400 to-blue-400 bg-clip-text text-transparent">طوق</span>؟
             </h2>
             <p className="text-xl text-blue-100 max-w-2xl mx-auto">{t('features.whyChoose.description')}</p>
           </div>
@@ -699,11 +687,11 @@ const CastingPlatform = () => {
             <div className="flex flex-col sm:flex-row justify-center gap-8 text-blue-100">
               <div className="flex items-center gap-2 justify-center">
                 <Mail className="text-orange-400" />
-                {t('contact.email')}
+                Toq@toq-group.com
               </div>
               <div className="flex items-center gap-2 justify-center">
                 <Phone className="text-orange-400" />
-                {t('contact.phone')}
+                +966 55 144 8433
               </div>
             </div>
           </div>
@@ -757,21 +745,32 @@ const CastingPlatform = () => {
               <div className="space-y-3">
                 <div className="flex items-center space-x-3">
                   <Phone className="w-5 h-5 text-orange-400" />
-                  <span className="text-blue-100">{t('contact.phone')}</span>
+                  <span className="text-blue-100">+966 55 144 8433</span>
                 </div>
                 <div className="flex items-center space-x-3">
                   <Mail className="w-5 h-5 text-orange-400" />
-                  <span className="text-blue-100">{t('contact.email')}</span>
+                  <span className="text-blue-100">Toq@toq-group.com</span>
                 </div>
                 <div className="flex items-center space-x-3">
                   <MapPin className="w-5 h-5 text-orange-400" />
-                  <span className="text-blue-100">{t('footer.address')}</span>
+                  <span className="text-blue-100">الرياض حي الملك سلمان مبنى الواحة سكوير الدور الاول مكتب 109</span>
                 </div>
               </div>
             </div>
           </div>
         </div>
       </footer>
+      {/* Floating WhatsApp Button */}
+      <a
+        href="https://wa.me/966551448433"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="fixed z-50 bottom-6 right-6 bg-green-500 hover:bg-green-600 text-white rounded-full shadow-lg flex items-center justify-center w-14 h-14 text-3xl transition-all animate-bounce-custom"
+        title="تواصل عبر واتساب"
+        style={{ boxShadow: '0 4px 24px 0 rgba(37, 211, 102, 0.3)' }}
+      >
+        <FaWhatsapp />
+      </a>
     </div>
   );
 };

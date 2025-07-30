@@ -5,10 +5,12 @@ const prisma = new PrismaClient();
 
 async function createOrderFromPayment(data: any) {
   try {
-    console.log('Creating order from payment data:', data);
+    console.log('=== [PAYMOB CALLBACK] Creating order from payment data ===');
+    console.log('Raw data:', JSON.stringify(data, null, 2));
     
     // Check for client, talent, and service data in metadata
     const metadata = data.metadata || {};
+    console.log('Extracted metadata:', JSON.stringify(metadata, null, 2));
     const talentId = metadata.talentId ? Number(metadata.talentId) : null;
     const clientId = metadata.clientId ? Number(metadata.clientId) : null;
     const services = metadata.services ? JSON.parse(metadata.services) : null;
@@ -33,7 +35,7 @@ async function createOrderFromPayment(data: any) {
       }
     });
     if (existing) {
-      console.log('Order already exists, skipping creation.');
+      console.log('Order already exists, skipping creation. Order:', existing);
       return existing;
     }
 
@@ -48,6 +50,25 @@ async function createOrderFromPayment(data: any) {
       }
     });
     console.log('Order created successfully from payment callback:', newOrder);
+
+    // إنشاء سجل العملية المالية (Transaction)
+    try {
+      const totalAmount = services.reduce((sum: number, service: any) => sum + Number(service.price || 0), 0);
+      const tx = await prisma.transaction.create({
+        data: {
+          type: 'earning',
+          amount: totalAmount,
+          description: `دفع طلب رقم ${newOrder.id}`,
+          status: 'paid',
+          senderId: clientId,
+          receiverId: talentId,
+          orderId: newOrder.id,
+        }
+      });
+      console.log('Transaction created for order:', tx);
+    } catch (txError) {
+      console.error('Error creating transaction for order:', txError);
+    }
 
     // Send notification to talent
     try {

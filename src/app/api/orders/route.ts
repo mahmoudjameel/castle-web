@@ -124,15 +124,101 @@ export async function POST(req: NextRequest) {
 // تحديث حالة الطلب
 export async function PATCH(req: Request) {
   try {
-    const { id, status } = await req.json();
-    if (!id || !status) {
-      return NextResponse.json({ message: 'id و status مطلوبان.' }, { status: 400 });
+    const { id, status, userConfirmed } = await req.json();
+    if (!id || (!status && typeof userConfirmed === 'undefined')) {
+      return NextResponse.json({ message: 'id و status أو userConfirmed مطلوبان.' }, { status: 400 });
     }
+    // إذا كان الطلب هو تأكيد المستخدم
+    if (typeof userConfirmed === 'boolean') {
+      // اجلب الطلب الحالي
+      const order = await prisma.talentOrder.findUnique({ where: { id: Number(id) } });
+      if (!order) return NextResponse.json({ message: 'الطلب غير موجود.' }, { status: 404 });
+      // إذا وافق المستخدم على الاكتمال
+      if (userConfirmed) {
+        // حدث الطلب: userConfirmed=true, status='completed'
+        const updatedOrder = await prisma.talentOrder.update({
+          where: { id: Number(id) },
+          data: { userConfirmed: true, status: 'completed' },
+        });
+        // منطق المحفظة والإشعار كما في السابق
+        let notifMsg = 'تهانينا! تم اكتمال تنفيذ طلبك بنجاح.';
+        let total = 0;
+        try {
+          const servicesArr = JSON.parse(order.services);
+          total = servicesArr.reduce((sum:any, srv:any) => sum + (parseFloat(srv.price)||0), 0);
+        } catch {}
+        if (total > 0) {
+          let commissionRate = 10;
+          try {
+            const setting = await prisma.settings.findUnique({ where: { key: 'commissionRate' } });
+            commissionRate = setting ? Number(setting.value) : 10;
+          } catch {}
+          const commission = Math.round((total * commissionRate) / 100);
+          const net = total - commission;
+          await prisma.wallet.upsert({
+            where: { userId: order.talentId },
+            update: {
+              balance: { increment: net },
+              totalEarned: { increment: net },
+            },
+            create: {
+              userId: order.talentId,
+              balance: net,
+              totalEarned: net,
+              totalWithdrawn: 0,
+            },
+          });
+        }
+        await prisma.notification.create({
+          data: {
+            userId: order.clientId,
+            title: 'تحديث حالة الطلب',
+            body: notifMsg,
+            date: new Date(),
+          }
+        });
+        return NextResponse.json(updatedOrder);
+      } else {
+        // فقط حدث userConfirmed=false
+        const updatedOrder = await prisma.talentOrder.update({
+          where: { id: Number(id) },
+          data: { userConfirmed: false },
+        });
+        return NextResponse.json(updatedOrder);
+      }
+    }
+    // منطق تغيير الحالة
+    if (status === 'completed') {
+      // اجلب الطلب الحالي
+      const order = await prisma.talentOrder.findUnique({ where: { id: Number(id) } });
+      if (!order) return NextResponse.json({ message: 'الطلب غير موجود.' }, { status: 404 });
+      // إذا لم يؤكد المستخدم بعد، لا تكمل الطلب
+      if (!order.userConfirmed) {
+        // حدث الحالة إلى 'awaiting_user_confirmation'
+        const updatedOrder = await prisma.talentOrder.update({
+          where: { id: Number(id) },
+          data: { status: 'awaiting_user_confirmation' },
+        });
+        // إشعار للمستخدم
+        await prisma.notification.create({
+          data: {
+            userId: order.clientId,
+            title: 'تأكيد اكتمال الطلب',
+            body: 'يرجى تأكيد اكتمال الطلب حتى يتم إنهاؤه بشكل رسمي.',
+            date: new Date(),
+          }
+        });
+        return NextResponse.json(updatedOrder);
+      }
+      // إذا كان userConfirmed=true، أكمل الطلب (منطق المحفظة ... الخ كما في السابق)
+      // (لن يصل غالباً لهذا الفرع إلا في حالة خاصة)
+    }
+    // باقي الحالات كما هي
     const order = await prisma.talentOrder.update({
       where: { id: Number(id) },
       data: { status },
     });
-    // إضافة إشعار للمستخدم عند تغيير الحالة
+    // إشعار الحالة
     let statusAr = '';
     let notifMsg = '';
     if (status === 'new') {
@@ -141,32 +227,9 @@ export async function PATCH(req: Request) {
     } else if (status === 'in_progress') {
       statusAr = 'قيد التنفيذ';
       notifMsg = 'تم قبول طلبك وهو الآن قيد التنفيذ من قبل الموهبة.';
-    } else if (status === 'completed') {
-      statusAr = 'مكتمل';
-      notifMsg = 'تهانينا! تم اكتمال تنفيذ طلبك بنجاح.';
-      // إضافة منطق المحفظة عند الاكتمال
-      let total = 0;
-      try {
-        const servicesArr = JSON.parse(order.services);
-        total = servicesArr.reduce((sum:any, srv:any) => sum + (parseFloat(srv.price)||0), 0);
-        console.log('servicesArr:', servicesArr, 'total:', total);
-      } catch (e) { console.log('services parse error', e); }
-      // زيادة رصيد المحفظة للموهبة
-      if (total > 0) {
-        await prisma.wallet.upsert({
-          where: { userId: order.talentId },
-          update: {
-            balance: { increment: total },
-            totalEarned: { increment: total },
-          },
-          create: {
-            userId: order.talentId,
-            balance: total,
-            totalEarned: total,
-            totalWithdrawn: 0,
-          },
-        });
-      }
+    } else if (status === 'awaiting_user_confirmation') {
+      statusAr = 'بانتظار موافقة المستخدم';
+      notifMsg = 'يرجى تأكيد اكتمال الطلب حتى يتم إنهاؤه بشكل رسمي.';
     } else if (status === 'rejected') {
       statusAr = 'مرفوض';
       notifMsg = 'نأسف، تم رفض طلبك من قبل الموهبة. يمكنك التواصل لمزيد من التفاصيل.';
@@ -178,6 +241,7 @@ export async function PATCH(req: Request) {
         userId: order.clientId,
         title: 'تحديث حالة الطلب',
         body: notifMsg,
+        date: new Date(),
       }
     });
     return NextResponse.json(order);

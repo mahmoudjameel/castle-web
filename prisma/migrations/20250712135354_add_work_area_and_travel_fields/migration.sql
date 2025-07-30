@@ -1,3 +1,11 @@
 -- AlterTable
 ALTER TABLE "User" ADD COLUMN "canTravelAbroad" BOOLEAN;
 ALTER TABLE "User" ADD COLUMN "workArea" TEXT;
+
+-- CreateTable
+CREATE TABLE "Settings" (
+    "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    "key" TEXT NOT NULL UNIQUE,
+    "value" TEXT NOT NULL,
+    "updatedAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+);

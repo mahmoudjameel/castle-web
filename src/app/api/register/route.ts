@@ -21,7 +21,7 @@ export async function POST(req: Request) {
         email,
         password, // يفضل تشفير كلمة المرور في الإنتاج
         role,
-        approved: role === 'USER' ? true : false,
+        approved: role === 'USER' || role === 'user' ? true : false,
       },
     });
     return NextResponse.json({ message: 'تم إنشاء الحساب بنجاح! بانتظار موافقة الإدارة.' }, { status: 201 });
