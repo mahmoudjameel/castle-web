@@ -2,21 +2,21 @@ import { NextResponse } from 'next/server';
 
 export const PAYMOB_CONFIG = {
   // API Keys
-  API_KEY: 'ZXlKaGJHY2lPaUpJVXpVeE1pSXNJblI1Y0NJNklrcFhWQ0o5LmV5SmpiR0Z6Y3lJNklrMWxjbU5vWVc1MElpd2ljSEp2Wm1sc1pWOXdheUk2TVRBME16TXNJbTVoYldVaU9pSnBibWwwYVdGc0luMC5rd3I2YlM0WHJRd1hYX2tCWlNiZlh5MVkyVHFfNzlnNmJfY2NYRzhVX3dYRzNKRURDcEVSbk1FaXA3MzI3OVNobEI4cHdIaXpEVlVQeGRFUHF4YXNjZw==',
-  SECRET_KEY: 'sau_sk_live_6c5848fbf0a834222f734e44dd0a7b3f55602fb9df1b147384cdf4ff3954ee44',
-  PUBLIC_KEY: 'sau_pk_live_ostMDWRcxwzRQe54pyITE5oERHFczuVC',
+  API_KEY: process.env.PAYMOB_API_KEY || '',
+  SECRET_KEY: process.env.PAYMOB_SECRET_KEY || '',
+  PUBLIC_KEY: process.env.PAYMOB_PUBLIC_KEY || '',
 
   // Integration IDs
   INTEGRATIONS: {
     APPLE_PAY: {
-      ID: 13183,
+      ID: parseInt(process.env.PAYMOB_APPLE_PAY_ID || '13183'),
       NAME: 'Apple pay payment link',
-      IFRAME_ID: '9083'
+      IFRAME_ID: process.env.PAYMOB_APPLE_PAY_IFRAME_ID || '9083'
     },
     CARD_PAYMENT: {
-      ID: 14214,
+      ID: parseInt(process.env.PAYMOB_CARD_PAYMENT_ID || '14214'),
       NAME: 'MIGS-online Payment link',
-      IFRAME_ID: '9589'
+      IFRAME_ID: process.env.PAYMOB_CARD_PAYMENT_IFRAME_ID || '9589'
     }
   },
 
