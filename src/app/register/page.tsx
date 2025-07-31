@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { User, Star } from 'lucide-react';
+import { User, Star, Mail, Lock, UserPlus, CheckCircle, ArrowRight } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 
@@ -13,16 +13,16 @@ const Register = () => {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
-  const [agreed, setAgreed] = useState(false); // for talent
-  const [userAgreed, setUserAgreed] = useState(false); // for user
+  const [agreed, setAgreed] = useState(false);
+  const [userAgreed, setUserAgreed] = useState(false);
+  const [focusedField, setFocusedField] = useState('');
   const router = useRouter();
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setMessage('');
     try {
-      // Map role to uppercase for backend
       const backendRole = role === 'user' ? 'USER' : role === 'talent' ? 'TALENT' : role;
       const res = await fetch('/api/register', {
         method: 'POST',
@@ -47,74 +47,311 @@ const Register = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-900 via-blue-900 to-purple-900 text-white">
-      <div className="w-full max-w-lg bg-indigo-950/80 backdrop-blur-md rounded-2xl shadow-lg p-8 border border-blue-400/20">
-        <h2 className="text-3xl font-bold mb-6 text-center bg-gradient-to-r from-orange-400 via-pink-400 to-blue-400 bg-clip-text text-transparent">{t('auth.registerTitle')}</h2>
-        <div className="flex justify-center gap-4 mb-8">
-          <button onClick={() => setRole('user')} className={`flex flex-col items-center px-6 py-3 rounded-lg border-2 transition-all ${role === 'user' ? 'border-orange-400 bg-gradient-to-r from-orange-400 to-pink-500 text-white' : 'border-blue-400/30 bg-blue-900/40 text-blue-100 hover:border-orange-400'}`}>
-            <User className="mb-1" />
-            {t('auth.user')}
-          </button>
-          <button onClick={() => setRole('talent')} className={`flex flex-col items-center px-6 py-3 rounded-lg border-2 transition-all ${role === 'talent' ? 'border-orange-400 bg-gradient-to-r from-orange-400 to-pink-500 text-white' : 'border-blue-400/30 bg-blue-900/40 text-blue-100 hover:border-orange-400'}`}>
-            <Star className="mb-1" />
-            {t('auth.talent')}
-          </button>
-        </div>
-        <form className="space-y-6" onSubmit={handleSubmit}>
-          <div>
-            <label className="block mb-2 text-blue-100">{t('auth.fullName')}</label>
-            <input type="text" value={name} onChange={e => setName(e.target.value)} className="w-full px-4 py-3 rounded-lg bg-blue-900/40 border border-blue-400/20 text-white focus:outline-none focus:ring-2 focus:ring-orange-400 placeholder:text-blue-200" placeholder={t('auth.fullNamePlaceholder')} required />
-          </div>
-          <div>
-            <label className="block mb-2 text-blue-100">{t('auth.email')}</label>
-            <input type="email" value={email} onChange={e => setEmail(e.target.value)} className="w-full px-4 py-3 rounded-lg bg-blue-900/40 border border-blue-400/20 text-white focus:outline-none focus:ring-2 focus:ring-orange-400 placeholder:text-blue-200" placeholder={t('auth.emailPlaceholder')} required />
-          </div>
-          <div>
-            <label className="block mb-2 text-blue-100">{t('auth.password')}</label>
-            <input type="password" value={password} onChange={e => setPassword(e.target.value)} className="w-full px-4 py-3 rounded-lg bg-blue-900/40 border border-blue-400/20 text-white focus:outline-none focus:ring-2 focus:ring-orange-400 placeholder:text-blue-200" placeholder={t('auth.passwordPlaceholder')} required />
-          </div>
-          {/* Agreements for talent and user */}
-          {role === 'talent' && (
-            <div className="bg-blue-900/30 border border-blue-400/20 rounded-lg p-4 mb-2">
-              <div className="font-bold text-orange-400 mb-2">اتفاقية وشروط التسجيل للموهبة:</div>
-              <ul className="list-disc pr-5 text-sm text-blue-100 space-y-1 mb-2">
-                <li>يتم خصم <span className="text-orange-400 font-bold">30%</span> من قيمة كل عملية بيع لصالح المنصة.</li>
-                <li>يجب الالتزام بجودة الخدمة المقدمة للعميل.</li>
-                <li>يمنع التواصل خارج المنصة بشأن الطلبات.</li>
-                <li>يحق للمنصة إيقاف الحساب في حال مخالفة الشروط.</li>
-                <li>أي شروط أخرى تراها المنصة ضرورية سيتم إعلامك بها.</li>
-              </ul>
-              <label className="flex items-center gap-2 cursor-pointer mt-2">
-                <input type="checkbox" checked={agreed} onChange={e => setAgreed(e.target.checked)} className="accent-orange-400 w-5 h-5" />
-                <span className="text-blue-100 text-sm">أوافق على جميع الشروط والأحكام أعلاه</span>
-              </label>
+    <div className="min-h-screen relative overflow-hidden bg-gradient-to-br from-indigo-900 via-blue-900 to-purple-900">
+      {/* خلفية مؤثرات بصرية */}
+      <div className="absolute inset-0">
+        <div className="absolute top-0 -left-4 w-96 h-96 bg-orange-400/8 rounded-full mix-blend-multiply filter blur-xl animate-pulse"></div>
+        <div className="absolute top-0 -right-4 w-96 h-96 bg-pink-400/8 rounded-full mix-blend-multiply filter blur-xl animate-pulse delay-1000"></div>
+        <div className="absolute -bottom-8 left-20 w-96 h-96 bg-blue-400/8 rounded-full mix-blend-multiply filter blur-xl animate-pulse delay-500"></div>
+        <div className="absolute bottom-0 right-10 w-72 h-72 bg-purple-400/8 rounded-full mix-blend-multiply filter blur-xl animate-pulse delay-700"></div>
+      </div>
+
+      <div className="relative min-h-screen flex items-center justify-center p-4">
+        <div className="w-full max-w-lg">
+          {/* البطاقة الرئيسية */}
+          <div className="bg-white/5 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/10 overflow-hidden">
+            {/* الهيدر */}
+            <div className="px-8 pt-8 pb-6 text-center">
+              <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-orange-400 to-pink-500 rounded-2xl flex items-center justify-center transform rotate-12 shadow-lg">
+                <UserPlus className="w-8 h-8 text-white transform -rotate-12" />
+              </div>
+              <h2 className="text-3xl font-bold mb-2 bg-gradient-to-r from-orange-400 via-pink-400 to-blue-400 bg-clip-text text-transparent">
+                {t('auth.registerTitle')}
+              </h2>
+              <p className="text-blue-200/80 text-sm">إنشاء حساب جديد</p>
             </div>
-          )}
-          {role === 'user' && (
-            <div className="bg-blue-900/30 border border-blue-400/20 rounded-lg p-4 mb-2">
-              <div className="font-bold text-orange-400 mb-2">اتفاقية وشروط التسجيل للمستخدم:</div>
-              <ul className="list-disc pr-5 text-sm text-blue-100 space-y-1 mb-2">
-                <li>يتم فرض ضريبة بنسبة <span className="text-orange-400 font-bold">15%</span> على قيمة المبلغ المدفوع.</li>
-                <li>يجب الالتزام باستخدام المنصة بشكل قانوني وعدم إساءة الاستخدام.</li>
-                <li>يحق للمنصة إيقاف الحساب في حال مخالفة الشروط.</li>
-                <li>أي شروط أخرى تراها المنصة ضرورية سيتم إعلامك بها.</li>
-              </ul>
-              <label className="flex items-center gap-2 cursor-pointer mt-2">
-                <input type="checkbox" checked={userAgreed} onChange={e => setUserAgreed(e.target.checked)} className="accent-orange-400 w-5 h-5" />
-                <span className="text-blue-100 text-sm">أوافق على جميع الشروط والأحكام أعلاه</span>
-              </label>
+
+            {/* اختيار نوع الحساب */}
+            <div className="px-8 pb-6">
+              <div className="flex gap-3 p-1 bg-white/5 rounded-2xl border border-white/10">
+                <button 
+                  onClick={() => setRole('user')} 
+                  className={`flex-1 flex flex-col items-center px-4 py-4 rounded-xl transition-all duration-300 ${
+                    role === 'user' 
+                      ? 'bg-gradient-to-r from-orange-400 to-pink-500 text-white shadow-lg transform scale-105' 
+                      : 'text-blue-200/80 hover:text-white hover:bg-white/5'
+                  }`}
+                >
+                  <User className={`w-6 h-6 mb-2 transition-transform duration-300 ${role === 'user' ? 'scale-110' : ''}`} />
+                  <span className="text-sm font-semibold">{t('auth.user')}</span>
+                </button>
+                <button 
+                  onClick={() => setRole('talent')} 
+                  className={`flex-1 flex flex-col items-center px-4 py-4 rounded-xl transition-all duration-300 ${
+                    role === 'talent' 
+                      ? 'bg-gradient-to-r from-orange-400 to-pink-500 text-white shadow-lg transform scale-105' 
+                      : 'text-blue-200/80 hover:text-white hover:bg-white/5'
+                  }`}
+                >
+                  <Star className={`w-6 h-6 mb-2 transition-transform duration-300 ${role === 'talent' ? 'scale-110' : ''}`} />
+                  <span className="text-sm font-semibold">{t('auth.talent')}</span>
+                </button>
+              </div>
             </div>
-          )}
-          <button type="submit" disabled={loading || (role === 'talent' ? !agreed : role === 'user' ? !userAgreed : false)} className="w-full py-3 bg-gradient-to-r from-orange-400 to-pink-500 rounded-lg font-bold text-lg text-white hover:from-orange-500 hover:to-pink-600 transition-all disabled:opacity-60 disabled:cursor-not-allowed">{loading ? t('auth.registering') : t('auth.registerBtn')}</button>
-        </form>
-        {message && <div className="mt-4 text-center text-orange-300 font-bold">{message}</div>}
-        <div className="mt-6 text-center">
-          <span className="text-blue-200">{t('auth.alreadyHaveAccount')} </span>
-          <a href="/login" className="text-orange-400 hover:underline font-bold">{t('auth.goToLogin')}</a>
+
+            {/* النموذج */}
+            <div className="px-8 pb-8">
+              <div className="space-y-6">
+                {/* حقل الاسم */}
+                <div className="relative">
+                  <label className={`absolute right-4 transition-all duration-200 pointer-events-none ${
+                    focusedField === 'name' || name 
+                      ? 'top-2 text-xs text-orange-400' 
+                      : 'top-4 text-base text-blue-200/60'
+                  }`}>
+                    {t('auth.fullName')}
+                  </label>
+                  <div className="relative">
+                    <User className={`absolute left-4 top-4 w-5 h-5 transition-colors duration-200 ${
+                      focusedField === 'name' ? 'text-orange-400' : 'text-blue-200/60'
+                    }`} />
+                    <input
+                      type="text"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      onFocus={() => setFocusedField('name')}
+                      onBlur={() => setFocusedField('')}
+                      className="w-full pl-12 pr-4 pt-6 pb-3 rounded-xl bg-white/5 border border-white/10 text-white focus:outline-none focus:ring-2 focus:ring-orange-400/50 focus:border-orange-400/50 transition-all duration-200"
+                      required
+                    />
+                  </div>
+                </div>
+
+                {/* حقل البريد الإلكتروني */}
+                <div className="relative">
+                  <label className={`absolute right-4 transition-all duration-200 pointer-events-none ${
+                    focusedField === 'email' || email 
+                      ? 'top-2 text-xs text-orange-400' 
+                      : 'top-4 text-base text-blue-200/60'
+                  }`}>
+                    {t('auth.email')}
+                  </label>
+                  <div className="relative">
+                    <Mail className={`absolute left-4 top-4 w-5 h-5 transition-colors duration-200 ${
+                      focusedField === 'email' ? 'text-orange-400' : 'text-blue-200/60'
+                    }`} />
+                    <input
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      onFocus={() => setFocusedField('email')}
+                      onBlur={() => setFocusedField('')}
+                      className="w-full pl-12 pr-4 pt-6 pb-3 rounded-xl bg-white/5 border border-white/10 text-white focus:outline-none focus:ring-2 focus:ring-orange-400/50 focus:border-orange-400/50 transition-all duration-200"
+                      required
+                    />
+                  </div>
+                </div>
+
+                {/* حقل كلمة المرور */}
+                <div className="relative">
+                  <label className={`absolute right-4 transition-all duration-200 pointer-events-none ${
+                    focusedField === 'password' || password 
+                      ? 'top-2 text-xs text-orange-400' 
+                      : 'top-4 text-base text-blue-200/60'
+                  }`}>
+                    {t('auth.password')}
+                  </label>
+                  <div className="relative">
+                    <Lock className={`absolute left-4 top-4 w-5 h-5 transition-colors duration-200 ${
+                      focusedField === 'password' ? 'text-orange-400' : 'text-blue-200/60'
+                    }`} />
+                    <input
+                      type="password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      onFocus={() => setFocusedField('password')}
+                      onBlur={() => setFocusedField('')}
+                      className="w-full pl-12 pr-4 pt-6 pb-3 rounded-xl bg-white/5 border border-white/10 text-white focus:outline-none focus:ring-2 focus:ring-orange-400/50 focus:border-orange-400/50 transition-all duration-200"
+                      required
+                    />
+                  </div>
+                </div>
+
+                {/* الشروط والأحكام للموهبة */}
+                {role === 'talent' && (
+                  <div className="bg-gradient-to-r from-orange-400/10 to-pink-500/10 border border-orange-400/20 rounded-2xl p-6 backdrop-blur-sm">
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="w-8 h-8 bg-gradient-to-r from-orange-400 to-pink-500 rounded-lg flex items-center justify-center">
+                        <Star className="w-4 h-4 text-white" />
+                      </div>
+                      <h3 className="font-bold text-orange-400">اتفاقية وشروط التسجيل للموهبة</h3>
+                    </div>
+                    <div className="space-y-3 text-sm text-blue-100 mb-4">
+                      <div className="flex items-start gap-2">
+                        <div className="w-1.5 h-1.5 bg-orange-400 rounded-full mt-2 flex-shrink-0"></div>
+                        <span>يتم خصم <span className="text-orange-400 font-bold">30%</span> من قيمة كل عملية بيع لصالح المنصة.</span>
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <div className="w-1.5 h-1.5 bg-orange-400 rounded-full mt-2 flex-shrink-0"></div>
+                        <span>يجب الالتزام بجودة الخدمة المقدمة للعميل.</span>
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <div className="w-1.5 h-1.5 bg-orange-400 rounded-full mt-2 flex-shrink-0"></div>
+                        <span>يمنع التواصل خارج المنصة بشأن الطلبات.</span>
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <div className="w-1.5 h-1.5 bg-orange-400 rounded-full mt-2 flex-shrink-0"></div>
+                        <span>يحق للمنصة إيقاف الحساب في حال مخالفة الشروط.</span>
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <div className="w-1.5 h-1.5 bg-orange-400 rounded-full mt-2 flex-shrink-0"></div>
+                        <span>أي شروط أخرى تراها المنصة ضرورية سيتم إعلامك بها.</span>
+                      </div>
+                    </div>
+                    <label className="flex items-center gap-3 cursor-pointer group">
+                      <div className="relative">
+                        <input 
+                          type="checkbox" 
+                          checked={agreed} 
+                          onChange={(e) => setAgreed(e.target.checked)} 
+                          className="sr-only"
+                        />
+                        <div className={`w-5 h-5 rounded border-2 transition-all duration-200 ${
+                          agreed 
+                            ? 'bg-gradient-to-r from-orange-400 to-pink-500 border-orange-400' 
+                            : 'border-blue-400/40 bg-white/5'
+                        }`}>
+                          {agreed && <CheckCircle className="w-5 h-5 text-white" />}
+                        </div>
+                      </div>
+                      <span className="text-blue-100 text-sm group-hover:text-white transition-colors">
+                        أوافق على جميع الشروط والأحكام أعلاه
+                      </span>
+                    </label>
+                  </div>
+                )}
+
+                {/* الشروط والأحكام للمستخدم */}
+                {role === 'user' && (
+                  <div className="bg-gradient-to-r from-blue-400/10 to-purple-500/10 border border-blue-400/20 rounded-2xl p-6 backdrop-blur-sm">
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="w-8 h-8 bg-gradient-to-r from-blue-400 to-purple-500 rounded-lg flex items-center justify-center">
+                        <User className="w-4 h-4 text-white" />
+                      </div>
+                      <h3 className="font-bold text-blue-400">اتفاقية وشروط التسجيل للمستخدم</h3>
+                    </div>
+                    <div className="space-y-3 text-sm text-blue-100 mb-4">
+                      <div className="flex items-start gap-2">
+                        <div className="w-1.5 h-1.5 bg-blue-400 rounded-full mt-2 flex-shrink-0"></div>
+                        <span>يتم فرض ضريبة بنسبة <span className="text-blue-400 font-bold">15%</span> على قيمة المبلغ المدفوع.</span>
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <div className="w-1.5 h-1.5 bg-blue-400 rounded-full mt-2 flex-shrink-0"></div>
+                        <span>يجب الالتزام باستخدام المنصة بشكل قانوني وعدم إساءة الاستخدام.</span>
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <div className="w-1.5 h-1.5 bg-blue-400 rounded-full mt-2 flex-shrink-0"></div>
+                        <span>يحق للمنصة إيقاف الحساب في حال مخالفة الشروط.</span>
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <div className="w-1.5 h-1.5 bg-blue-400 rounded-full mt-2 flex-shrink-0"></div>
+                        <span>أي شروط أخرى تراها المنصة ضرورية سيتم إعلامك بها.</span>
+                      </div>
+                    </div>
+                    <label className="flex items-center gap-3 cursor-pointer group">
+                      <div className="relative">
+                        <input 
+                          type="checkbox" 
+                          checked={userAgreed} 
+                          onChange={(e) => setUserAgreed(e.target.checked)} 
+                          className="sr-only"
+                        />
+                        <div className={`w-5 h-5 rounded border-2 transition-all duration-200 ${
+                          userAgreed 
+                            ? 'bg-gradient-to-r from-blue-400 to-purple-500 border-blue-400' 
+                            : 'border-blue-400/40 bg-white/5'
+                        }`}>
+                          {userAgreed && <CheckCircle className="w-5 h-5 text-white" />}
+                        </div>
+                      </div>
+                      <span className="text-blue-100 text-sm group-hover:text-white transition-colors">
+                        أوافق على جميع الشروط والأحكام أعلاه
+                      </span>
+                    </label>
+                  </div>
+                )}
+
+                {/* زر التسجيل */}
+                <div
+                  onClick={handleSubmit}
+                  className={`group w-full py-4 rounded-xl font-bold text-lg text-white transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center gap-2 cursor-pointer ${
+                    loading || (role === 'talent' ? !agreed : role === 'user' ? !userAgreed : false)
+                      ? 'bg-gray-500/50 opacity-60 cursor-not-allowed' 
+                      : 'bg-gradient-to-r from-orange-400 to-pink-500 hover:from-orange-500 hover:to-pink-600'
+                  }`}
+                >
+                  {loading ? (
+                    <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                  ) : (
+                    <>
+                      <span>{t('auth.registerBtn')}</span>
+                      <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform duration-200" />
+                    </>
+                  )}
+                </div>
+              </div>
+
+              {/* رسالة النجاح/الخطأ */}
+              {message && (
+                <div className={`mt-4 p-3 rounded-lg border text-center text-sm animate-fade-in ${
+                  message.includes('success') || message.includes('نجح') 
+                    ? 'bg-green-500/10 border-green-400/20 text-green-300' 
+                    : 'bg-red-500/10 border-red-400/20 text-orange-300'
+                }`}>
+                  {message}
+                </div>
+              )}
+
+              {/* رابط تسجيل الدخول */}
+              <div className="mt-8 text-center">
+                <div className="flex items-center justify-center gap-4 mb-4">
+                  <div className="flex-1 h-px bg-white/10"></div>
+                  <span className="text-blue-200/60 text-sm">أو</span>
+                  <div className="flex-1 h-px bg-white/10"></div>
+                </div>
+                <p className="text-blue-200/80 text-sm">
+                  {t('auth.alreadyHaveAccount')}
+                  <a 
+                    href="/login" 
+                    className="text-orange-400 hover:text-pink-400 font-semibold mr-2 transition-colors duration-200 hover:underline"
+                  >
+                    {t('auth.goToLogin')}
+                  </a>
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* النقاط الزخرفية */}
+          <div className="mt-6 flex justify-center gap-2">
+            <div className="w-2 h-2 bg-orange-400/40 rounded-full animate-pulse"></div>
+            <div className="w-2 h-2 bg-pink-400/40 rounded-full animate-pulse delay-300"></div>
+            <div className="w-2 h-2 bg-blue-400/40 rounded-full animate-pulse delay-700"></div>
+          </div>
         </div>
       </div>
+
+      <style jsx>{`
+        @keyframes fade-in {
+          from { opacity: 0; transform: translateY(10px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in {
+          animation: fade-in 0.3s ease-out;
+        }
+      `}</style>
     </div>
   );
 };
 
-export default Register; 
+export default Register;

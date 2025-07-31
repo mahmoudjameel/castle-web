@@ -1,49 +1,207 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    // إجمالي الطلبات
-    const totalOrders = await prisma.talentOrder.count();
-    // الطلبات الجديدة اليوم
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const newOrders = await prisma.talentOrder.count({
+    const { searchParams } = new URL(request.url);
+    const status = searchParams.get('status');
+    const reporterId = searchParams.get('reporterId');
+    const reportedUserId = searchParams.get('reportedUserId');
+
+    const where: any = {};
+    if (status) where.status = status;
+    if (reporterId) where.reporterId = parseInt(reporterId);
+    if (reportedUserId) where.reportedUserId = parseInt(reportedUserId);
+
+    const reports = await prisma.report.findMany({
+      where,
+      include: {
+        reporter: {
+          select: {
+            id: true,
+            name: true,
+            email: true
+          }
+        },
+        reportedUser: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            profileImageData: true
+          }
+        }
+      },
+      orderBy: {
+        createdAt: 'desc'
+      }
+    });
+
+    // تحويل profileImageData من Bytes إلى base64 string
+    const reportsWithConvertedImages = reports.map(report => ({
+      ...report,
+      reportedUser: {
+        ...report.reportedUser,
+        profileImageData: report.reportedUser.profileImageData 
+          ? Buffer.from(report.reportedUser.profileImageData).toString('base64')
+          : null
+      }
+    }));
+
+    return NextResponse.json(reportsWithConvertedImages);
+  } catch (error) {
+    console.error('Error fetching reports:', error);
+    return NextResponse.json(
+      { error: 'Failed to fetch reports' },
+      { status: 500 }
+    );
+  }
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    const body = await request.json();
+    const { reporterId, reportedUserId, reason, description, status = 'pending' } = body;
+
+    if (!reporterId || !reportedUserId || !reason || !description) {
+      return NextResponse.json(
+        { error: 'Missing required fields' },
+        { status: 400 }
+      );
+    }
+
+    // Check if user is reporting themselves
+    if (reporterId === reportedUserId) {
+      return NextResponse.json(
+        { error: 'Cannot report yourself' },
+        { status: 400 }
+      );
+    }
+
+    // Check if report already exists
+    const existingReport = await prisma.report.findFirst({
       where: {
-        createdAt: {
-          gte: today
+        reporterId: parseInt(reporterId),
+        reportedUserId: parseInt(reportedUserId),
+        reason,
+        status: {
+          in: ['pending', 'under_review']
         }
       }
     });
-    // الطلبات المكتملة
-    const completedOrders = await prisma.talentOrder.count({ where: { status: 'completed' } });
-    // الطلبات المرفوضة
-    const rejectedOrders = await prisma.talentOrder.count({ where: { status: 'rejected' } });
-    // عدد المواهب
-    const talents = await prisma.user.count({ where: { role: 'USER', approved: true } });
-    // عدد العملاء (كل المستخدمين غير المواهب)
-    const clients = await prisma.user.count({ where: { role: 'USER', approved: true } });
-    // إجمالي المبالغ المدفوعة (نجمع أسعار الخدمات في الطلبات المكتملة)
-    const completed = await prisma.talentOrder.findMany({ where: { status: 'completed' }, select: { services: true } });
-    let totalAmount = 0;
-    for (const order of completed) {
-      try {
-        const services = JSON.parse(order.services);
-        totalAmount += services.reduce((sum: number, s: any) => sum + Number(s.price || 0), 0);
-      } catch {}
+
+    if (existingReport) {
+      return NextResponse.json(
+        { error: 'Similar report already exists' },
+        { status: 409 }
+      );
     }
-    return NextResponse.json({
-      totalOrders,
-      newOrders,
-      completedOrders,
-      rejectedOrders,
-      talents,
-      clients,
-      totalAmount
+
+    const report = await prisma.report.create({
+      data: {
+        reporterId: parseInt(reporterId),
+        reportedUserId: parseInt(reportedUserId),
+        reason,
+        description,
+        status
+      },
+      include: {
+        reporter: {
+          select: {
+            id: true,
+            name: true,
+            email: true
+          }
+        },
+        reportedUser: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            profileImageData: true
+          }
+        }
+      }
     });
+
+    // تحويل profileImageData من Bytes إلى base64 string
+    const reportWithConvertedImage = {
+      ...report,
+      reportedUser: {
+        ...report.reportedUser,
+        profileImageData: report.reportedUser.profileImageData 
+          ? Buffer.from(report.reportedUser.profileImageData).toString('base64')
+          : null
+      }
+    };
+
+    return NextResponse.json(reportWithConvertedImage, { status: 201 });
   } catch (error) {
-    return NextResponse.json({ error: 'فشل في جلب التقارير', details: typeof error === 'object' && error && 'message' in error ? (error as any).message : '' }, { status: 500 });
+    console.error('Error creating report:', error);
+    return NextResponse.json(
+      { error: 'Failed to create report' },
+      { status: 500 }
+    );
+  }
+}
+
+export async function PUT(request: NextRequest) {
+  try {
+    const body = await request.json();
+    const { id, status, adminNotes } = body;
+
+    if (!id || !status) {
+      return NextResponse.json(
+        { error: 'Missing required fields' },
+        { status: 400 }
+      );
+    }
+
+    const report = await prisma.report.update({
+      where: { id: parseInt(id) },
+      data: {
+        status,
+        adminNotes,
+        updatedAt: new Date()
+      },
+      include: {
+        reporter: {
+          select: {
+            id: true,
+            name: true,
+            email: true
+          }
+        },
+        reportedUser: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            profileImageData: true
+          }
+        }
+      }
+    });
+
+    // تحويل profileImageData من Bytes إلى base64 string
+    const reportWithConvertedImage = {
+      ...report,
+      reportedUser: {
+        ...report.reportedUser,
+        profileImageData: report.reportedUser.profileImageData 
+          ? Buffer.from(report.reportedUser.profileImageData).toString('base64')
+          : null
+      }
+    };
+
+    return NextResponse.json(reportWithConvertedImage);
+  } catch (error) {
+    console.error('Error updating report:', error);
+    return NextResponse.json(
+      { error: 'Failed to update report' },
+      { status: 500 }
+    );
   }
 } 

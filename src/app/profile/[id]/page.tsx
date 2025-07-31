@@ -1,7 +1,7 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import { Star, MapPin, Globe, Calendar, Clock, MessageCircle, Camera, Video, Award, Users } from "lucide-react";
+import { Star, MapPin, Globe, Calendar, Clock, MessageCircle, Camera, Video, Award, Users, Settings, AlertTriangle, CheckCircle } from "lucide-react";
 import Dialog from '@mui/material/Dialog';
 import DialogTitle from '@mui/material/DialogTitle';
 import DialogContent from '@mui/material/DialogContent';
@@ -19,7 +19,6 @@ export default function TalentPublicProfile() {
   const [portfolio, setPortfolio] = useState<Array<Record<string, any>>>([]);
   const [loading, setLoading] = useState(true);
   const [reviews, setReviews] = useState<any[]>([]);
-  const [reviewForm, setReviewForm] = useState({ reviewerName: '', rating: 0, comment: '' });
   const [submitting, setSubmitting] = useState(false);
   const [showLoginMsg, setShowLoginMsg] = useState(false);
   const [showOrderModal, setShowOrderModal] = useState(false);
@@ -32,15 +31,30 @@ export default function TalentPublicProfile() {
   const [selectedTotal, setSelectedTotal] = useState(0);
   const [orderDate, setOrderDate] = useState('');
   const [orderMessage, setOrderMessage] = useState('');
-  const [lang, setLang] = useState('ar');
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [showErrorModal, setShowErrorModal] = useState(false);
+  const [showValidationModal, setShowValidationModal] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
+  const [reportReason, setReportReason] = useState('');
+  const [reportDescription, setReportDescription] = useState('');
 
   const clearPendingOrderData = () => {
-    localStorage.removeItem('pendingOrder_talentId');
-    localStorage.removeItem('pendingOrder_clientId');
-    localStorage.removeItem('pendingOrder_date');
-    localStorage.removeItem('pendingOrder_message');
-    localStorage.removeItem('pendingOrder_services');
-    localStorage.removeItem('pendingOrder_address');
+    if (typeof window !== 'undefined') {
+      const keys = [
+        'pendingOrder_talentId',
+        'pendingOrder_clientId', 
+        'pendingOrder_date',
+        'pendingOrder_message',
+        'pendingOrder_services',
+        'pendingOrder_address'
+      ];
+      keys.forEach(key => {
+        try {
+          localStorage.removeItem(key);
+        } catch {}
+      });
+    }
   };
 
   useEffect(() => {
@@ -67,29 +81,6 @@ export default function TalentPublicProfile() {
     }
   }, [showPaymentModal]);
 
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      setLang(localStorage.getItem('lang') || document.documentElement.lang || 'ar');
-    }
-  }, []);
-
-  const handleReviewSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!reviewForm.reviewerName || !reviewForm.rating || !reviewForm.comment) return;
-    setSubmitting(true);
-    const res = await fetch('/api/reviews', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ userId: id, ...reviewForm }),
-    });
-    if (res.ok) {
-      const newReview = await res.json();
-      setReviews([newReview, ...reviews]);
-      setReviewForm({ reviewerName: '', rating: 0, comment: '' });
-    }
-    setSubmitting(false);
-  };
-
   const handleServiceChange = (serviceName: string) => {
     setSelectedServices((prev) =>
       prev.includes(serviceName)
@@ -113,18 +104,20 @@ export default function TalentPublicProfile() {
   const handleConfirmAndPay = async () => {
     setShowConfirmModal(false);
     try {
-      const userStr = localStorage.getItem("user");
+      const userStr = typeof window !== 'undefined' ? localStorage.getItem("user") : null;
       if (!userStr) { setShowLoginMsg(true); return; }
       const user = JSON.parse(userStr);
       const selectedServices = selectedServicesSummary;
       const address = user.address || "";
       
-      localStorage.setItem('pendingOrder_talentId', talent?.id?.toString() || '');
-      localStorage.setItem('pendingOrder_clientId', user.id?.toString() || '');
-      localStorage.setItem('pendingOrder_date', orderDate || new Date().toISOString());
-      localStorage.setItem('pendingOrder_message', orderMessage || 'طلب جديد');
-      localStorage.setItem('pendingOrder_services', JSON.stringify(selectedServices));
-      localStorage.setItem('pendingOrder_address', address);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('pendingOrder_talentId', talent?.id?.toString() || '');
+        localStorage.setItem('pendingOrder_clientId', user.id?.toString() || '');
+        localStorage.setItem('pendingOrder_date', orderDate || new Date().toISOString());
+        localStorage.setItem('pendingOrder_message', orderMessage || 'طلب جديد');
+        localStorage.setItem('pendingOrder_services', JSON.stringify(selectedServices));
+        localStorage.setItem('pendingOrder_address', address);
+      }
       
       const res = await fetch('/api/paymob-init', {
         method: 'POST',
@@ -152,10 +145,12 @@ export default function TalentPublicProfile() {
         clearPendingOrderData();
         
         if (data.error && data.details && data.details.includes('Too many attempts')) {
-          alert('تم حظر الاتصال مؤقتًا من Paymob. يرجى المحاولة بعد 30 دقيقة أو استخدام شبكة مختلفة.');
+          setErrorMessage('تم حظر الاتصال مؤقتًا من Paymob. يرجى المحاولة بعد 30 دقيقة أو استخدام شبكة مختلفة.');
+          setShowErrorModal(true);
           return;
         }
-        alert(`خطأ في بوابة الدفع: ${data.error || 'خطأ غير معروف'}\n\nالتفاصيل: ${data.details || 'لا توجد تفاصيل'}`);
+        setErrorMessage(`خطأ في بوابة الدفع: ${data.error || 'خطأ غير معروف'}\n\nالتفاصيل: ${data.details || 'لا توجد تفاصيل'}`);
+        setShowErrorModal(true);
         return;
       }
       setIframeUrl(data.iframe);
@@ -163,7 +158,53 @@ export default function TalentPublicProfile() {
     } catch (error) {
       clearPendingOrderData();
       console.error('Payment error:', error);
-      alert('خطأ في الاتصال مع بوابة الدفع. يرجى المحاولة مرة أخرى.');
+      setErrorMessage('خطأ في الاتصال مع بوابة الدفع. يرجى المحاولة مرة أخرى.');
+      setShowErrorModal(true);
+    }
+  };
+
+  const handleReportSubmit = async () => {
+    if (!reportReason || !reportDescription) {
+      setShowValidationModal(true);
+      return;
+    }
+
+    try {
+      const userStr = typeof window !== 'undefined' ? localStorage.getItem("user") : null;
+      if (!userStr) { 
+        setShowLoginMsg(true); 
+        setShowReportModal(false);
+        return; 
+      }
+      const user = JSON.parse(userStr);
+
+      const reportData = {
+        reporterId: user.id,
+        reportedUserId: talent?.id,
+        reason: reportReason,
+        description: reportDescription,
+        status: 'pending'
+      };
+
+      const response = await fetch('/api/reports', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(reportData)
+      });
+
+      if (response.ok) {
+        setShowReportModal(false);
+        setShowSuccessModal(true);
+        setReportReason('');
+        setReportDescription('');
+      } else {
+        setErrorMessage('حدث خطأ في إرسال البلاغ. يرجى المحاولة مرة أخرى.');
+        setShowErrorModal(true);
+      }
+    } catch (error) {
+      console.error('Report error:', error);
+      setErrorMessage('حدث خطأ في إرسال البلاغ. يرجى المحاولة مرة أخرى.');
+      setShowErrorModal(true);
     }
   };
 
@@ -189,10 +230,10 @@ export default function TalentPublicProfile() {
 
   if (loading || !talent) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center">
-        <div className="bg-white rounded-3xl shadow-xl p-12 text-center border border-blue-100">
-          <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-slate-600 text-lg font-medium">جاري تحميل البيانات...</p>
+      <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-blue-900 to-purple-900 flex items-center justify-center">
+        <div className="bg-white/10 rounded-2xl p-8 text-center border border-white/20">
+          <div className="w-16 h-16 border-4 border-orange-400 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-white text-lg font-medium">جاري تحميل البيانات...</p>
         </div>
       </div>
     );
@@ -209,7 +250,6 @@ export default function TalentPublicProfile() {
   const reviewsCount = reviews.length;
   const avgRating = reviewsCount > 0 ? (reviews.reduce((sum, r) => sum + (r.rating || 0), 0) / reviewsCount).toFixed(1) : null;
 
-  // Ensure servicesArr is typed as any[] to avoid TS 'never' error
   const servicesArr: any[] = selectedServices.map(name => {
     if (!talent?.services) return null;
     let arr = [];
@@ -221,164 +261,183 @@ export default function TalentPublicProfile() {
   const totalWithTax = subtotal + tax;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
-      {/* Hero Section */}
-      <div className="relative bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-700 pb-16 sm:pb-20 md:pb-32">
-        <div className="absolute inset-0 bg-black/20"></div>
-        <div className="relative container mx-auto px-4 pt-8 sm:pt-12 md:pt-16 pb-12 sm:pb-16 md:pb-20">
-          <div className="max-w-4xl mx-auto text-center">
-            {/* Profile Image */}
-            <div className="relative inline-block mb-6 sm:mb-8">
-              <div className="w-24 h-24 sm:w-32 sm:h-32 md:w-40 md:h-40 mx-auto rounded-full ring-4 sm:ring-8 ring-white/30 shadow-2xl overflow-hidden bg-white">
-              {talent?.profileImageData ? (
-                  <Image 
-                    src={`data:image/png;base64,${talent.profileImageData}`} 
-                    alt={talent.name as string} 
-                    width={160} 
-                    height={160} 
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <div className="w-full h-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white text-3xl sm:text-4xl md:text-6xl">
-                    👤
-                  </div>
-                )}
-              </div>
-              {/* Online Status */}
-              <div className="absolute bottom-2 right-2 sm:bottom-4 sm:right-4 w-4 h-4 sm:w-6 sm:h-6 bg-green-400 rounded-full border-2 sm:border-4 border-white shadow-lg"></div>
-            </div>
+    <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-blue-900 to-purple-900">
 
-            {/* Name & Title */}
-            <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-2 sm:mb-3 drop-shadow-lg px-4">
-              {talent.name}
-            </h1>
-            <p className="text-lg sm:text-xl md:text-2xl text-blue-100 font-medium mb-4 sm:mb-6 px-4">
-              {talent.jobTitle}
-            </p>
-
-            {/* Stats */}
-            <div className="flex flex-wrap justify-center gap-3 sm:gap-4 md:gap-6 mb-6 sm:mb-8 px-4">
-              <div className="bg-white/20 backdrop-blur-sm rounded-xl sm:rounded-2xl px-3 sm:px-4 md:px-6 py-2 sm:py-3 md:py-4 border border-white/30">
-                <div className="flex items-center gap-1 sm:gap-2 text-white">
-                  <Star className="w-4 h-4 sm:w-5 sm:h-5 text-yellow-300 fill-current" />
-                  <span className="font-bold text-sm sm:text-base md:text-lg">{avgRating || '0.0'}</span>
-                  <span className="text-blue-100 text-xs sm:text-sm md:text-base">({reviewsCount} تقييم)</span>
+      <div className="relative py-8 px-4">
+        <div className="max-w-7xl mx-auto">
+          {/* Hero Section */}
+          <div className="bg-white/10 rounded-2xl border border-white/20 p-6 mb-6">
+            <div className="text-center">
+              {/* Profile Image */}
+              <div className="relative inline-block mb-6">
+                <div className="w-32 h-32 sm:w-40 sm:h-40 mx-auto rounded-2xl ring-2 ring-orange-400/30 overflow-hidden bg-white/10">
+                  {talent?.profileImageData ? (
+                    <Image 
+                      src={`data:image/png;base64,${talent.profileImageData}`} 
+                      alt={talent.name as string} 
+                      width={160} 
+                      height={160} 
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-gradient-to-br from-orange-400/20 to-pink-500/20 flex items-center justify-center text-white text-6xl">
+                      👤
+                    </div>
+                  )}
+                </div>
+                <div className="absolute -bottom-2 -right-2 w-6 h-6 bg-green-500 rounded-full border-2 border-white/20 flex items-center justify-center">
+                  <div className="w-3 h-3 bg-white rounded-full"></div>
                 </div>
               </div>
-              <div className="bg-white/20 backdrop-blur-sm rounded-xl sm:rounded-2xl px-3 sm:px-4 md:px-6 py-2 sm:py-3 md:py-4 border border-white/30">
-                <div className="flex items-center gap-1 sm:gap-2 text-white">
-                  <Users className="w-4 h-4 sm:w-5 sm:h-5 text-blue-300" />
-                  <span className="font-bold text-sm sm:text-base md:text-lg">{portfolio.length}</span>
-                  <span className="text-blue-100 text-xs sm:text-sm md:text-base">عمل</span>
+
+              {/* Name & Title */}
+              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white mb-3 drop-shadow-lg">
+                {talent.name}
+              </h1>
+              <p className="text-xl sm:text-2xl text-blue-200 font-medium mb-6">
+                {talent.jobTitle}
+              </p>
+
+              {/* Stats */}
+              <div className="flex flex-wrap justify-center gap-4 mb-6">
+                <div className="bg-white/15 rounded-2xl px-6 py-4 border border-white/25">
+                  <div className="flex items-center gap-2 text-white">
+                    <Star className="w-5 h-5 text-yellow-300 fill-current" />
+                    <span className="font-bold text-lg">{avgRating || '0.0'}</span>
+                    <span className="text-blue-200 text-base">({reviewsCount} تقييم)</span>
+                  </div>
+                </div>
+                <div className="bg-white/15 rounded-2xl px-6 py-4 border border-white/25">
+                  <div className="flex items-center gap-2 text-white">
+                    <Users className="w-5 h-5 text-blue-300" />
+                    <span className="font-bold text-lg">{portfolio.length}</span>
+                    <span className="text-blue-200 text-base">عمل</span>
+                  </div>
                 </div>
               </div>
-            </div>
 
-            {/* Location & Travel */}
-            {(talent.workArea || talent.canTravelAbroad) && (
-              <div className="flex flex-wrap justify-center gap-2 sm:gap-3 md:gap-4 mb-6 sm:mb-8 px-4">
-                {talent.workArea && (
-                  <div className="bg-white/20 backdrop-blur-sm rounded-full px-3 sm:px-4 py-1 sm:py-2 border border-white/30">
-                    <div className="flex items-center gap-1 sm:gap-2 text-white">
-                      <MapPin className="w-3 h-3 sm:w-4 sm:h-4" />
-                      <span className="font-medium text-xs sm:text-sm md:text-base">{talent.workArea}</span>
+              {/* Location & Travel */}
+              {(talent.workArea || talent.canTravelAbroad) && (
+                <div className="flex flex-wrap justify-center gap-3 mb-6">
+                  {talent.workArea && (
+                    <div className="bg-white/15 rounded-full px-4 py-2 border border-white/25">
+                      <div className="flex items-center gap-2 text-white">
+                        <MapPin className="w-4 h-4" />
+                        <span className="font-medium">{talent.workArea}</span>
+                      </div>
                     </div>
-                  </div>
-                )}
-                {talent.canTravelAbroad && (
-                  <div className="bg-green-500/30 backdrop-blur-sm rounded-full px-3 sm:px-4 py-1 sm:py-2 border border-green-300/50">
-                    <div className="flex items-center gap-1 sm:gap-2 text-white">
-                      <Globe className="w-3 h-3 sm:w-4 sm:h-4" />
-                      <span className="font-medium text-xs sm:text-sm md:text-base">يمكنني السفر خارج المملكة</span>
+                  )}
+                  {talent.canTravelAbroad && (
+                    <div className="bg-green-500/25 rounded-full px-4 py-2 border border-green-300/40">
+                      <div className="flex items-center gap-2 text-white">
+                        <Globe className="w-4 h-4" />
+                        <span className="font-medium">يمكنني السفر خارج المملكة</span>
+                      </div>
                     </div>
-                  </div>
-                )}
-              </div>
-            )}
+                  )}
+                </div>
+              )}
 
-            {/* Action Buttons */}
-            <div className="flex flex-col sm:flex-row flex-wrap justify-center gap-3 sm:gap-4 px-4">
-              <button 
-                onClick={() => {
-                  try {
-                    const userStr = localStorage.getItem("user");
-                    if (!userStr) {
+              {/* Action Buttons */}
+              <div className="flex flex-col sm:flex-row justify-center gap-4">
+                <button 
+                  onClick={() => {
+                    try {
+                      const userStr = typeof window !== 'undefined' ? localStorage.getItem("user") : null;
+                      if (!userStr) {
+                        setShowLoginMsg(true);
+                        return;
+                      }
+                      setShowOrderModal(true);
+                    } catch {
                       setShowLoginMsg(true);
-                      return;
                     }
-                    setShowOrderModal(true);
-                  } catch {
-                    setShowLoginMsg(true);
-                  }
-                }}
-                className="bg-gradient-to-r from-orange-500 to-pink-500 hover:from-orange-600 hover:to-pink-600 text-white px-6 sm:px-8 py-3 sm:py-4 rounded-xl sm:rounded-2xl font-bold text-base sm:text-lg shadow-xl hover:shadow-2xl transform hover:-translate-y-1 transition-all duration-300 w-full sm:w-auto"
-              >
-                احجز الآن
-              </button>
-              <a
-                href={`/chat/${talent?.id}`}
-                className="bg-white/20 backdrop-blur-sm hover:bg-white/30 text-white border-2 border-white/30 px-6 sm:px-8 py-3 sm:py-4 rounded-xl sm:rounded-2xl font-bold text-base sm:text-lg shadow-xl hover:shadow-2xl transform hover:-translate-y-1 transition-all duration-300 flex items-center justify-center gap-2 w-full sm:w-auto"
-              >
-                <MessageCircle className="w-4 h-4 sm:w-5 sm:h-5" />
-                محادثة
-              </a>
-            </div>
+                  }}
+                  className="bg-gradient-to-r from-orange-400 to-pink-500 hover:from-orange-500 hover:to-pink-600 text-white px-6 py-3 rounded-xl font-bold text-base shadow-lg hover:shadow-xl transition-all duration-200"
+                >
+                  احجز الآن
+                </button>
+                <a
+                  href={`/chat/${talent?.id}`}
+                  className="bg-white/15 hover:bg-white/25 text-white border border-white/25 px-6 py-3 rounded-xl font-bold text-base shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center gap-2"
+                >
+                  <MessageCircle className="w-5 h-5" />
+                  محادثة
+                </a>
+                <button
+                  onClick={() => {
+                    try {
+                      const userStr = typeof window !== 'undefined' ? localStorage.getItem("user") : null;
+                      if (!userStr) {
+                        setShowLoginMsg(true);
+                        return;
+                      }
+                      setShowReportModal(true);
+                    } catch {
+                      setShowLoginMsg(true);
+                    }
+                  }}
+                  className="bg-red-500/20 hover:bg-red-500/30 text-red-300 border border-red-400/30 px-6 py-3 rounded-xl font-bold text-base shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center gap-2"
+                >
+                  <AlertTriangle className="w-5 h-5" />
+                  بلاغ
+                </button>
+              </div>
 
               {showLoginMsg && (
-              <div className="mt-4 sm:mt-6 bg-white/90 backdrop-blur-sm text-red-600 px-4 sm:px-6 py-3 sm:py-4 rounded-xl sm:rounded-2xl border border-red-200 max-w-sm sm:max-w-md mx-auto">
-                <p className="font-medium mb-2 text-sm sm:text-base">يجب تسجيل الدخول أولاً للاستفادة من هذه الميزة</p>
-                <a href="/login" className="text-blue-600 hover:text-blue-800 font-bold underline text-sm sm:text-base">
-                  سجّل الدخول الآن
-                </a>
-              </div>
-            )}
+                <div className="mt-6 bg-white/15 text-red-300 px-6 py-4 rounded-2xl border border-red-400/40 max-w-md mx-auto">
+                  <p className="font-medium mb-2">يجب تسجيل الدخول أولاً للاستفادة من هذه الميزة</p>
+                  <a href="/login" className="text-orange-400 hover:text-orange-300 font-bold underline">
+                    سجّل الدخول الآن
+                  </a>
+                </div>
+              )}
+            </div>
           </div>
-        </div>
-      </div>
 
-      {/* Main Content */}
-      <div className="container mx-auto px-4 -mt-8 sm:-mt-12 md:-mt-20 relative z-10">
-        <div className="max-w-7xl mx-auto">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
+          {/* Main Content Grid */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Left Column */}
-            <div className="lg:col-span-2 space-y-6 lg:space-y-8">
+            <div className="lg:col-span-2 space-y-6">
               {/* About Section */}
               {talent.bio && (
-                <div className="bg-white rounded-2xl sm:rounded-3xl shadow-xl p-4 sm:p-6 lg:p-8 border border-gray-100">
-                  <h2 className="text-xl sm:text-2xl font-bold text-gray-800 mb-4 sm:mb-6 flex items-center gap-2 sm:gap-3">
-                    <div className="w-6 h-6 sm:w-8 sm:h-8 bg-gradient-to-r from-blue-500 to-purple-500 rounded-md sm:rounded-lg"></div>
+                <div className="bg-white/10 rounded-2xl p-5 border border-white/20">
+                  <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-3">
+                    <div className="w-8 h-8 bg-gradient-to-r from-orange-400 to-pink-500 rounded-lg flex items-center justify-center">
+                      <Settings className="w-4 h-4 text-white" />
+                    </div>
                     نبذة عني
                   </h2>
-                  <div className="prose prose-gray max-w-none">
-                    <p className="text-gray-600 leading-relaxed text-sm sm:text-base lg:text-lg whitespace-pre-wrap break-words overflow-hidden">
-                      {talent.bio}
-                    </p>
-                  </div>
+                  <p className="text-blue-200/80 leading-relaxed text-lg whitespace-pre-wrap break-words">
+                    {talent.bio}
+                  </p>
                 </div>
               )}
 
               {/* Portfolio Section */}
-              <div className="bg-white rounded-2xl sm:rounded-3xl shadow-xl p-4 sm:p-6 lg:p-8 border border-gray-100">
-                <h2 className="text-xl sm:text-2xl font-bold text-gray-800 mb-4 sm:mb-6 flex items-center gap-2 sm:gap-3 flex-wrap">
-                  <div className="w-6 h-6 sm:w-8 sm:h-8 bg-gradient-to-r from-green-500 to-blue-500 rounded-md sm:rounded-lg"></div>
+              <div className="bg-white/10 rounded-2xl p-5 border border-white/20">
+                <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-3 flex-wrap">
+                  <div className="w-8 h-8 bg-gradient-to-r from-blue-400 to-purple-500 rounded-lg flex items-center justify-center">
+                    <Camera className="w-4 h-4 text-white" />
+                  </div>
                   <span>معرض الأعمال</span>
-                  <span className="bg-gray-100 text-gray-600 px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-medium">
+                  <span className="bg-white/10 text-blue-200 px-3 py-1 rounded-full text-sm font-medium">
                     {portfolio.length} عمل
                   </span>
                 </h2>
                 
                 {portfolio.length === 0 ? (
-                  <div className="text-center py-8 sm:py-12">
-                    <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <Camera className="w-8 h-8 sm:w-10 sm:h-10 text-gray-400" />
+                  <div className="text-center py-12">
+                    <div className="w-20 h-20 bg-white/15 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                      <Camera className="w-10 h-10 text-blue-300" />
                     </div>
-                    <p className="text-gray-500 text-base sm:text-lg">لا يوجد أعمال بعد</p>
+                    <p className="text-blue-200/80 text-lg">لا يوجد أعمال بعد</p>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     {portfolio.map(item => (
-                      <div key={item.id} className="group relative overflow-hidden rounded-xl sm:rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 sm:hover:-translate-y-2">
-                        <div className="aspect-video bg-gradient-to-br from-gray-100 to-gray-200">
+                      <div key={item.id} className="group relative overflow-hidden rounded-xl shadow-md hover:shadow-lg transition-all duration-200">
+                        <div className="aspect-video bg-white/15">
                           {item.type === 'image' && item.mediaData && (
                             <Image 
                               src={`data:image/png;base64,${item.mediaData}`} 
@@ -397,16 +456,16 @@ export default function TalentPublicProfile() {
                             />
                           )}
                         </div>
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                          <div className="absolute bottom-3 sm:bottom-4 left-3 sm:left-4 right-3 sm:right-4">
-                            <h3 className="text-white font-bold text-sm sm:text-base lg:text-lg mb-1">{item.title}</h3>
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                          <div className="absolute bottom-4 left-4 right-4">
+                            <h3 className="text-white font-bold text-lg mb-1">{item.title}</h3>
                             <div className="flex items-center gap-2">
                               {item.type === 'image' ? (
-                                <Camera className="w-3 h-3 sm:w-4 sm:h-4 text-white/80" />
+                                <Camera className="w-4 h-4 text-white/80" />
                               ) : (
-                                <Video className="w-3 h-3 sm:w-4 sm:h-4 text-white/80" />
+                                <Video className="w-4 h-4 text-white/80" />
                               )}
-                              <span className="text-white/80 text-xs sm:text-sm capitalize">{item.type}</span>
+                              <span className="text-white/80 text-sm capitalize">{item.type}</span>
                             </div>
                           </div>
                         </div>
@@ -417,83 +476,86 @@ export default function TalentPublicProfile() {
               </div>
 
               {/* Reviews Section */}
-              <div className="bg-white rounded-2xl sm:rounded-3xl shadow-xl p-4 sm:p-6 lg:p-8 border border-gray-100">
-                <h2 className="text-xl sm:text-2xl font-bold text-gray-800 mb-4 sm:mb-6 flex items-center gap-2 sm:gap-3 flex-wrap">
-                  <div className="w-6 h-6 sm:w-8 sm:h-8 bg-gradient-to-r from-yellow-500 to-orange-500 rounded-md sm:rounded-lg"></div>
+              <div className="bg-white/10 rounded-2xl p-5 border border-white/20">
+                <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-3 flex-wrap">
+                  <div className="w-8 h-8 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-lg flex items-center justify-center">
+                    <Star className="w-4 h-4 text-white" />
+                  </div>
                   <span>التقييمات</span>
-                  <span className="bg-gray-100 text-gray-600 px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-medium">
+                  <span className="bg-white/10 text-blue-200 px-3 py-1 rounded-full text-sm font-medium">
                     {reviewsCount} تقييم
                   </span>
                 </h2>
 
                 {reviews.length === 0 ? (
-                  <div className="text-center py-8 sm:py-12">
-                    <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <Star className="w-8 h-8 sm:w-10 sm:h-10 text-gray-400" />
+                  <div className="text-center py-12">
+                    <div className="w-20 h-20 bg-white/15 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                      <Star className="w-10 h-10 text-yellow-300" />
                     </div>
-                    <p className="text-gray-500 text-base sm:text-lg">لا يوجد تقييمات بعد</p>
+                    <p className="text-blue-200/80 text-lg">لا يوجد تقييمات بعد</p>
                   </div>
                 ) : (
-                  <div className="space-y-4 sm:space-y-6 mb-6 sm:mb-8">
+                  <div className="space-y-4">
                     {reviews.map((rev, idx) => (
-                      <div key={idx} className="bg-gray-50 rounded-xl sm:rounded-2xl p-4 sm:p-6 border border-gray-100">
-                        <div className="flex items-start gap-3 sm:gap-4">
-                          <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full flex items-center justify-center text-white font-bold text-sm sm:text-lg flex-shrink-0">
+                      <div key={idx} className="bg-white/5 rounded-xl p-4 border border-white/10">
+                        <div className="flex items-start gap-4">
+                          <div className="w-12 h-12 bg-gradient-to-br from-orange-400 to-pink-500 rounded-2xl flex items-center justify-center text-white font-bold text-lg flex-shrink-0">
                             {rev.reviewerName.charAt(0)}
                           </div>
                           <div className="flex-1 min-w-0">
-                            <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 mb-2">
-                              <h4 className="font-bold text-gray-800 text-sm sm:text-base">{rev.reviewerName}</h4>
+                            <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-2">
+                              <h4 className="font-bold text-white">{rev.reviewerName}</h4>
                               <div className="flex items-center gap-1">
                                 {[1,2,3,4,5].map(i => (
                                   <Star 
                                     key={i} 
-                                    size={14} 
-                                    className={`sm:w-4 sm:h-4 ${i <= rev.rating ? 'text-yellow-400 fill-current' : 'text-gray-300'}`} 
+                                    size={16} 
+                                    className={`${i <= rev.rating ? 'text-yellow-400 fill-current' : 'text-gray-500'}`} 
                                   />
                                 ))}
                               </div>
-                              <span className="text-gray-500 text-xs sm:text-sm">{reviewDates[idx]}</span>
+                              <span className="text-blue-200/60 text-sm">{reviewDates[idx]}</span>
                             </div>
-                            <p className="text-gray-600 leading-relaxed text-sm sm:text-base break-words">{rev.comment}</p>
+                            <p className="text-blue-200/80 leading-relaxed break-words">{rev.comment}</p>
                           </div>
                         </div>
                       </div>
                     ))}
                   </div>
                 )}
-                {/* تم حذف فورم إضافة التقييم */}
               </div>
             </div>
 
             {/* Right Column */}
-            <div className="space-y-6 lg:space-y-8">
+            <div className="space-y-6">
               {/* Services & Pricing */}
-              <div className="bg-white rounded-2xl sm:rounded-3xl shadow-xl p-4 sm:p-6 lg:p-8 border border-gray-100 lg:sticky lg:top-8">
-                <h2 className="text-xl sm:text-2xl font-bold text-gray-800 mb-4 sm:mb-6 flex items-center gap-2 sm:gap-3 flex-wrap">
-                  <div className="w-6 h-6 sm:w-8 sm:h-8 bg-gradient-to-r from-purple-500 to-pink-500 rounded-md sm:rounded-lg"></div>
+              <div className="bg-white/10 rounded-2xl p-5 border border-white/20 lg:sticky lg:top-8">
+                <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-3 flex-wrap">
+                  <div className="w-8 h-8 bg-gradient-to-r from-green-400 to-blue-500 rounded-lg flex items-center justify-center">
+                    <Award className="w-4 h-4 text-white" />
+                  </div>
                   <span>الخدمات والأسعار</span>
                 </h2>
                 
-                <div className="space-y-3 sm:space-y-4 mb-4 sm:mb-6">
+                <div className="space-y-3">
                   {talent?.services && (() => {
                     let servicesArr = [];
                     try { servicesArr = JSON.parse(talent.services); } catch {}
                     if (!Array.isArray(servicesArr) || servicesArr.length === 0) {
                       return (
-                        <div className="text-center py-6 sm:py-8">
-                          <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
-                            <Award className="w-6 h-6 sm:w-8 sm:h-8 text-gray-400" />
+                        <div className="text-center py-8">
+                          <div className="w-16 h-16 bg-white/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                            <Award className="w-8 h-8 text-blue-300" />
                           </div>
-                          <p className="text-gray-500 text-sm sm:text-base">لا يوجد خدمات مضافة بعد</p>
+                          <p className="text-blue-200/80">لا يوجد خدمات مضافة بعد</p>
                         </div>
                       );
                     }
                     return servicesArr.map((srv: any, idx: number) => (
-                      <div key={idx} className="bg-gradient-to-r from-gray-50 to-blue-50 rounded-xl sm:rounded-2xl p-3 sm:p-4 border border-gray-100 hover:shadow-md transition-shadow">
-                        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
-                          <h3 className="font-semibold text-gray-800 text-sm sm:text-base">{srv.name}</h3>
-                          <span className="bg-gradient-to-r from-green-500 to-blue-500 text-white px-2 sm:px-3 py-1 rounded-full font-bold text-xs sm:text-sm self-start sm:self-auto">
+                      <div key={idx} className="bg-white/5 rounded-xl p-3 border border-white/10 hover:bg-white/10 transition-all duration-200">
+                        <div className="flex justify-between items-center">
+                          <h3 className="font-semibold text-white">{srv.name}</h3>
+                          <span className="bg-gradient-to-r from-orange-400 to-pink-500 text-white px-3 py-1 rounded-full font-bold text-sm">
                             {srv.price} ر.س
                           </span>
                         </div>
@@ -504,24 +566,26 @@ export default function TalentPublicProfile() {
               </div>
 
               {/* Schedule */}
-              <div className="bg-white rounded-2xl sm:rounded-3xl shadow-xl p-4 sm:p-6 lg:p-8 border border-gray-100">
-                <h2 className="text-xl sm:text-2xl font-bold text-gray-800 mb-4 sm:mb-6 flex items-center gap-2 sm:gap-3 flex-wrap">
-                  <div className="w-6 h-6 sm:w-8 sm:h-8 bg-gradient-to-r from-indigo-500 to-blue-500 rounded-md sm:rounded-lg"></div>
+              <div className="bg-white/10 rounded-2xl p-5 border border-white/20">
+                <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-3 flex-wrap">
+                  <div className="w-8 h-8 bg-gradient-to-r from-indigo-500 to-blue-500 rounded-lg flex items-center justify-center">
+                    <Calendar className="w-4 h-4 text-white" />
+                  </div>
                   <span>المواعيد المتاحة</span>
                 </h2>
                 
-                <div className="space-y-2 sm:space-y-3">
+                <div className="space-y-3">
                   {Object.keys(daysAr).map(day => (
                     workingSchedule[day]?.active ? (
-                      <div key={day} className="bg-gradient-to-r from-green-50 to-blue-50 rounded-lg sm:rounded-xl p-3 sm:p-4 border border-green-100">
-                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-                          <div className="flex items-center gap-2 sm:gap-3">
-                            <Calendar className="w-4 h-4 sm:w-5 sm:h-5 text-green-600" />
-                            <span className="font-semibold text-gray-800 text-sm sm:text-base">{daysAr[day]}</span>
+                      <div key={day} className="bg-white/5 rounded-xl p-3 border border-white/10 hover:bg-white/10 transition-all duration-200">
+                        <div className="flex justify-between items-center">
+                          <div className="flex items-center gap-2">
+                            <Calendar className="w-4 h-4 text-blue-300" />
+                            <span className="font-semibold text-white text-sm">{daysAr[day]}</span>
                           </div>
-                          <div className="flex items-center gap-2 text-gray-600 mr-6 sm:mr-0">
-                            <Clock className="w-3 h-3 sm:w-4 sm:h-4" />
-                            <span className="font-medium text-xs sm:text-sm">
+                          <div className="flex items-center gap-2 text-blue-200">
+                            <Clock className="w-3 h-3" />
+                            <span className="font-medium text-xs">
                               {workingSchedule[day].from} - {workingSchedule[day].to}
                             </span>
                           </div>
@@ -534,23 +598,25 @@ export default function TalentPublicProfile() {
 
               {/* Social Media */}
               {(socialLinks.instagram || socialLinks.tiktok || socialLinks.youtube || socialLinks.twitter) && (
-                <div className="bg-white rounded-2xl sm:rounded-3xl shadow-xl p-4 sm:p-6 lg:p-8 border border-gray-100">
-                  <h2 className="text-xl sm:text-2xl font-bold text-gray-800 mb-4 sm:mb-6 flex items-center gap-2 sm:gap-3 flex-wrap">
-                    <div className="w-6 h-6 sm:w-8 sm:h-8 bg-gradient-to-r from-pink-500 to-red-500 rounded-md sm:rounded-lg"></div>
+                <div className="bg-white/10 rounded-2xl p-5 border border-white/20">
+                  <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-3 flex-wrap">
+                    <div className="w-8 h-8 bg-gradient-to-r from-pink-500 to-red-500 rounded-lg flex items-center justify-center">
+                      <FaInstagram className="w-4 h-4 text-white" />
+                    </div>
                     <span>تابعني على</span>
                   </h2>
                   
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                  <div className="space-y-3">
               {socialLinks.instagram && (
                       <a 
                         href={socialLinks.instagram} 
                         target="_blank" 
                         rel="noopener noreferrer" 
-                        className="group bg-gradient-to-br from-pink-500 to-orange-400 rounded-xl sm:rounded-2xl p-3 sm:p-4 text-white hover:shadow-lg transform hover:-translate-y-1 transition-all duration-300"
+                        className="block bg-white/5 rounded-xl p-3 border border-white/10 hover:bg-white/10 transition-all duration-200"
                       >
-                        <div className="flex items-center gap-2 sm:gap-3">
-                          <FaInstagram size={20} className="sm:w-6 sm:h-6" />
-                          <span className="font-semibold text-sm sm:text-base">Instagram</span>
+                        <div className="flex items-center gap-3">
+                          <FaInstagram size={20} className="text-pink-400" />
+                          <span className="font-semibold text-white text-sm">Instagram</span>
                         </div>
                 </a>
               )}
@@ -559,11 +625,11 @@ export default function TalentPublicProfile() {
                         href={socialLinks.tiktok} 
                         target="_blank" 
                         rel="noopener noreferrer" 
-                        className="group bg-gradient-to-br from-black to-gray-700 rounded-xl sm:rounded-2xl p-3 sm:p-4 text-white hover:shadow-lg transform hover:-translate-y-1 transition-all duration-300"
+                        className="block bg-white/5 rounded-xl p-3 border border-white/10 hover:bg-white/10 transition-all duration-200"
                       >
-                        <div className="flex items-center gap-2 sm:gap-3">
-                          <FaTiktok size={20} className="sm:w-6 sm:h-6" />
-                          <span className="font-semibold text-sm sm:text-base">TikTok</span>
+                        <div className="flex items-center gap-3">
+                          <FaTiktok size={20} className="text-gray-300" />
+                          <span className="font-semibold text-white text-sm">TikTok</span>
                         </div>
                 </a>
               )}
@@ -572,11 +638,11 @@ export default function TalentPublicProfile() {
                         href={socialLinks.youtube} 
                         target="_blank" 
                         rel="noopener noreferrer" 
-                        className="group bg-gradient-to-br from-red-600 to-pink-500 rounded-xl sm:rounded-2xl p-3 sm:p-4 text-white hover:shadow-lg transform hover:-translate-y-1 transition-all duration-300"
+                        className="block bg-white/5 rounded-xl p-3 border border-white/10 hover:bg-white/10 transition-all duration-200"
                       >
-                        <div className="flex items-center gap-2 sm:gap-3">
-                          <FaYoutube size={20} className="sm:w-6 sm:h-6" />
-                          <span className="font-semibold text-sm sm:text-base">YouTube</span>
+                        <div className="flex items-center gap-3">
+                          <FaYoutube size={20} className="text-red-400" />
+                          <span className="font-semibold text-white text-sm">YouTube</span>
                         </div>
                 </a>
               )}
@@ -585,11 +651,11 @@ export default function TalentPublicProfile() {
                         href={socialLinks.twitter} 
                         target="_blank" 
                         rel="noopener noreferrer" 
-                        className="group bg-gradient-to-br from-blue-400 to-blue-700 rounded-xl sm:rounded-2xl p-3 sm:p-4 text-white hover:shadow-lg transform hover:-translate-y-1 transition-all duration-300"
+                        className="block bg-white/5 rounded-xl p-3 border border-white/10 hover:bg-white/10 transition-all duration-200"
                       >
-                        <div className="flex items-center gap-2 sm:gap-3">
-                          <FaTwitter size={20} className="sm:w-6 sm:h-6" />
-                          <span className="font-semibold text-sm sm:text-base">Twitter</span>
+                        <div className="flex items-center gap-3">
+                          <FaTwitter size={20} className="text-blue-400" />
+                          <span className="font-semibold text-white text-sm">Twitter</span>
                         </div>
                       </a>
                     )}
@@ -604,7 +670,7 @@ export default function TalentPublicProfile() {
       {/* Order Modal */}
       <Dialog open={showOrderModal} onClose={()=>setShowOrderModal(false)} PaperProps={{
         style: {
-          borderRadius: 24,
+          borderRadius: 16,
           background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
           color: '#fff',
           minWidth: 280,
@@ -618,7 +684,6 @@ export default function TalentPublicProfile() {
           color: '#fff', 
           textAlign: 'center',
           background: 'linear-gradient(45deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05))',
-          backdropFilter: 'blur(10px)',
           borderBottom: '1px solid rgba(255,255,255,0.1)',
           padding: { xs: '16px', sm: '24px' }
         }}>
@@ -635,7 +700,7 @@ export default function TalentPublicProfile() {
                   return <div className="text-blue-200 text-center py-4 text-sm sm:text-base">لا يوجد خدمات متاحة حالياً.</div>;
                 }
                 return servicesArr.map((srv: any, idx: number) => (
-                  <div key={idx} className="bg-white/10 backdrop-blur-sm rounded-lg sm:rounded-xl p-2 sm:p-3 border border-white/20">
+                  <div key={idx} className="bg-white/10 rounded-lg p-2 sm:p-3 border border-white/20">
                   <FormControlLabel
                       control={
                         <Checkbox 
@@ -667,7 +732,7 @@ export default function TalentPublicProfile() {
             <select 
               value={orderDate} 
               onChange={e=>setOrderDate(e.target.value)} 
-              className="w-full px-3 sm:px-4 py-2 sm:py-3 rounded-lg sm:rounded-xl bg-white/10 backdrop-blur-sm border border-white/20 text-white focus:border-yellow-400 focus:ring-2 focus:ring-yellow-400/50 outline-none text-sm sm:text-base"
+              className="w-full px-3 sm:px-4 py-2 sm:py-3 rounded-lg bg-white/10 border border-white/20 text-white focus:border-yellow-400 focus:ring-2 focus:ring-yellow-400/50 outline-none text-sm sm:text-base"
             >
               <option value="" className="text-gray-800">اختر موعداً...</option>
                 {getAvailableSlots().map(slot => (
@@ -690,7 +755,6 @@ export default function TalentPublicProfile() {
                 style: { 
                   color: '#fff',
                   background: 'rgba(255,255,255,0.1)',
-                  backdropFilter: 'blur(10px)',
                   borderRadius: '12px',
                   fontSize: window.innerWidth < 640 ? '14px' : '16px'
                 }
@@ -714,7 +778,7 @@ export default function TalentPublicProfile() {
           <div className="text-center">
                 <a
                   href={`/chat/${talent?.id}`}
-              className="inline-flex items-center gap-2 sm:gap-3 px-4 sm:px-6 py-2 sm:py-3 bg-white/20 backdrop-blur-sm border border-white/30 rounded-lg sm:rounded-xl text-white font-bold hover:bg-white/30 transition-all duration-300 transform hover:-translate-y-0.5 text-sm sm:text-base"
+              className="inline-flex items-center gap-2 sm:gap-3 px-4 sm:px-6 py-2 sm:py-3 bg-white/20 border border-white/30 rounded-lg text-white font-bold hover:bg-white/30 transition-all duration-200 text-sm sm:text-base"
                   style={{textDecoration:'none'}}
                 >
               <MessageCircle className="w-4 h-4 sm:w-5 sm:h-5" />
@@ -729,7 +793,6 @@ export default function TalentPublicProfile() {
               color: '#fff', 
               fontWeight: 700,
               background: 'rgba(255,255,255,0.1)',
-              backdropFilter: 'blur(10px)',
               borderRadius: '12px',
               padding: { xs: '8px 16px', sm: '12px 24px' },
               fontSize: { xs: '14px', sm: '16px' },
@@ -742,16 +805,15 @@ export default function TalentPublicProfile() {
             onClick={handleOrderRequest} 
             disabled={selectedServices.length === 0 || !orderDate}
             sx={{ 
-              background: 'linear-gradient(45deg, #fbbf24, #f59e0b)',
-              color: '#fff',
-              fontWeight: 700,
-              borderRadius: '12px',
-              padding: { xs: '8px 16px', sm: '12px 24px' },
-              fontSize: { xs: '14px', sm: '16px' },
-              '&:hover': { 
-                background: 'linear-gradient(45deg, #f59e0b, #d97706)',
-                transform: 'translateY(-2px)'
-              },
+                              background: 'linear-gradient(45deg, #fbbf24, #f59e0b)',
+                color: '#fff',
+                fontWeight: 700,
+                borderRadius: '12px',
+                padding: { xs: '8px 16px', sm: '12px 24px' },
+                fontSize: { xs: '14px', sm: '16px' },
+                '&:hover': { 
+                  background: 'linear-gradient(45deg, #f59e0b, #d97706)'
+                },
               '&:disabled': { 
                 background: 'rgba(255,255,255,0.1)',
                 color: 'rgba(255,255,255,0.5)'
@@ -765,8 +827,8 @@ export default function TalentPublicProfile() {
 
       {/* Payment Modal */}
           {showPaymentModal && iframeUrl && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-2 sm:p-4">
-          <div className="bg-white rounded-2xl sm:rounded-3xl shadow-2xl w-full max-w-2xl max-h-[95vh] sm:max-h-[90vh] overflow-hidden">
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-2 sm:p-4">
+          <div className="bg-white rounded-xl shadow-lg w-full max-w-2xl max-h-[95vh] sm:max-h-[90vh] overflow-hidden">
             <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-4 sm:p-6 text-white relative">
                 <button
                   onClick={() => {
@@ -807,8 +869,8 @@ export default function TalentPublicProfile() {
 
       {/* Confirmation Modal */}
       {showConfirmModal && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-2 sm:p-4">
-          <div className="bg-white rounded-2xl sm:rounded-3xl shadow-2xl w-full max-w-md overflow-hidden">
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-2 sm:p-4">
+          <div className="bg-white rounded-xl shadow-lg w-full max-w-md overflow-hidden">
             <div className="bg-gradient-to-r from-green-500 to-blue-500 p-4 sm:p-6 text-white relative">
               <button
                 onClick={() => setShowConfirmModal(false)}
@@ -857,6 +919,361 @@ export default function TalentPublicProfile() {
           </div>
         </div>
       )}
+
+      {/* Report Modal */}
+      <Dialog open={showReportModal} onClose={()=>setShowReportModal(false)} PaperProps={{
+        style: {
+          borderRadius: 16,
+          background: 'linear-gradient(135deg, #dc2626 0%, #b91c1c 100%)',
+          color: '#fff',
+          minWidth: 280,
+          maxWidth: 480,
+          margin: '16px'
+        }
+      }}>
+        <DialogTitle sx={{
+          fontWeight: 700, 
+          fontSize: { xs: '1.25rem', sm: '1.5rem' }, 
+          color: '#fff', 
+          textAlign: 'center',
+          background: 'linear-gradient(45deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05))',
+          borderBottom: '1px solid rgba(255,255,255,0.1)',
+          padding: { xs: '16px', sm: '24px' }
+        }}>
+          <div className="flex items-center justify-center gap-3">
+            <AlertTriangle className="w-6 h-6 text-red-300" />
+            <span>إبلاغ عن {talent?.name}</span>
+          </div>
+        </DialogTitle>
+        <DialogContent sx={{ padding: { xs: '16px', sm: '24px' } }}>
+          <div className="mb-4 sm:mb-6">
+            <h3 className="text-base sm:text-lg font-bold mb-3 sm:mb-4 text-white">سبب البلاغ:</h3>
+            <select 
+              value={reportReason} 
+              onChange={e=>setReportReason(e.target.value)} 
+              className="w-full px-3 sm:px-4 py-2 sm:py-3 rounded-lg bg-white/10 border border-white/20 text-white focus:border-red-400 focus:ring-2 focus:ring-red-400/50 outline-none text-sm sm:text-base"
+            >
+              <option value="" className="text-gray-800">اختر سبب البلاغ...</option>
+              <option value="inappropriate_content" className="text-gray-800">محتوى غير لائق</option>
+              <option value="fake_profile" className="text-gray-800">ملف شخصي مزيف</option>
+              <option value="spam" className="text-gray-800">رسائل مزعجة</option>
+              <option value="fraud" className="text-gray-800">احتيال أو غش</option>
+              <option value="harassment" className="text-gray-800">تحرش أو إساءة</option>
+              <option value="other" className="text-gray-800">سبب آخر</option>
+            </select>
+          </div>
+
+          <div className="mb-4 sm:mb-6">
+            <TextField
+              label="تفاصيل البلاغ"
+              multiline
+              minRows={4}
+              fullWidth
+              value={reportDescription}
+              onChange={e => setReportDescription(e.target.value)}
+              placeholder="يرجى وصف المشكلة بالتفصيل..."
+              InputProps={{
+                style: { 
+                  color: '#fff',
+                  background: 'rgba(255,255,255,0.1)',
+                  borderRadius: '12px',
+                  fontSize: window.innerWidth < 640 ? '14px' : '16px'
+                }
+              }}
+              InputLabelProps={{ 
+                style: { 
+                  color: '#fbbf24',
+                  fontSize: window.innerWidth < 640 ? '14px' : '16px'
+                } 
+              }}
+              sx={{
+                '& .MuiOutlinedInput-root': { 
+                  '& fieldset': { borderColor: 'rgba(255,255,255,0.3)' },
+                  '&:hover fieldset': { borderColor: '#fbbf24' },
+                  '&.Mui-focused fieldset': { borderColor: '#fbbf24' }
+                }
+              }}
+            />
+          </div>
+
+          <div className="bg-yellow-500/20 border border-yellow-400/30 rounded-lg p-3 sm:p-4 mb-4 sm:mb-6">
+            <div className="flex items-start gap-3">
+              <AlertTriangle className="w-5 h-5 text-yellow-400 mt-0.5 flex-shrink-0" />
+              <div className="text-yellow-100 text-sm">
+                <p className="font-semibold mb-1">ملاحظة مهمة:</p>
+                <p>سيتم مراجعة بلاغك من قبل فريق الإدارة. البلاغات الكاذبة قد تؤدي إلى تعليق حسابك.</p>
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+        <DialogActions sx={{justifyContent:'center', padding: { xs: '0 16px 16px', sm: '0 24px 24px' }}}>
+          <Button 
+            onClick={()=>setShowReportModal(false)} 
+            sx={{ 
+              color: '#fff', 
+              fontWeight: 700,
+              background: 'rgba(255,255,255,0.1)',
+              borderRadius: '12px',
+              padding: { xs: '8px 16px', sm: '12px 24px' },
+              fontSize: { xs: '14px', sm: '16px' },
+              '&:hover': { background: 'rgba(255,255,255,0.2)' }
+            }}
+          >
+            إلغاء
+          </Button>
+          <Button 
+            onClick={handleReportSubmit} 
+            disabled={!reportReason || !reportDescription}
+            sx={{ 
+              background: 'linear-gradient(45deg, #dc2626, #b91c1c)',
+              color: '#fff',
+              fontWeight: 700,
+              borderRadius: '12px',
+              padding: { xs: '8px 16px', sm: '12px 24px' },
+              fontSize: { xs: '14px', sm: '16px' },
+              '&:hover': { 
+                background: 'linear-gradient(45deg, #b91c1c, #991b1b)'
+              },
+              '&:disabled': { 
+                background: 'rgba(255,255,255,0.1)',
+                color: 'rgba(255,255,255,0.5)'
+              }
+            }}
+          >
+            إرسال البلاغ
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Success Modal */}
+      <Dialog open={showSuccessModal} onClose={()=>setShowSuccessModal(false)} PaperProps={{
+        style: {
+          borderRadius: 16,
+          background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+          color: '#fff',
+          minWidth: 280,
+          maxWidth: 480,
+          margin: '16px'
+        }
+      }}>
+        <DialogTitle sx={{
+          fontWeight: 700, 
+          fontSize: { xs: '1.25rem', sm: '1.5rem' }, 
+          color: '#fff', 
+          textAlign: 'center',
+          background: 'linear-gradient(45deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05))',
+          borderBottom: '1px solid rgba(255,255,255,0.1)',
+          padding: { xs: '16px', sm: '24px' }
+        }}>
+          <div className="flex items-center justify-center gap-3">
+            <CheckCircle className="w-6 h-6 text-green-300" />
+            <span>تم إرسال البلاغ بنجاح</span>
+          </div>
+        </DialogTitle>
+        <DialogContent sx={{ padding: { xs: '16px', sm: '24px' } }}>
+          <div className="text-center space-y-4">
+            <div className="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+              <CheckCircle className="w-8 h-8 text-green-400" />
+            </div>
+            
+            <div className="space-y-3">
+              <h3 className="text-lg sm:text-xl font-bold text-white">
+                شكراً لك على إبلاغنا
+              </h3>
+              <p className="text-green-100 text-sm sm:text-base leading-relaxed">
+                تم إرسال بلاغك بنجاح إلى فريق الإدارة. سنقوم بمراجعته في أقرب وقت ممكن واتخاذ الإجراءات اللازمة.
+              </p>
+            </div>
+
+            <div className="bg-green-500/20 border border-green-400/30 rounded-lg p-4 mt-6">
+              <div className="flex items-start gap-3">
+                <div className="w-5 h-5 bg-green-400 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <div className="w-2 h-2 bg-white rounded-full"></div>
+                </div>
+                <div className="text-green-100 text-sm">
+                  <p className="font-semibold mb-1">ماذا يحدث بعد ذلك؟</p>
+                  <ul className="space-y-1 text-xs">
+                    <li>• سيتم مراجعة بلاغك من قبل فريق الإدارة</li>
+                    <li>• قد نتصل بك للحصول على معلومات إضافية</li>
+                    <li>• سيتم اتخاذ الإجراءات المناسبة في أقرب وقت</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+        <DialogActions sx={{justifyContent:'center', padding: { xs: '0 16px 16px', sm: '0 24px 24px' }}}>
+          <Button 
+            onClick={()=>setShowSuccessModal(false)} 
+            sx={{ 
+              background: 'linear-gradient(45deg, #10b981, #059669)',
+              color: '#fff',
+              fontWeight: 700,
+              borderRadius: '12px',
+              padding: { xs: '8px 16px', sm: '12px 24px' },
+              fontSize: { xs: '14px', sm: '16px' },
+              '&:hover': { 
+                background: 'linear-gradient(45deg, #059669, #047857)'
+              }
+            }}
+          >
+            تم
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Error Modal */}
+      <Dialog open={showErrorModal} onClose={()=>setShowErrorModal(false)} PaperProps={{
+        style: {
+          borderRadius: 16,
+          background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
+          color: '#fff',
+          minWidth: 280,
+          maxWidth: 480,
+          margin: '16px'
+        }
+      }}>
+        <DialogTitle sx={{
+          fontWeight: 700, 
+          fontSize: { xs: '1.25rem', sm: '1.5rem' }, 
+          color: '#fff', 
+          textAlign: 'center',
+          background: 'linear-gradient(45deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05))',
+          borderBottom: '1px solid rgba(255,255,255,0.1)',
+          padding: { xs: '16px', sm: '24px' }
+        }}>
+          <div className="flex items-center justify-center gap-3">
+            <AlertTriangle className="w-6 h-6 text-red-300" />
+            <span>حدث خطأ</span>
+          </div>
+        </DialogTitle>
+        <DialogContent sx={{ padding: { xs: '16px', sm: '24px' } }}>
+          <div className="text-center space-y-4">
+            <div className="w-16 h-16 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+              <AlertTriangle className="w-8 h-8 text-red-400" />
+            </div>
+            
+            <div className="space-y-3">
+              <h3 className="text-lg sm:text-xl font-bold text-white">
+                عذراً، حدث خطأ
+              </h3>
+              <p className="text-red-100 text-sm sm:text-base leading-relaxed whitespace-pre-line">
+                {errorMessage}
+              </p>
+            </div>
+
+            <div className="bg-red-500/20 border border-red-400/30 rounded-lg p-4 mt-6">
+              <div className="flex items-start gap-3">
+                <div className="w-5 h-5 bg-red-400 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <div className="w-2 h-2 bg-white rounded-full"></div>
+                </div>
+                <div className="text-red-100 text-sm">
+                  <p className="font-semibold mb-1">اقتراحات لحل المشكلة:</p>
+                  <ul className="space-y-1 text-xs">
+                    <li>• تحقق من اتصال الإنترنت</li>
+                    <li>• أعد المحاولة بعد قليل</li>
+                    <li>• تواصل مع الدعم الفني إذا استمرت المشكلة</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+        <DialogActions sx={{justifyContent:'center', padding: { xs: '0 16px 16px', sm: '0 24px 24px' }}}>
+          <Button 
+            onClick={()=>setShowErrorModal(false)} 
+            sx={{ 
+              background: 'linear-gradient(45deg, #ef4444, #dc2626)',
+              color: '#fff',
+              fontWeight: 700,
+              borderRadius: '12px',
+              padding: { xs: '8px 16px', sm: '12px 24px' },
+              fontSize: { xs: '14px', sm: '16px' },
+              '&:hover': { 
+                background: 'linear-gradient(45deg, #dc2626, #b91c1c)'
+              }
+            }}
+          >
+            إغلاق
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Validation Modal */}
+      <Dialog open={showValidationModal} onClose={()=>setShowValidationModal(false)} PaperProps={{
+        style: {
+          borderRadius: 16,
+          background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+          color: '#fff',
+          minWidth: 280,
+          maxWidth: 480,
+          margin: '16px'
+        }
+      }}>
+        <DialogTitle sx={{
+          fontWeight: 700, 
+          fontSize: { xs: '1.25rem', sm: '1.5rem' }, 
+          color: '#fff', 
+          textAlign: 'center',
+          background: 'linear-gradient(45deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05))',
+          borderBottom: '1px solid rgba(255,255,255,0.1)',
+          padding: { xs: '16px', sm: '24px' }
+        }}>
+          <div className="flex items-center justify-center gap-3">
+            <AlertTriangle className="w-6 h-6 text-yellow-300" />
+            <span>معلومات مطلوبة</span>
+          </div>
+        </DialogTitle>
+        <DialogContent sx={{ padding: { xs: '16px', sm: '24px' } }}>
+          <div className="text-center space-y-4">
+            <div className="w-16 h-16 bg-yellow-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+              <AlertTriangle className="w-8 h-8 text-yellow-400" />
+            </div>
+            
+            <div className="space-y-3">
+              <h3 className="text-lg sm:text-xl font-bold text-white">
+                يرجى ملء جميع الحقول
+              </h3>
+              <p className="text-yellow-100 text-sm sm:text-base leading-relaxed">
+                يجب عليك اختيار سبب البلاغ وكتابة تفاصيل البلاغ قبل الإرسال.
+              </p>
+            </div>
+
+            <div className="bg-yellow-500/20 border border-yellow-400/30 rounded-lg p-4 mt-6">
+              <div className="flex items-start gap-3">
+                <div className="w-5 h-5 bg-yellow-400 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <div className="w-2 h-2 bg-white rounded-full"></div>
+                </div>
+                <div className="text-yellow-100 text-sm">
+                  <p className="font-semibold mb-1">الحقول المطلوبة:</p>
+                  <ul className="space-y-1 text-xs">
+                    <li>• سبب البلاغ (اختيار من القائمة)</li>
+                    <li>• تفاصيل البلاغ (وصف المشكلة)</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+        <DialogActions sx={{justifyContent:'center', padding: { xs: '0 16px 16px', sm: '0 24px 24px' }}}>
+          <Button 
+            onClick={()=>setShowValidationModal(false)} 
+            sx={{ 
+              background: 'linear-gradient(45deg, #f59e0b, #d97706)',
+              color: '#fff',
+              fontWeight: 700,
+              borderRadius: '12px',
+              padding: { xs: '8px 16px', sm: '12px 24px' },
+              fontSize: { xs: '14px', sm: '16px' },
+              '&:hover': { 
+                background: 'linear-gradient(45deg, #d97706, #b45309)'
+              }
+            }}
+          >
+            فهمت
+          </Button>
+        </DialogActions>
+      </Dialog>
     </div>
   );
 } 

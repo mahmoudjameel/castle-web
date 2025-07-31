@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
-import { Search, Star, Users, Calendar, Shield, Play, ChevronRight, Menu, X, Phone, Mail, MapPin } from 'lucide-react';
+import { Search, Star, Users, Calendar, Shield, Play, ChevronRight, Menu, X, Phone, Mail, MapPin, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 import Avatar from '@mui/material/Avatar';
 import MuiMenu from '@mui/material/Menu';
@@ -22,6 +22,7 @@ const CastingPlatform = () => {
   const [isMounted, setIsMounted] = useState(false);
   const [lang, setLang] = useState('ar');
   const [showLangModal, setShowLangModal] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
 
   // heroSlides الافتراضية للاحتياط
   const defaultHeroSlides = [
@@ -44,8 +45,6 @@ const CastingPlatform = () => {
       cta: t('hero.slide3.cta')
     }
   ];
-  // الحالة الجديدة
-  // const [heroSlides, setHeroSlides] = useState<any[]>(defaultHeroSlides);
 
   const features = [
     {
@@ -102,6 +101,15 @@ const CastingPlatform = () => {
   ];
 
   useEffect(() => {
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 100);
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  useEffect(() => {
     const timer = setInterval(() => {
       // setCurrentSlide((prev) => (prev + 1) % heroSlides.length);
     }, 5000);
@@ -134,22 +142,10 @@ const CastingPlatform = () => {
     } catch { setLang('ar'); }
   }, [isMounted]);
 
-  useEffect(() => {
-    // جلب بيانات البانر الرئيسي
-    // fetch('/api/hero-banners')
-    //   .then(res => res.json())
-    //   .then(data => {
-    //     setHeroSlides(Array.isArray(data) ? data : []);
-    //   })
-    //   .catch(error => {
-    //     console.error('Error fetching hero banners:', error);
-    //     setHeroSlides([]);
-    //   });
-  }, []);
-
   const toggleLang = () => {
     setShowLangModal(!showLangModal);
   };
+  
   const selectLanguage = (selectedLang: string) => {
     localStorage.setItem('lang', selectedLang);
     setLang(selectedLang);
@@ -160,50 +156,97 @@ const CastingPlatform = () => {
   const handleAvatarClick = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
   };
+  
   const handleMenuClose = () => setAnchorEl(null);
+  
   const handleLogout = () => {
     localStorage.removeItem('user');
     setUser(null);
     setAnchorEl(null);
     window.location.reload();
   };
-  let dashboardLink = '/user'; // Default to user dashboard if role is missing
+  
+  let dashboardLink = '/user';
   if (user?.role === 'admin') dashboardLink = '/admin';
   else if (user?.role === 'talent') dashboardLink = '/talent';
   else if (user?.role === 'company') dashboardLink = '/company';
   else if (user?.role === 'user') dashboardLink = '/user';
 
-  // Banner is now static
   const heroSlide = defaultHeroSlides[0];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-blue-900 to-purple-900 text-white overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-indigo-950 via-blue-950 to-purple-950 text-white">
       {/* Navigation */}
-      <nav className="relative z-50" style={{ background: '#0D0552CC', borderBottom: '1px solid #3B3B98' }}>
+      <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+        scrolled 
+          ? 'bg-indigo-950/95 border-b border-blue-400/20 shadow-lg' 
+          : 'bg-transparent'
+      }`}>
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center space-x-4">
-              <div className="w-20 h-20 relative">
+          <div className="flex items-center justify-between h-20">
+            {/* Logo */}
+            <div className="flex items-center space-x-4 group">
+              <div className="w-16 h-16 relative transition-transform duration-300 group-hover:scale-110">
                 <Image src="/logo.png" alt="شعار طوق" fill className="object-contain" />
               </div>
-              <div className="hidden sm:block text-sm text-blue-200">
-                {t('platform.tagline')}
+              <div className="hidden sm:block">
+                <div className="text-xl font-bold bg-gradient-to-r from-orange-400 via-pink-400 to-blue-400 bg-clip-text text-transparent">
+                  طوق
+                </div>
+                <div className="text-xs text-blue-300/80">
+                  {t('platform.tagline')}
+                </div>
               </div>
             </div>
-            <div className="hidden md:flex items-center space-x-8">
-              <a href="#home" className="hover:text-orange-400 transition-colors">{t('navigation.home')}</a>
-              <a href="#categories" className="hover:text-orange-400 transition-colors">{t('navigation.categories')}</a>
-              <a href="#services" className="hover:text-orange-400 transition-colors">{t('navigation.services')}</a>
-              <a href="#about" className="hover:text-orange-400 transition-colors">{t('navigation.about')}</a>
-              <a href="#contact" className="hover:text-orange-400 transition-colors">{t('navigation.contact')}</a>
+
+            {/* Desktop Navigation */}
+            <div className="hidden lg:flex items-center space-x-8">
+              <a href="#home" className="relative py-2 px-1 group">
+                <span className="relative z-10 transition-colors duration-300 group-hover:text-orange-400">
+                  {t('navigation.home')}
+                </span>
+                <div className="absolute bottom-0 left-0 w-0 h-0.5 bg-gradient-to-r from-orange-400 to-pink-500 transition-all duration-300 group-hover:w-full"></div>
+              </a>
+              <a href="#categories" className="relative py-2 px-1 group">
+                <span className="relative z-10 transition-colors duration-300 group-hover:text-orange-400">
+                  {t('navigation.categories')}
+                </span>
+                <div className="absolute bottom-0 left-0 w-0 h-0.5 bg-gradient-to-r from-orange-400 to-pink-500 transition-all duration-300 group-hover:w-full"></div>
+              </a>
+              <a href="#services" className="relative py-2 px-1 group">
+                <span className="relative z-10 transition-colors duration-300 group-hover:text-orange-400">
+                  {t('navigation.services')}
+                </span>
+                <div className="absolute bottom-0 left-0 w-0 h-0.5 bg-gradient-to-r from-orange-400 to-pink-500 transition-all duration-300 group-hover:w-full"></div>
+              </a>
+              <a href="#about" className="relative py-2 px-1 group">
+                <span className="relative z-10 transition-colors duration-300 group-hover:text-orange-400">
+                  {t('navigation.about')}
+                </span>
+                <div className="absolute bottom-0 left-0 w-0 h-0.5 bg-gradient-to-r from-orange-400 to-pink-500 transition-all duration-300 group-hover:w-full"></div>
+              </a>
+              <a href="#contact" className="relative py-2 px-1 group">
+                <span className="relative z-10 transition-colors duration-300 group-hover:text-orange-400">
+                  {t('navigation.contact')}
+                </span>
+                <div className="absolute bottom-0 left-0 w-0 h-0.5 bg-gradient-to-r from-orange-400 to-pink-500 transition-all duration-300 group-hover:w-full"></div>
+              </a>
             </div>
+
+            {/* User Actions */}
             <div className="hidden md:flex items-center space-x-4">
-              {/* أزرار اللغة والحساب كما كانت */}
               {!isMounted ? null : !user ? (
                 <>
-                  <a href="/login" className="px-4 py-2 bg-blue-600/30 hover:bg-blue-600/50 rounded-lg transition-colors border border-blue-400/30">{t('navigation.login')}</a>
-                  <a href="/register" className="px-4 py-2 bg-gradient-to-r from-orange-400 to-pink-500 text-white rounded-lg hover:from-orange-500 hover:to-pink-600 transition-all">{t('navigation.joinNow')}</a>
-                  <button onClick={toggleLang} className="flex items-center gap-2 px-3 py-2 rounded-full bg-blue-900/40 border border-blue-400/20 hover:bg-orange-400/80 transition-all text-white text-lg font-bold">
+                  <a href="/login" className="px-6 py-2.5 bg-blue-600/20 hover:bg-blue-600/40 rounded-full transition-all duration-300 border border-blue-400/30 hover:border-blue-400/60">
+                    {t('navigation.login')}
+                  </a>
+                  <a href="/register" className="px-6 py-2.5 bg-gradient-to-r from-orange-400 to-pink-500 text-white rounded-full hover:from-orange-500 hover:to-pink-600 transition-all duration-300 shadow-lg hover:shadow-orange-500/25">
+                    {t('navigation.joinNow')}
+                  </a>
+                  <button 
+                    onClick={toggleLang} 
+                    className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-blue-900/30 border border-blue-400/20 hover:bg-orange-400/20 hover:border-orange-400/40 transition-all duration-300 backdrop-blur-sm"
+                  >
                     <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <circle cx="12" cy="12" r="10"/>
                       <path d="M2 12h20"/>
@@ -234,7 +277,10 @@ const CastingPlatform = () => {
                 </>
               ) : (
                 <>
-                  <button onClick={toggleLang} className="flex items-center gap-2 px-3 py-2 rounded-full bg-blue-900/40 border border-blue-400/20 hover:bg-orange-400/80 transition-all text-white text-lg font-bold">
+                  <button 
+                    onClick={toggleLang} 
+                    className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-blue-900/30 border border-blue-400/20 hover:bg-orange-400/20 hover:border-orange-400/40 transition-all duration-300 backdrop-blur-sm"
+                  >
                     <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <circle cx="12" cy="12" r="10"/>
                       <path d="M2 12h20"/>
@@ -262,113 +308,170 @@ const CastingPlatform = () => {
                       </span>
                     )}
                   </button>
-                  <button onClick={handleAvatarClick} className="ml-2 focus:outline-none">
+                  <button onClick={handleAvatarClick} className="ml-2 focus:outline-none group">
                     {user.profileImageData ? (
                       <Image
                         src={`data:image/png;base64,${typeof user.profileImageData === 'string' ? user.profileImageData : ''}`}
                         alt={typeof user.name === 'string' ? user.name : 'user'}
-                        width={40}
-                        height={40}
-                        className="w-10 h-10 rounded-full object-cover border-2 border-blue-400 shadow"
+                        width={48}
+                        height={48}
+                        className="w-12 h-12 rounded-full object-cover border-2 border-blue-400/50 shadow-lg group-hover:border-orange-400/70 transition-all duration-300"
                       />
                     ) : (
-                  <Avatar
-                        sx={{ width: 40, height: 40, bgcolor: '#FFD600', color: '#222' }}
-                  >
-                    {user && typeof user.name === 'string' ? user.name[0] : 'م'}
-                  </Avatar>
-                    )}
-                  </button>
-                  <MuiMenu anchorEl={anchorEl} open={menuOpen} onClose={handleMenuClose} anchorOrigin={{vertical:'bottom',horizontal:'right'}} transformOrigin={{vertical:'top',horizontal:'right'}}>
-                    <div className="flex flex-col items-center px-4 pt-4 pb-2">
                       <Avatar
-                        src={user && typeof user.profileImageData === 'string' ? `data:image/png;base64,${user.profileImageData}` : undefined}
-                        alt={user && typeof user.name === 'string' ? user.name : 'user'}
-                        sx={{ width: 56, height: 56, bgcolor: '#FFD600', color: '#222', mb: 1 }}
+                        sx={{ 
+                          width: 48, 
+                          height: 48, 
+                          bgcolor: '#FFD600', 
+                          color: '#222',
+                          border: '2px solid rgba(59, 130, 246, 0.5)',
+                          '&:hover': {
+                            border: '2px solid rgba(251, 146, 60, 0.7)'
+                          }
+                        }}
                       >
                         {user && typeof user.name === 'string' ? user.name[0] : 'م'}
                       </Avatar>
-                      <div className="font-bold text-blue-900 mb-2" style={{fontSize:'1.1rem'}}>{user && typeof user.name === 'string' ? user.name : ''}</div>
+                    )}
+                  </button>
+                  <MuiMenu 
+                    anchorEl={anchorEl} 
+                    open={menuOpen} 
+                    onClose={handleMenuClose} 
+                    anchorOrigin={{vertical:'bottom',horizontal:'right'}} 
+                    transformOrigin={{vertical:'top',horizontal:'right'}}
+                    PaperProps={{
+                      sx: {
+                        bgcolor: 'rgba(30, 41, 59, 0.95)',
+                        backdropFilter: 'blur(16px)',
+                        border: '1px solid rgba(59, 130, 246, 0.2)',
+                        borderRadius: '16px',
+                        mt: 1
+                      }
+                    }}
+                  >
+                    <div className="flex flex-col items-center px-6 pt-6 pb-4">
+                      <Avatar
+                        src={user && typeof user.profileImageData === 'string' ? `data:image/png;base64,${user.profileImageData}` : undefined}
+                        alt={user && typeof user.name === 'string' ? user.name : 'user'}
+                        sx={{ width: 64, height: 64, bgcolor: '#FFD600', color: '#222', mb: 2 }}
+                      >
+                        {user && typeof user.name === 'string' ? user.name[0] : 'م'}
+                      </Avatar>
+                      <div className="font-bold text-white text-lg mb-2">{user && typeof user.name === 'string' ? user.name : ''}</div>
                     </div>
-                    <MuiMenuItem onClick={() => { handleMenuClose(); router.push(dashboardLink); }}>لوحة التحكم</MuiMenuItem>
-                    <MuiMenuItem onClick={handleLogout}>تسجيل خروج</MuiMenuItem>
+                    <MuiMenuItem 
+                      onClick={() => { handleMenuClose(); router.push(dashboardLink); }}
+                      sx={{ color: 'white', '&:hover': { bgcolor: 'rgba(251, 146, 60, 0.1)' } }}
+                    >
+                      لوحة التحكم
+                    </MuiMenuItem>
+                    <MuiMenuItem 
+                      onClick={handleLogout}
+                      sx={{ color: 'white', '&:hover': { bgcolor: 'rgba(239, 68, 68, 0.1)' } }}
+                    >
+                      تسجيل خروج
+                    </MuiMenuItem>
                   </MuiMenu>
                 </>
               )}
             </div>
+
+            {/* Mobile Menu Button */}
             <button 
-              className="md:hidden"
+              className="md:hidden p-2 rounded-lg bg-blue-900/30 border border-blue-400/20 transition-all duration-300 hover:bg-blue-800/40"
               onClick={() => setIsMenuOpen(!isMenuOpen)}
             >
-              {isMenuOpen ? <X /> : <Menu />}
+              {isMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
             </button>
           </div>
         </div>
       </nav>
-        {/* Mobile Menu */}
-        {isMenuOpen && (
-        <div className="md:hidden fixed top-20 left-1/2 transform -translate-x-1/2 w-[90vw] max-w-sm bg-indigo-950/95 backdrop-blur-md rounded-2xl shadow-2xl border border-blue-400/20 z-50 animate-fadeIn">
-          <div className="flex flex-col items-center px-6 py-8 gap-4">
-            <Link href="/#home" className="w-full text-center py-3 rounded-xl font-bold text-lg hover:bg-gradient-to-r hover:from-orange-400 hover:to-pink-500 hover:text-white transition-all">{t('navigation.home')}</Link>
-            <Link href="/#categories" className="w-full text-center py-3 rounded-xl font-bold text-lg hover:bg-gradient-to-r hover:from-orange-400 hover:to-pink-500 hover:text-white transition-all">{t('navigation.categories')}</Link>
-            <Link href="/#services" className="w-full text-center py-3 rounded-xl font-bold text-lg hover:bg-gradient-to-r hover:from-orange-400 hover:to-pink-500 hover:text-white transition-all">{t('navigation.services')}</Link>
-            <Link href="/#about" className="w-full text-center py-3 rounded-xl font-bold text-lg hover:bg-gradient-to-r hover:from-orange-400 hover:to-pink-500 hover:text-white transition-all">{t('navigation.about')}</Link>
-            <Link href="/#contact" className="w-full text-center py-3 rounded-xl font-bold text-lg hover:bg-gradient-to-r hover:from-orange-400 hover:to-pink-500 hover:text-white transition-all">{t('navigation.contact')}</Link>
-            <div className="flex flex-col w-full gap-2 pt-4">
-              <Link href="/login" className="w-full py-3 bg-blue-600/30 rounded-xl border border-blue-400/30 text-center font-bold text-white">{t('navigation.login')}</Link>
-              <Link href="/register" className="w-full py-3 bg-gradient-to-r from-orange-400 to-pink-500 text-white rounded-xl text-center font-bold">{t('navigation.joinNow')}</Link>
-              </div>
+
+      {/* Mobile Menu */}
+      {isMenuOpen && (
+        <div className="md:hidden fixed top-20 left-0 right-0 z-40 bg-indigo-950/98 border-b border-blue-400/20 shadow-lg animate-slideDown">
+          <div className="container mx-auto px-4 py-6">
+            <div className="flex flex-col space-y-4">
+              <Link href="/#home" className="py-3 px-4 rounded-xl hover:bg-gradient-to-r hover:from-orange-400/20 hover:to-pink-500/20 transition-all duration-300 text-center font-medium">
+                {t('navigation.home')}
+              </Link>
+              <Link href="/#categories" className="py-3 px-4 rounded-xl hover:bg-gradient-to-r hover:from-orange-400/20 hover:to-pink-500/20 transition-all duration-300 text-center font-medium">
+                {t('navigation.categories')}
+              </Link>
+              <Link href="/#services" className="py-3 px-4 rounded-xl hover:bg-gradient-to-r hover:from-orange-400/20 hover:to-pink-500/20 transition-all duration-300 text-center font-medium">
+                {t('navigation.services')}
+              </Link>
+              <Link href="/#about" className="py-3 px-4 rounded-xl hover:bg-gradient-to-r hover:from-orange-400/20 hover:to-pink-500/20 transition-all duration-300 text-center font-medium">
+                {t('navigation.about')}
+              </Link>
+              <Link href="/#contact" className="py-3 px-4 rounded-xl hover:bg-gradient-to-r hover:from-orange-400/20 hover:to-pink-500/20 transition-all duration-300 text-center font-medium">
+                {t('navigation.contact')}
+              </Link>
+              {!user && (
+                <div className="flex flex-col space-y-3 pt-4 border-t border-blue-400/20">
+                  <Link href="/login" className="py-3 bg-blue-600/30 rounded-xl border border-blue-400/30 text-center font-medium hover:bg-blue-600/50 transition-all duration-300">
+                    {t('navigation.login')}
+                  </Link>
+                  <Link href="/register" className="py-3 bg-gradient-to-r from-orange-400 to-pink-500 text-white rounded-xl text-center font-medium hover:from-orange-500 hover:to-pink-600 transition-all duration-300">
+                    {t('navigation.joinNow')}
+                  </Link>
+                </div>
+              )}
             </div>
           </div>
-        )}
+        </div>
+      )}
 
       {/* Language Selection Modal */}
       {showLangModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-indigo-950/95 backdrop-blur-md rounded-2xl p-6 border border-blue-400/20 shadow-2xl max-w-sm w-full mx-4">
-            <div className="text-center mb-6">
-              <h3 className="text-xl font-bold text-white mb-2">{t('language.select')}</h3>
-              <p className="text-blue-200 text-sm">{t('language.selectPrompt')}</p>
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
+          <div className="bg-indigo-950/95 rounded-2xl p-8 border border-blue-400/20 shadow-lg max-w-md w-full mx-4 animate-scaleIn">
+            <div className="text-center mb-8">
+              <h3 className="text-2xl font-bold text-white mb-3 bg-gradient-to-r from-orange-400 via-pink-400 to-blue-400 bg-clip-text text-transparent">
+                {t('language.select')}
+              </h3>
+              <p className="text-blue-200">{t('language.selectPrompt')}</p>
             </div>
-            <div className="space-y-3">
+            <div className="space-y-4">
               <button 
                 onClick={() => selectLanguage('ar')}
-                className={`w-full flex items-center gap-3 p-4 rounded-lg border-2 transition-all ${
+                className={`w-full flex items-center gap-4 p-5 rounded-xl border-2 transition-all duration-300 ${
                   lang === 'ar' 
-                    ? 'border-orange-400 bg-gradient-to-r from-orange-400 to-pink-500 text-white' 
-                    : 'border-blue-400/30 bg-blue-900/40 text-blue-100 hover:border-orange-400'
+                    ? 'border-orange-400 bg-gradient-to-r from-orange-400/20 to-pink-500/20 text-white shadow-lg shadow-orange-500/20' 
+                    : 'border-blue-400/30 bg-blue-900/30 text-blue-100 hover:border-orange-400/50 hover:bg-blue-800/40'
                 }`}
               >
-                <svg width="24" height="16" viewBox="0 0 24 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <rect width="24" height="16" rx="2" fill="#1A9F29"/>
+                <svg width="32" height="22" viewBox="0 0 24 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <rect width="24" height="16" rx="3" fill="#1A9F29"/>
                   <path d="M17.5 7.5c0-.276-.224-.5-.5-.5h-7a.5.5 0 0 0 0 1h7c.276 0 .5-.224.5-.5Zm-2.5 2.5c0-.276-.224-.5-.5-.5h-2a.5.5 0 0 0 0 1h2c.276 0 .5-.224.5-.5Z" fill="#fff"/>
                   <circle cx="6" cy="8" r="1.2" fill="#fff"/>
                 </svg>
-                <span className="font-bold">{t('language.arabic')}</span>
-                {lang === 'ar' && <span className="ml-auto text-sm">✓</span>}
+                <span className="font-bold text-lg">{t('language.arabic')}</span>
+                {lang === 'ar' && <span className="ml-auto text-xl">✓</span>}
               </button>
               <button 
                 onClick={() => selectLanguage('en')}
-                className={`w-full flex items-center gap-3 p-4 rounded-lg border-2 transition-all ${
+                className={`w-full flex items-center gap-4 p-5 rounded-xl border-2 transition-all duration-300 ${
                   lang === 'en' 
-                    ? 'border-orange-400 bg-gradient-to-r from-orange-400 to-pink-500 text-white' 
-                    : 'border-blue-400/30 bg-blue-900/40 text-blue-100 hover:border-orange-400'
+                    ? 'border-orange-400 bg-gradient-to-r from-orange-400/20 to-pink-500/20 text-white shadow-lg shadow-orange-500/20' 
+                    : 'border-blue-400/30 bg-blue-900/30 text-blue-100 hover:border-orange-400/50 hover:bg-blue-800/40'
                 }`}
               >
-                <svg width="24" height="16" viewBox="0 0 24 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <rect width="24" height="16" rx="2" fill="#00247D"/>
+                <svg width="32" height="22" viewBox="0 0 24 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <rect width="24" height="16" rx="3" fill="#00247D"/>
                   <rect y="5.33" width="24" height="1.33" fill="#fff"/>
                   <rect y="9.33" width="24" height="1.33" fill="#fff"/>
                   <rect x="8" width="1.33" height="16" fill="#fff"/>
                   <rect x="14.67" width="1.33" height="16" fill="#fff"/>
                 </svg>
-                <span className="font-bold">{t('language.english')}</span>
-                {lang === 'en' && <span className="ml-auto text-sm">✓</span>}
+                <span className="font-bold text-lg">{t('language.english')}</span>
+                {lang === 'en' && <span className="ml-auto text-xl">✓</span>}
               </button>
             </div>
             <button 
               onClick={() => setShowLangModal(false)}
-              className="w-full mt-6 py-3 bg-blue-900/40 border border-blue-400/20 text-blue-200 rounded-lg hover:bg-blue-800/60 transition-all"
+              className="w-full mt-8 py-4 bg-blue-900/40 border border-blue-400/20 text-blue-200 rounded-xl hover:bg-blue-800/60 transition-all duration-300 font-medium"
             >
               {t('language.cancel')}
             </button>
@@ -377,72 +480,90 @@ const CastingPlatform = () => {
       )}
 
       {/* Hero Section */}
-      <section id="home" className="relative min-h-[90vh] flex items-center">
-        <div className="absolute inset-0 bg-gradient-to-r from-black/60 to-transparent z-10"></div>
-        {/* Background Image Static */}
+      <section id="home" className="relative min-h-screen flex items-center pt-20">
+        {/* Background with Parallax Effect */}
         <div className="absolute inset-0 overflow-hidden">
-          <div className="absolute inset-0">
-            <Image
-              src={heroSlide.image}
-              alt={heroSlide.title}
-              fill
-              className="object-cover"
-              priority
-            />
-          </div>
+          <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/50 to-transparent z-10"></div>
+          <Image
+            src={heroSlide.image}
+            alt={heroSlide.title}
+            fill
+            className="object-cover transform scale-105"
+            priority
+          />
+          {/* Animated Gradient Overlay */}
+          <div className="absolute inset-0 bg-gradient-to-br from-indigo-900/60 via-transparent to-purple-900/60 z-5"></div>
         </div>
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-20 flex flex-col md:flex-row items-center justify-between min-h-[70vh]">
-          {/* النصوص والأزرار */}
-          <div className="w-full md:w-1/2 flex flex-col items-center md:items-start text-center md:text-right space-y-6 md:space-y-8 py-12 md:py-0">
-            <h1 className="text-3xl xs:text-4xl md:text-5xl lg:text-6xl font-bold leading-tight mb-2 md:mb-4 bg-gradient-to-r from-orange-400 via-pink-400 to-blue-400 bg-clip-text text-transparent">
-              {heroSlide.title}
-            </h1>
-            <p className="text-lg xs:text-xl md:text-2xl text-blue-100 leading-relaxed mb-2 md:mb-4 max-w-xl">
-              {heroSlide.subtitle}
-            </p>
-            <div className="flex flex-col sm:flex-row items-center w-full gap-4 md:gap-6 mb-2 md:mb-6">
-              <button className="w-full sm:w-auto px-8 py-4 bg-gradient-to-r from-orange-400 to-pink-500 text-white font-semibold rounded-lg hover:from-orange-500 hover:to-pink-600 transition-all transform hover:scale-105 text-lg md:text-xl shadow-lg">
-                {heroSlide.cta}
-              </button>
-              <button className="w-full sm:w-auto px-8 py-4 bg-blue-600/30 backdrop-blur-sm border border-blue-400/30 rounded-lg hover:bg-blue-600/50 transition-all flex items-center justify-center gap-2 text-lg md:text-xl shadow-lg">
-                <Play className="w-5 h-5" />
-                <span>{t('hero.video')}</span>
-              </button>
-            </div>
-            {/* User Type Selection */}
+
+        <div className="container mx-auto px-6 sm:px-8 lg:px-12 relative z-20">
+          <div className="grid lg:grid-cols-2 gap-12 items-center min-h-[80vh]">
+            {/* Content */}
+            <div className="text-center lg:text-right">
+              <div className="animate-fadeInUp">
+                <h1 className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-bold leading-tight mb-6">
+                  <span className="bg-gradient-to-r from-orange-400 via-pink-400 to-blue-400 bg-clip-text text-transparent">
+                    {heroSlide.title}
+                  </span>
+                </h1>
+                <p className="text-xl sm:text-2xl lg:text-3xl text-blue-100/90 leading-relaxed mb-8 max-w-2xl mx-auto lg:mx-0">
+                  {heroSlide.subtitle}
+                </p>
+                <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-6 mb-8">
+                  <button className="group relative px-8 py-4 bg-gradient-to-r from-orange-400 to-pink-500 text-white font-semibold rounded-xl overflow-hidden transition-all duration-300 hover:shadow-lg hover:shadow-orange-500/25">
+                    <span className="relative z-10">{heroSlide.cta}</span>
+                    <div className="absolute inset-0 bg-gradient-to-r from-orange-500 to-pink-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                  </button>
+                  <button className="group flex items-center gap-3 px-8 py-4 bg-white/10 border border-white/20 rounded-xl hover:bg-white/20 transition-all duration-300">
+                    <div className="w-12 h-12 bg-gradient-to-r from-orange-400 to-pink-500 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                      <Play className="w-5 h-5 ml-1" />
+                    </div>
+                    <span className="font-medium">{t('hero.video')}</span>
+                  </button>
+                </div>
               </div>
-          {/* صورة البانر على الديسكتوب فقط */}
-          <div className="hidden md:block w-1/2 h-[400px] lg:h-[500px] relative">
-            <div className="absolute inset-0 rounded-3xl shadow-2xl border-4 border-blue-400/20 overflow-hidden">
-              {heroSlide?.image ? (
-                <Image
-                  src={heroSlide.image}
-                  alt={heroSlide?.title || 'سلايدر'}
-                  fill
-                  className="object-cover"
-                  priority
-                />
-              ) : null}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+            </div>
+
+            {/* Hero Visual */}
+            <div className="hidden lg:block">
+              <div className="relative">
+                <div className="w-full h-[600px] rounded-2xl overflow-hidden shadow-lg border border-white/10">
+                  <Image
+                    src={heroSlide.image}
+                    alt={heroSlide.title}
+                    fill
+                    className="object-cover"
+                    priority
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
+                </div>
+                {/* Floating Elements */}
+                <div className="absolute -top-4 -right-4 w-24 h-24 bg-gradient-to-r from-orange-400 to-pink-500 rounded-2xl rotate-12 animate-float opacity-80"></div>
+                <div className="absolute -bottom-6 -left-6 w-32 h-32 bg-gradient-to-r from-blue-400 to-purple-500 rounded-2xl -rotate-12 animate-floatReverse opacity-60"></div>
+              </div>
             </div>
           </div>
         </div>
-        {/* Slide Indicators */}
-        <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 flex space-x-2 z-20">
-          {/* Removed heroSlides.map as heroSlides is no longer used */}
+
+        {/* Scroll Indicator */}
+        <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 animate-bounce z-20">
+          <div className="w-6 h-10 border-2 border-white/30 rounded-full flex justify-center">
+            <div className="w-1 h-3 bg-white/50 rounded-full mt-2 animate-pulse"></div>
+          </div>
         </div>
       </section>
 
       {/* Stats Section */}
-      <section className="py-16 bg-indigo-950/50 backdrop-blur-sm">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+      <section className="py-20 bg-gradient-to-r from-indigo-950/80 to-purple-950/80 backdrop-blur-sm">
+        <div className="container mx-auto px-6 sm:px-8 lg:px-12">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
             {stats.map((stat, index) => (
-              <div key={index} className="text-center">
-                <div className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-orange-400 via-pink-400 to-blue-400 bg-clip-text text-transparent mb-2">
-                  {stat.number}
+              <div key={index} className="text-center group">
+                <div className="bg-white/5 rounded-xl p-6 border border-white/10 hover:bg-white/10 transition-all duration-300 group-hover:scale-105">
+                  <div className="text-4xl lg:text-5xl font-bold bg-gradient-to-r from-orange-400 via-pink-400 to-blue-400 bg-clip-text text-transparent mb-4">
+                    {stat.number}
+                  </div>
+                  <div className="text-blue-200 font-medium">{stat.label}</div>
                 </div>
-                <div className="text-sm md:text-base text-blue-200">{stat.label}</div>
               </div>
             ))}
           </div>
@@ -451,20 +572,53 @@ const CastingPlatform = () => {
 
       {/* Categories Section */}
       {categories.length > 0 && (
-        <section id="categories" className="py-16">
-          <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-            <h2 className="text-3xl font-bold mb-10 text-center bg-gradient-to-r from-orange-400 via-pink-400 to-blue-400 bg-clip-text text-transparent">{t('categories.title')}</h2>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-8">
-              {categories.map(cat => (
-                <Link key={cat.id} href={`/categories/${cat.id}?name=${encodeURIComponent(cat.name)}`} className="flex flex-col items-center bg-indigo-800/30 rounded-xl p-4 border border-blue-400/30 shadow-md hover:bg-orange-400/10 transition-all cursor-pointer">
-                  {cat.imageData ? (
-                    <Image src={`data:image/png;base64,${cat.imageData}`} alt={cat.name} width={80} height={80} className="w-20 h-20 object-cover rounded-lg border border-blue-400/30 mb-2" />
-                  ) : cat.imageUrl ? (
-                    <Image src={cat.imageUrl} alt={cat.name} width={80} height={80} className="w-20 h-20 object-cover rounded-lg border border-blue-400/30 mb-2" />
-                  ) : (
-                    <div className="w-20 h-20 rounded-lg bg-blue-900/40 flex items-center justify-center text-blue-200 mb-2">{t('categories.noImage')}</div>
-                  )}
-                  <div className="font-bold text-lg text-center mt-2">{cat.name}</div>
+        <section id="categories" className="py-24">
+          <div className="container mx-auto px-6 sm:px-8 lg:px-12">
+            <div className="text-center mb-16 animate-fadeInUp">
+              <h2 className="text-4xl lg:text-5xl font-bold mb-6 bg-gradient-to-r from-orange-400 via-pink-400 to-blue-400 bg-clip-text text-transparent">
+                {t('categories.title')}
+              </h2>
+              <p className="text-xl text-blue-100/80 max-w-2xl mx-auto">
+                اكتشف مجموعة واسعة من فئات المواهب المتاحة على منصتنا
+              </p>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-6">
+              {categories.map((cat, index) => (
+                <Link 
+                  key={cat.id} 
+                  href={`/categories/${cat.id}?name=${encodeURIComponent(cat.name)}`} 
+                  className="group"
+                >
+                  <div className="bg-white/5 rounded-xl p-6 border border-white/10 hover:bg-white/10 transition-all duration-300 group-hover:scale-105 group-hover:shadow-lg group-hover:shadow-orange-500/10">
+                    <div className="flex flex-col items-center text-center">
+                      <div className="w-20 h-20 mb-4 rounded-xl overflow-hidden border border-white/20 group-hover:border-orange-400/50 transition-colors duration-300">
+                        {cat.imageData ? (
+                          <Image 
+                            src={`data:image/png;base64,${cat.imageData}`} 
+                            alt={cat.name} 
+                            width={80} 
+                            height={80} 
+                            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300" 
+                          />
+                        ) : cat.imageUrl ? (
+                          <Image 
+                            src={cat.imageUrl} 
+                            alt={cat.name} 
+                            width={80} 
+                            height={80} 
+                            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300" 
+                          />
+                        ) : (
+                          <div className="w-full h-full bg-gradient-to-br from-blue-500/20 to-purple-500/20 flex items-center justify-center text-blue-200">
+                            <span className="text-xs">{t('categories.noImage')}</span>
+                          </div>
+                        )}
+                      </div>
+                      <h3 className="font-bold text-lg group-hover:text-orange-400 transition-colors duration-300">
+                        {cat.name}
+                      </h3>
+                    </div>
+                  </div>
                 </Link>
               ))}
             </div>
@@ -473,23 +627,31 @@ const CastingPlatform = () => {
       )}
 
       {/* Features Section */}
-      <section className="py-20">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold mb-6">
+      <section className="py-24 bg-gradient-to-br from-indigo-950/60 to-purple-950/60">
+        <div className="container mx-auto px-6 sm:px-8 lg:px-12">
+          <div className="text-center mb-20 animate-fadeInUp">
+            <h2 className="text-4xl lg:text-5xl font-bold mb-6">
               {t('features.whyChoose.title')} <span className="bg-gradient-to-r from-orange-400 via-pink-400 to-blue-400 bg-clip-text text-transparent">طوق</span>؟
             </h2>
-            <p className="text-xl text-blue-100 max-w-2xl mx-auto">{t('features.whyChoose.description')}</p>
+            <p className="text-xl text-blue-100/80 max-w-3xl mx-auto leading-relaxed">
+              {t('features.whyChoose.description')}
+            </p>
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
             {features.map((feature, index) => (
-              <div key={index} className="bg-indigo-800/30 backdrop-blur-sm rounded-xl p-6 border border-blue-400/30 hover:bg-indigo-800/50 transition-all transform hover:scale-105">
-                <div className="text-orange-400 mb-4">
-                  {feature.icon}
+              <div key={index} className="group">
+                <div className="bg-white/5 rounded-xl p-6 border border-white/10 hover:bg-white/10 transition-all duration-300 group-hover:scale-105 group-hover:shadow-lg group-hover:shadow-orange-500/10 h-full">
+                  <div className="text-orange-400 mb-6 group-hover:scale-110 transition-transform duration-300">
+                    {feature.icon}
+                  </div>
+                  <h3 className="text-xl font-bold mb-4 group-hover:text-orange-400 transition-colors duration-300">
+                    {feature.title}
+                  </h3>
+                  <p className="text-blue-100/80 leading-relaxed">
+                    {feature.description}
+                  </p>
                 </div>
-                <h3 className="text-xl font-semibold mb-3">{feature.title}</h3>
-                <p className="text-blue-100">{feature.description}</p>
               </div>
             ))}
           </div>
@@ -497,65 +659,102 @@ const CastingPlatform = () => {
       </section>
 
       {/* How It Works Section */}
-      <section className="py-20 bg-indigo-950/50 backdrop-blur-sm">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold mb-6">{t('howItWorks.title')}</h2>
-            <p className="text-xl text-blue-100">{t('howItWorks.description')}</p>
+      <section className="py-24">
+        <div className="container mx-auto px-6 sm:px-8 lg:px-12">
+          <div className="text-center mb-20 animate-fadeInUp">
+            <h2 className="text-4xl lg:text-5xl font-bold mb-6 bg-gradient-to-r from-orange-400 via-pink-400 to-blue-400 bg-clip-text text-transparent">
+              {t('howItWorks.title')}
+            </h2>
+            <p className="text-xl text-blue-100/80 max-w-3xl mx-auto">
+              {t('howItWorks.description')}
+            </p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-8">
-            <div className="text-center">
-              <div className="w-20 h-20 bg-gradient-to-r from-orange-400 to-pink-500 rounded-full flex items-center justify-center text-white font-bold text-2xl mx-auto mb-6">
-                1
+          <div className="grid lg:grid-cols-3 gap-12">
+            <div className="group text-center">
+              <div className="relative mb-8">
+                <div className="w-24 h-24 bg-gradient-to-r from-orange-400 to-pink-500 rounded-xl flex items-center justify-center text-white font-bold text-3xl mx-auto shadow-lg shadow-orange-500/25 group-hover:scale-110 transition-all duration-300">
+                  1
+                </div>
+                <div className="absolute -inset-4 bg-gradient-to-r from-orange-400/20 to-pink-500/20 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 blur-lg"></div>
               </div>
-              <h3 className="text-xl font-semibold mb-4">{t('howItWorks.step1.title')}</h3>
-              <p className="text-blue-100">{t('howItWorks.step1.description')}</p>
+              <h3 className="text-2xl font-bold mb-6 group-hover:text-orange-400 transition-colors duration-300">
+                {t('howItWorks.step1.title')}
+              </h3>
+              <p className="text-blue-100/80 text-lg leading-relaxed">
+                {t('howItWorks.step1.description')}
+              </p>
             </div>
 
-            <div className="text-center">
-              <div className="w-20 h-20 bg-gradient-to-r from-pink-400 to-blue-400 rounded-full flex items-center justify-center text-white font-bold text-2xl mx-auto mb-6">
-                2
+            <div className="group text-center">
+              <div className="relative mb-8">
+                <div className="w-24 h-24 bg-gradient-to-r from-pink-400 to-blue-400 rounded-xl flex items-center justify-center text-white font-bold text-3xl mx-auto shadow-lg shadow-pink-500/25 group-hover:scale-110 transition-all duration-300">
+                  2
+                </div>
+                <div className="absolute -inset-4 bg-gradient-to-r from-pink-400/20 to-blue-400/20 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 blur-lg"></div>
               </div>
-              <h3 className="text-xl font-semibold mb-4">{t('howItWorks.step2.title')}</h3>
-              <p className="text-blue-100">{t('howItWorks.step2.description')}</p>
+              <h3 className="text-2xl font-bold mb-6 group-hover:text-pink-400 transition-colors duration-300">
+                {t('howItWorks.step2.title')}
+              </h3>
+              <p className="text-blue-100/80 text-lg leading-relaxed">
+                {t('howItWorks.step2.description')}
+              </p>
             </div>
 
-            <div className="text-center">
-              <div className="w-20 h-20 bg-gradient-to-r from-blue-400 to-purple-400 rounded-full flex items-center justify-center text-white font-bold text-2xl mx-auto mb-6">
-                3
+            <div className="group text-center">
+              <div className="relative mb-8">
+                <div className="w-24 h-24 bg-gradient-to-r from-blue-400 to-purple-400 rounded-xl flex items-center justify-center text-white font-bold text-3xl mx-auto shadow-lg shadow-blue-500/25 group-hover:scale-110 transition-all duration-300">
+                  3
+                </div>
+                <div className="absolute -inset-4 bg-gradient-to-r from-blue-400/20 to-purple-400/20 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 blur-lg"></div>
               </div>
-              <h3 className="text-xl font-semibold mb-4">{t('howItWorks.step3.title')}</h3>
-              <p className="text-blue-100">{t('howItWorks.step3.description')}</p>
+              <h3 className="text-2xl font-bold mb-6 group-hover:text-blue-400 transition-colors duration-300">
+                {t('howItWorks.step3.title')}
+              </h3>
+              <p className="text-blue-100/80 text-lg leading-relaxed">
+                {t('howItWorks.step3.description')}
+              </p>
             </div>
           </div>
         </div>
       </section>
 
       {/* Testimonials Section */}
-      <section className="py-20">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold mb-6">{t('testimonials.title')}</h2>
-            <p className="text-xl text-blue-100">{t('testimonials.description')}</p>
+      <section className="py-24 bg-gradient-to-br from-indigo-950/60 to-purple-950/60">
+        <div className="container mx-auto px-6 sm:px-8 lg:px-12">
+          <div className="text-center mb-20 animate-fadeInUp">
+            <h2 className="text-4xl lg:text-5xl font-bold mb-6 bg-gradient-to-r from-orange-400 via-pink-400 to-blue-400 bg-clip-text text-transparent">
+              {t('testimonials.title')}
+            </h2>
+            <p className="text-xl text-blue-100/80 max-w-3xl mx-auto">
+              {t('testimonials.description')}
+            </p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-8">
+          <div className="grid lg:grid-cols-3 gap-8">
             {testimonials.map((testimonial, index) => (
-              <div key={index} className="bg-indigo-800/30 backdrop-blur-sm rounded-xl p-6 border border-blue-400/30 hover:bg-indigo-800/50 transition-all transform hover:scale-105">
-                <div className="flex items-center mb-4">
-                  {[...Array(testimonial.rating)].map((_, i) => (
-                    <Star key={i} className="w-5 h-5 text-orange-400 fill-current" />
-                  ))}
-                </div>
-                <p className="mb-6 text-blue-100 italic">"{testimonial.text}"</p>
-                <div className="flex items-center">
-                  <div className="w-12 h-12 bg-gradient-to-r from-orange-400 to-pink-500 rounded-full flex items-center justify-center text-white font-bold text-lg mr-4">
-                    {testimonial.name.charAt(0)}
+              <div key={index} className="group">
+                <div className="bg-white/5 rounded-xl p-6 border border-white/10 hover:bg-white/10 transition-all duration-300 group-hover:scale-105 group-hover:shadow-lg group-hover:shadow-orange-500/10 h-full">
+                  <div className="flex items-center mb-6">
+                    {[...Array(testimonial.rating)].map((_, i) => (
+                      <Star key={i} className="w-5 h-5 text-orange-400 fill-current" />
+                    ))}
                   </div>
-                  <div>
-                    <div className="font-semibold">{testimonial.name}</div>
-                    <div className="text-sm text-blue-200">{testimonial.role} - {testimonial.company}</div>
+                  <blockquote className="text-blue-100/80 text-lg leading-relaxed mb-8 italic">
+                    "{testimonial.text}"
+                  </blockquote>
+                  <div className="flex items-center">
+                    <div className="w-16 h-16 bg-gradient-to-r from-orange-400 to-pink-500 rounded-xl flex items-center justify-center text-white font-bold text-xl ml-4 shadow-lg">
+                      {testimonial.name.charAt(0)}
+                    </div>
+                    <div>
+                      <div className="font-bold text-lg group-hover:text-orange-400 transition-colors duration-300">
+                        {testimonial.name}
+                      </div>
+                      <div className="text-blue-200/80">
+                        {testimonial.role} - {testimonial.company}
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -565,66 +764,140 @@ const CastingPlatform = () => {
       </section>
 
       {/* CTA Section */}
-      <section className="py-20 bg-gradient-to-r from-orange-400 to-pink-500 text-white">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-3xl md:text-4xl font-bold mb-6">{t('cta.ready.title')}</h2>
-          <p className="text-xl mb-8 opacity-90">{t('cta.ready.description')}</p>
-          <div className="flex justify-center">
-            <button className="px-8 py-4 bg-white text-orange-500 font-semibold rounded-lg hover:bg-gray-100 transition-all transform hover:scale-105">
-              {t('cta.startAsTalent')}
-            </button>
+      <section className="py-24 bg-gradient-to-r from-orange-400 via-pink-500 to-purple-600 text-white relative overflow-hidden">
+        <div className="absolute inset-0 bg-black/20"></div>
+        <div className="container mx-auto px-6 sm:px-8 lg:px-12 text-center relative z-10">
+          <div className="max-w-4xl mx-auto">
+            <h2 className="text-4xl lg:text-6xl font-bold mb-8 animate-fadeInUp">
+              {t('cta.ready.title')}
+            </h2>
+            <p className="text-xl lg:text-2xl mb-12 opacity-90 leading-relaxed animate-fadeInUp">
+              {t('cta.ready.description')}
+            </p>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-6 animate-fadeInUp">
+              <button className="group px-10 py-5 bg-white text-orange-500 font-bold rounded-xl hover:bg-gray-100 transition-all duration-300 shadow-lg text-lg">
+                <span className="flex items-center gap-2">
+                  {t('cta.startAsTalent')}
+                  <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform duration-300" />
+                </span>
+              </button>
+              <button className="px-10 py-5 bg-white/10 border-2 border-white/30 rounded-xl hover:bg-white/20 transition-all duration-300 font-bold text-lg">
+                تعرف على المزيد
+              </button>
+            </div>
           </div>
         </div>
+        {/* Decorative Elements */}
+        <div className="absolute top-10 left-10 w-32 h-32 bg-white/10 rounded-full blur-3xl"></div>
+        <div className="absolute bottom-10 right-10 w-48 h-48 bg-white/10 rounded-full blur-3xl"></div>
       </section>
 
       {/* Services Section */}
-      <section id="services" className="py-20 bg-gradient-to-br from-indigo-900 via-blue-900 to-purple-900 text-white">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-orange-400 via-pink-400 to-blue-400 bg-clip-text text-transparent">{t('services.title')}</h2>
-            <p className="text-lg text-blue-100">{t('services.description')}</p>
+      <section id="services" className="py-24">
+        <div className="container mx-auto px-6 sm:px-8 lg:px-12">
+          <div className="text-center mb-20 animate-fadeInUp">
+            <h2 className="text-4xl lg:text-5xl font-bold mb-6 bg-gradient-to-r from-orange-400 via-pink-400 to-blue-400 bg-clip-text text-transparent">
+              {t('services.title')}
+            </h2>
+            <p className="text-xl text-blue-100/80 max-w-3xl mx-auto">
+              {t('services.description')}
+            </p>
           </div>
-          <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-            <div className="flex items-start gap-4 bg-indigo-800/30 rounded-xl p-6 border border-blue-400/30">
-              <Search size={36} className="text-orange-400" />
-              <div>
-                <h3 className="text-xl font-semibold mb-2">{t('services.smartSearch.title')}</h3>
-                <p className="text-blue-100">{t('services.smartSearch.description')}</p>
+          
+          <div className="grid lg:grid-cols-2 gap-8 max-w-6xl mx-auto">
+            <div className="group">
+              <div className="flex items-start gap-6 bg-white/5 rounded-xl p-6 border border-white/10 hover:bg-white/10 transition-all duration-300 group-hover:scale-105 group-hover:shadow-lg group-hover:shadow-orange-500/10">
+                <div className="text-orange-400 group-hover:scale-110 transition-transform duration-300">
+                  <Search size={48} />
+                </div>
+                <div>
+                  <h3 className="text-2xl font-bold mb-4 group-hover:text-orange-400 transition-colors duration-300">
+                    {t('services.smartSearch.title')}
+                  </h3>
+                  <p className="text-blue-100/80 text-lg leading-relaxed">
+                    {t('services.smartSearch.description')}
+                  </p>
+                </div>
               </div>
             </div>
-            <div className="flex items-start gap-4 bg-indigo-800/30 rounded-xl p-6 border border-blue-400/30">
-              <Users size={36} className="text-orange-400" />
-              <div>
-                <h3 className="text-xl font-semibold mb-2">{t('services.manageTalents.title')}</h3>
-                <p className="text-blue-100">{t('services.manageTalents.description')}</p>
+
+            <div className="group">
+              <div className="flex items-start gap-6 bg-white/5 rounded-xl p-6 border border-white/10 hover:bg-white/10 transition-all duration-300 group-hover:scale-105 group-hover:shadow-lg group-hover:shadow-pink-500/10">
+                <div className="text-pink-400 group-hover:scale-110 transition-transform duration-300">
+                  <Users size={48} />
+                </div>
+                <div>
+                  <h3 className="text-2xl font-bold mb-4 group-hover:text-pink-400 transition-colors duration-300">
+                    {t('services.manageTalents.title')}
+                  </h3>
+                  <p className="text-blue-100/80 text-lg leading-relaxed">
+                    {t('services.manageTalents.description')}
+                  </p>
+                </div>
               </div>
             </div>
-            <div className="flex items-start gap-4 bg-indigo-800/30 rounded-xl p-6 border border-blue-400/30">
-              <Calendar size={36} className="text-orange-400" />
-              <div>
-                <h3 className="text-xl font-semibold mb-2">{t('services.scheduleInterviews.title')}</h3>
-                <p className="text-blue-100">{t('services.scheduleInterviews.description')}</p>
+
+            <div className="group">
+              <div className="flex items-start gap-6 bg-white/5 rounded-xl p-6 border border-white/10 hover:bg-white/10 transition-all duration-300 group-hover:scale-105 group-hover:shadow-lg group-hover:shadow-blue-500/10">
+                <div className="text-blue-400 group-hover:scale-110 transition-transform duration-300">
+                  <Calendar size={48} />
+                </div>
+                <div>
+                  <h3 className="text-2xl font-bold mb-4 group-hover:text-blue-400 transition-colors duration-300">
+                    {t('services.scheduleInterviews.title')}
+                  </h3>
+                  <p className="text-blue-100/80 text-lg leading-relaxed">
+                    {t('services.scheduleInterviews.description')}
+                  </p>
+                </div>
               </div>
             </div>
-            <div className="flex items-start gap-4 bg-indigo-800/30 rounded-xl p-6 border border-blue-400/30">
-              <Shield size={36} className="text-orange-400" />
-              <div>
-                <h3 className="text-xl font-semibold mb-2">{t('services.electronicPayment.title')}</h3>
-                <p className="text-blue-100">{t('services.electronicPayment.description')}</p>
+
+            <div className="group">
+              <div className="flex items-start gap-6 bg-white/5 rounded-xl p-6 border border-white/10 hover:bg-white/10 transition-all duration-300 group-hover:scale-105 group-hover:shadow-lg group-hover:shadow-green-500/10">
+                <div className="text-green-400 group-hover:scale-110 transition-transform duration-300">
+                  <Shield size={48} />
+                </div>
+                <div>
+                  <h3 className="text-2xl font-bold mb-4 group-hover:text-green-400 transition-colors duration-300">
+                    {t('services.electronicPayment.title')}
+                  </h3>
+                  <p className="text-blue-100/80 text-lg leading-relaxed">
+                    {t('services.electronicPayment.description')}
+                  </p>
+                </div>
               </div>
             </div>
-            <div className="flex items-start gap-4 bg-indigo-800/30 rounded-xl p-6 border border-blue-400/30">
-              <Play size={36} className="text-orange-400" />
-              <div>
-                <h3 className="text-xl font-semibold mb-2">{t('services.reportingTracking.title')}</h3>
-                <p className="text-blue-100">{t('services.reportingTracking.description')}</p>
+
+            <div className="group">
+              <div className="flex items-start gap-6 bg-white/5 rounded-xl p-6 border border-white/10 hover:bg-white/10 transition-all duration-300 group-hover:scale-105 group-hover:shadow-lg group-hover:shadow-purple-500/10">
+                <div className="text-purple-400 group-hover:scale-110 transition-transform duration-300">
+                  <Play size={48} />
+                </div>
+                <div>
+                  <h3 className="text-2xl font-bold mb-4 group-hover:text-purple-400 transition-colors duration-300">
+                    {t('services.reportingTracking.title')}
+                  </h3>
+                  <p className="text-blue-100/80 text-lg leading-relaxed">
+                    {t('services.reportingTracking.description')}
+                  </p>
+                </div>
               </div>
             </div>
-            <div className="flex items-start gap-4 bg-indigo-800/30 rounded-xl p-6 border border-blue-400/30">
-              <ChevronRight size={36} className="text-orange-400" />
-              <div>
-                <h3 className="text-xl font-semibold mb-2">{t('services.invitationsCommunication.title')}</h3>
-                <p className="text-blue-100">{t('services.invitationsCommunication.description')}</p>
+
+            <div className="group">
+              <div className="flex items-start gap-6 bg-white/5 rounded-xl p-6 border border-white/10 hover:bg-white/10 transition-all duration-300 group-hover:scale-105 group-hover:shadow-lg group-hover:shadow-indigo-500/10">
+                <div className="text-indigo-400 group-hover:scale-110 transition-transform duration-300">
+                  <ChevronRight size={48} />
+                </div>
+                <div>
+                  <h3 className="text-2xl font-bold mb-4 group-hover:text-indigo-400 transition-colors duration-300">
+                    {t('services.invitationsCommunication.title')}
+                  </h3>
+                  <p className="text-blue-100/80 text-lg leading-relaxed">
+                    {t('services.invitationsCommunication.description')}
+                  </p>
+                </div>
               </div>
             </div>
           </div>
@@ -632,29 +905,70 @@ const CastingPlatform = () => {
       </section>
 
       {/* About Section */}
-      <section id="about" className="py-20 bg-indigo-950/60 text-white">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="max-w-3xl mx-auto text-center mb-12">
-            <h2 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-orange-400 via-pink-400 to-blue-400 bg-clip-text text-transparent">{t('about.title')}</h2>
-            <p className="text-lg text-blue-100 mb-8">{t('about.description')}</p>
+      <section id="about" className="py-24 bg-gradient-to-br from-indigo-950/60 to-purple-950/60">
+        <div className="container mx-auto px-6 sm:px-8 lg:px-12">
+          <div className="max-w-4xl mx-auto text-center mb-16 animate-fadeInUp">
+            <h2 className="text-4xl lg:text-5xl font-bold mb-6 bg-gradient-to-r from-orange-400 via-pink-400 to-blue-400 bg-clip-text text-transparent">
+              {t('about.title')}
+            </h2>
+            <p className="text-xl text-blue-100/80 leading-relaxed">
+              {t('about.description')}
+            </p>
           </div>
-          <div className="max-w-4xl mx-auto grid md:grid-cols-3 gap-8 mb-12">
-            <div className="bg-indigo-800/30 rounded-xl p-6 border border-blue-400/30">
-              <h3 className="text-xl font-bold mb-2 text-orange-400">{t('about.vision.title')}</h3>
-              <p className="text-blue-100">{t('about.vision.description')}</p>
+          
+          <div className="grid lg:grid-cols-3 gap-8 mb-16">
+            <div className="group">
+              <div className="bg-white/5 rounded-xl p-6 border border-white/10 hover:bg-white/10 transition-all duration-300 group-hover:scale-105 group-hover:shadow-lg group-hover:shadow-orange-500/10 h-full text-center">
+                <div className="w-16 h-16 bg-gradient-to-r from-orange-400 to-pink-500 rounded-xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform duration-300">
+                  <span className="text-2xl">🎯</span>
+                </div>
+                <h3 className="text-2xl font-bold mb-4 text-orange-400">
+                  {t('about.vision.title')}
+                </h3>
+                <p className="text-blue-100/80 leading-relaxed">
+                  {t('about.vision.description')}
+                </p>
+              </div>
             </div>
-            <div className="bg-indigo-800/30 rounded-xl p-6 border border-blue-400/30">
-              <h3 className="text-xl font-bold mb-2 text-orange-400">{t('about.mission.title')}</h3>
-              <p className="text-blue-100">{t('about.mission.description')}</p>
+
+            <div className="group">
+              <div className="bg-white/5 rounded-xl p-6 border border-white/10 hover:bg-white/10 transition-all duration-300 group-hover:scale-105 group-hover:shadow-lg group-hover:shadow-pink-500/10 h-full text-center">
+                <div className="w-16 h-16 bg-gradient-to-r from-pink-400 to-purple-500 rounded-xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform duration-300">
+                  <span className="text-2xl">🚀</span>
+                </div>
+                <h3 className="text-2xl font-bold mb-4 text-pink-400">
+                  {t('about.mission.title')}
+                </h3>
+                <p className="text-blue-100/80 leading-relaxed">
+                  {t('about.mission.description')}
+                </p>
+              </div>
             </div>
-            <div className="bg-indigo-800/30 rounded-xl p-6 border border-blue-400/30">
-              <h3 className="text-xl font-bold mb-2 text-orange-400">{t('about.values.title')}</h3>
-              <p className="text-blue-100">{t('about.values.description')}</p>
+
+            <div className="group">
+              <div className="bg-white/5 rounded-xl p-6 border border-white/10 hover:bg-white/10 transition-all duration-300 group-hover:scale-105 group-hover:shadow-lg group-hover:shadow-blue-500/10 h-full text-center">
+                <div className="w-16 h-16 bg-gradient-to-r from-blue-400 to-indigo-500 rounded-xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform duration-300">
+                  <span className="text-2xl">💎</span>
+                </div>
+                <h3 className="text-2xl font-bold mb-4 text-blue-400">
+                  {t('about.values.title')}
+                </h3>
+                <p className="text-blue-100/80 leading-relaxed">
+                  {t('about.values.description')}
+                </p>
+              </div>
             </div>
           </div>
-          <div className="max-w-2xl mx-auto text-center">
-            <h2 className="text-2xl font-bold mb-4 text-pink-400">{t('about.team.title')}</h2>
-            <p className="text-blue-100">{t('about.team.description')}</p>
+
+          <div className="max-w-3xl mx-auto text-center">
+            <div className="bg-white/5 rounded-xl p-6 border border-white/10">
+              <h3 className="text-3xl font-bold mb-6 text-pink-400">
+                {t('about.team.title')}
+              </h3>
+              <p className="text-blue-100/80 text-lg leading-relaxed">
+                {t('about.team.description')}
+              </p>
+            </div>
           </div>
         </div>
       </section>
@@ -666,7 +980,7 @@ const CastingPlatform = () => {
             <h2 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-orange-400 via-pink-400 to-blue-400 bg-clip-text text-transparent">{t('contact.title')}</h2>
             <p className="text-lg text-blue-100 mb-8">{t('contact.description')}</p>
           </div>
-          <div className="max-w-2xl mx-auto bg-indigo-800/30 rounded-xl p-8 border border-blue-400/30 mb-8">
+          <div className="max-w-2xl mx-auto bg-indigo-800/30 rounded-xl p-6 border border-blue-400/30 mb-8">
             <form className="space-y-6">
               <div>
                 <label className="block mb-2 text-blue-100">{t('contact.form.name')}</label>
@@ -699,7 +1013,7 @@ const CastingPlatform = () => {
       </section>
 
       {/* Footer */}
-      <footer className="bg-indigo-950/90 backdrop-blur-sm py-12">
+      <footer className="bg-indigo-950/90 py-12">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid md:grid-cols-4 gap-8">
             <div>

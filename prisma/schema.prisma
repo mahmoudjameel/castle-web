@@ -40,6 +40,8 @@ model User {
   withdrawals Withdrawal[]
   transactions Transaction[] @relation("Sender")
   transactionsReceived Transaction[] @relation("Receiver")
+  reportsSent Report[] @relation("ReportsAsReporter")
+  reportsReceived Report[] @relation("ReportsAsReported")
   phone      String? // رقم الهاتف
 }
 
@@ -169,4 +171,16 @@ model Settings {
   updatedAt DateTime @updatedAt
 }
 
-// تم حذف جداول Wallet وTransaction وWithdrawal
+model Report {
+  id            Int      @id @default(autoincrement())
+  reporter      User     @relation("ReportsAsReporter", fields: [reporterId], references: [id])
+  reporterId    Int
+  reportedUser  User     @relation("ReportsAsReported", fields: [reportedUserId], references: [id])
+  reportedUserId Int
+  reason        String   // سبب البلاغ
+  description   String   // تفاصيل البلاغ
+  status        String   @default("pending") // pending, under_review, resolved, dismissed
+  adminNotes    String?  // ملاحظات الإدارة
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
