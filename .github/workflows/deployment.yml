@@ -101,8 +101,8 @@ jobs:
             # Setup environment
             cp /var/www/toq/castle-web/.env .env || echo "NODE_ENV: production" > .env
 
-            # Install production dependencies only
-            npm ci --omit=dev
+            # Install all dependencies (including dev dependencies for build)
+            npm ci
 
             # Generate Prisma client and run migrations
             npx prisma generate
@@ -110,6 +110,9 @@ jobs:
 
             # Build application on server
             npm run build
+
+            # Remove dev dependencies after build to save space
+            npm prune --omit=dev
 
             # Update nginx configuration
             sudo cp nginx.conf /etc/nginx/sites-available/castle-web
