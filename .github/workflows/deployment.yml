@@ -27,6 +27,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Remove conflicting PostCSS config
+        run: rm -f postcss.config.mjs || true
+
       - name: Setup database for testing
         run: |
           npx prisma generate
@@ -54,6 +57,16 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Remove conflicting PostCSS config
+        run: rm -f postcss.config.mjs || true
+
+      - name: Debug PostCSS configuration
+        run: |
+          echo "🔍 PostCSS config contents:"
+          cat postcss.config.js || echo "❌ postcss.config.js not found"
+          echo "🔍 Checking TailwindCSS packages:"
+          npm list @tailwindcss/postcss || echo "❌ @tailwindcss/postcss not found"
 
       - name: Generate Prisma client
         run: npx prisma generate
