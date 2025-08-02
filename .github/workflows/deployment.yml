@@ -104,9 +104,23 @@ jobs:
             # Install all dependencies (including dev dependencies for build)
             npm ci
 
+            # Clear any build caches that might cause issues
+            rm -rf .next node_modules/.cache || true
+
+            # Remove conflicting PostCSS config to avoid issues
+            rm -f postcss.config.mjs || true
+
+            # Debug: Check PostCSS configuration
+            echo "🔍 Checking PostCSS configuration..."
+            echo "postcss.config.js contents:"
+            cat postcss.config.js || echo "❌ postcss.config.js not found"
+            echo "postcss.config.mjs contents:"
+            cat postcss.config.mjs || echo "❌ postcss.config.mjs not found (expected)"
+
             # Debug: Check if TailwindCSS packages are installed
             echo "🔍 Checking TailwindCSS installation..."
             npm list tailwindcss || echo "❌ tailwindcss not found"
+            npm list @tailwindcss/postcss || echo "❌ @tailwindcss/postcss not found"
             npm list autoprefixer || echo "❌ autoprefixer not found"
 
             # Debug: Check Node.js and npm versions
@@ -121,6 +135,13 @@ jobs:
             npx prisma migrate deploy
 
             # Build application on server
+            echo "🔍 Testing PostCSS configuration before build..."
+            npx postcss --version || echo "PostCSS not found"
+            
+            # Test if PostCSS can load our configuration
+            echo "Testing PostCSS config..."
+            echo "@tailwind base;" | npx postcss --config postcss.config.js || echo "PostCSS config test failed"
+            
             npm run build
 
             # Remove dev dependencies after build to save space
