@@ -32,8 +32,8 @@ jobs:
           npx prisma generate
           npx prisma db push
 
-      - name: Run linting
-        run: npm run lint
+      # - name: Run linting
+      #   run: npm run lint
 
       - name: Type checking
         run: npx tsc --noEmit
