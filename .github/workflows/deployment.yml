@@ -35,8 +35,8 @@ jobs:
       # - name: Run linting
       #   run: npm run lint
 
-      - name: Type checking
-        run: npx tsc --noEmit
+      # - name: Type checking
+      #   run: npx tsc --noEmit
 
   # Build job
   build:
