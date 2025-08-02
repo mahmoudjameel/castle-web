@@ -104,6 +104,18 @@ jobs:
             # Install all dependencies (including dev dependencies for build)
             npm ci
 
+            # Debug: Check if TailwindCSS packages are installed
+            echo "🔍 Checking TailwindCSS installation..."
+            npm list tailwindcss || echo "❌ tailwindcss not found"
+            npm list autoprefixer || echo "❌ autoprefixer not found"
+
+            # Debug: Check Node.js and npm versions
+            echo "🔍 Environment info:"
+            echo "Node.js version: $(node --version)"
+            echo "npm version: $(npm --version)"
+            echo "Current directory: $(pwd)"
+            echo "Package.json exists: $(test -f package.json && echo 'Yes' || echo 'No')"
+
             # Generate Prisma client and run migrations
             npx prisma generate
             npx prisma migrate deploy
