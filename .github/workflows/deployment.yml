@@ -137,11 +137,11 @@ jobs:
             # Build application on server
             echo "🔍 Testing PostCSS configuration before build..."
             npx postcss --version || echo "PostCSS not found"
-            
+
             # Test if PostCSS can load our configuration
             echo "Testing PostCSS config..."
             echo "@tailwind base;" | npx postcss --config postcss.config.js || echo "PostCSS config test failed"
-            
+
             npm run build
 
             # Remove dev dependencies after build to save space
