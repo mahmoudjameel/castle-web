@@ -1,0 +1,159 @@
+#
+name: Test, Build and Deploy Castle-Web App
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
+env:
+  NODE_ENV: production
+
+jobs:
+  # Test job
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22.18.0"
+          cache: npm
+
+      - name: Install dependencies
+        run: |
+          npm install
+          npm list tailwindcss autoprefixer postcss || echo "Some packages missing, installing..."
+          npm install --force tailwindcss@^3.4.0 postcss autoprefixer
+
+      - name: Remove conflicting PostCSS config
+        run: rm -f postcss.config.mjs || true
+
+      - name: Setup database for testing
+        run: |
+          npx prisma generate
+          npx prisma db push
+
+      # - name: Run linting
+      #   run: npm run lint
+
+      # - name: Type checking
+      #   run: npx tsc --noEmit
+
+  # Build job
+  build:
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22.18.0"
+          cache: 'npm'
+          cache-dependency-path: '**/package-lock.json'
+
+      - name: Clear npm cache
+        run: npm cache clean --force
+
+      - name: Install dependencies
+        run: |
+          npm install
+          npm list tailwindcss autoprefixer postcss || echo "Some packages missing, installing..."
+          npm install --force tailwindcss@^3.4.0 postcss autoprefixer
+
+      - name: Remove conflicting PostCSS config
+        run: rm -f postcss.config.mjs || true
+
+      - name: Generate Prisma client
+        run: npx prisma generate
+
+      - name: Build application
+        run: npm run build
+
+  # Deploy job
+  deploy:
+    runs-on: ubuntu-latest
+    needs: [test, build]
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - name: Deploy to server
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          port: ${{ secrets.SERVER_PORT || 22 }}
+          script: |
+            cd /var/www/toq/castle-web
+
+            # Stop PM2 app
+            pm2 stop castle-web || true
+
+            # Backup current deployment
+            if [ -d "current" ]; then
+              mv current backup-$(date +%Y%m%d%H%M%S)
+              # Keep only last 3 backups
+              ls -dt backup-* | tail -n +4 | xargs -r rm -rf
+            fi
+
+            # Clone or pull from private repository
+            if [ -d "current" ]; then
+              # Remove existing current directory for fresh clone
+              rm -rf current
+            fi
+
+            # Clone fresh copy with personal access token
+            git clone https://${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git current
+            cd current
+            git checkout ${{ github.sha }}
+
+            # Setup environment
+            cp /var/www/toq/castle-web/.env .env || echo "NODE_ENV: production" > .env
+
+            # Install all dependencies (including dev dependencies for build)
+            npm ci
+
+            # Clear build caches
+            rm -rf .next node_modules/.cache || true
+
+            # Remove conflicting PostCSS config
+            rm -f postcss.config.mjs || true
+
+            # Generate Prisma client and run migrations
+            npx prisma generate
+            npx prisma migrate deploy
+
+            # Build application on server
+            npm run build
+
+            # Remove dev dependencies after build to save space
+            npm prune --omit=dev
+
+            # Update nginx configuration
+            sudo cp nginx.conf /etc/nginx/sites-available/castle-web
+            sudo ln -sf /etc/nginx/sites-available/castle-web /etc/nginx/sites-enabled/castle-web
+
+            # Start with PM2 using ecosystem file
+            pm2 start ecosystem.config.js
+            pm2 save
+
+            # Test and reload nginx
+            sudo nginx -t && sudo systemctl reload nginx
+
+            # Verify deployment
+            sleep 5
+            if pm2 list | grep -q "castle-web.*online"; then
+              echo "✅ Deployment successful"
+              pm2 status
+            else
+              echo "❌ Deployment failed"
+              pm2 logs castle-web --lines 10
+              exit 1
+            fi
