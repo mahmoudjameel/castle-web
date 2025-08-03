@@ -63,8 +63,7 @@ jobs:
 
       - name: Verify TailwindCSS installation
         run: |
-          npm list tailwindcss || npm install tailwindcss
-          npm list @tailwindcss/postcss || npm install @tailwindcss/postcss
+          npm list tailwindcss || npm install tailwindcss@^3.4.0
           npm list autoprefixer || npm install autoprefixer
           npm list postcss || npm install postcss
 
