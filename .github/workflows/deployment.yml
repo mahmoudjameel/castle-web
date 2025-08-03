@@ -30,6 +30,9 @@ jobs:
       - name: Remove conflicting PostCSS config
         run: rm -f postcss.config.mjs || true
 
+      - name: Install required PostCSS packages
+        run: npm install --save-dev tailwindcss@^3.4.0 postcss autoprefixer
+
       - name: Setup database for testing
         run: |
           npx prisma generate
@@ -61,11 +64,10 @@ jobs:
       - name: Remove conflicting PostCSS config
         run: rm -f postcss.config.mjs || true
 
-      - name: Verify TailwindCSS installation
+      - name: Install required PostCSS packages
         run: |
-          npm list tailwindcss || npm install tailwindcss@^3.4.0
-          npm list autoprefixer || npm install autoprefixer
-          npm list postcss || npm install postcss
+          npm install --save-dev tailwindcss@^3.4.0 postcss autoprefixer
+          npm list tailwindcss autoprefixer postcss
 
       - name: Generate Prisma client
         run: npx prisma generate
