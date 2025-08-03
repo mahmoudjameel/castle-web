@@ -13,22 +13,9 @@ export async function GET(req: Request) {
     if (id) where.id = Number(id);
     if (categoryId) where.categoryId = categoryId;
     if (role) {
-      // Expand role(s) to include both upper and lower case
-      const roles = role.split(',').map(r => r.trim());
-      const expandedRoles = roles.flatMap(r => {
-        if (r.toUpperCase() === 'USER') return ['USER', 'user'];
-        if (r.toUpperCase() === 'TALENT') return ['TALENT', 'talent'];
-        return [r];
-      });
-      if (expandedRoles.length > 1) {
-        where.role = { in: expandedRoles };
-      } else {
-        where.role = expandedRoles[0];
-      }
-    } else {
-      // الافتراضي: جلب المواهب فقط
-      where.role = { in: ['TALENT', 'talent'] };
+      where.role = role;
     }
+    // إذا لم يتم تحديد دور، سيتم جلب جميع المستخدمين
     const users = await prisma.user.findMany({ where });
     // تحويل profileImageData إلى base64 إذا كانت موجودة
     const usersWithImage = users.map(u => {
@@ -46,7 +33,7 @@ export async function GET(req: Request) {
 export async function PATCH(req: Request) {
   try {
     const body = await req.json();
-    let { id, approved, age, bio, socialLinks, categoryId, profileImageData, workingSchedule, jobTitle, services, name, workArea, canTravelAbroad } = body;
+    let { id, approved, age, bio, socialLinks, categoryId, profileImageData, workingSchedule, jobTitle, services, name, workArea, canTravelAbroad, role } = body;
     if (!id) {
       return NextResponse.json({ message: 'id مطلوب.' }, { status: 400 });
     }
@@ -68,6 +55,7 @@ export async function PATCH(req: Request) {
     if (typeof name === 'string') data.name = name;
     if (typeof workArea === 'string') data.workArea = workArea;
     if (typeof canTravelAbroad === 'boolean') data.canTravelAbroad = canTravelAbroad;
+    if (typeof role === 'string' && ['user', 'talent', 'admin'].includes(role)) data.role = role;
     const user = await prisma.user.update({ where: { id }, data });
     return NextResponse.json(user);
   } catch (err) {

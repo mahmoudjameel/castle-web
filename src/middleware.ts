@@ -41,6 +41,70 @@ export function middleware(request: NextRequest) {
       return response;
     }
   }
+
+  // حماية الصفحات حسب دور المستخدم
+  const userRole = request.cookies.get('user_role')?.value;
+  const isLoggedIn = request.cookies.get('user_id')?.value;
+
+  // الصفحات المحمية للمدير فقط
+  const adminProtectedPaths = [
+    '/admin',
+    '/admin/accounts',
+    '/admin/categories',
+    '/admin/orders',
+    '/admin/invoices',
+    '/admin/withdrawals',
+    '/admin/reports',
+    '/admin/banners'
+  ];
+
+  // الصفحات المحمية لصاحب الموهبة فقط
+  const talentProtectedPaths = [
+    '/talent',
+    '/talent/profile',
+    '/talent/portfolio',
+    '/talent/services',
+    '/talent/schedule',
+    '/talent/bookings',
+    '/talent/chats',
+    '/talent/notifications',
+    '/talent/wallet'
+  ];
+
+  // الصفحات المحمية للمستخدم العادي فقط
+  const userProtectedPaths = [
+    '/user',
+    '/user/profile',
+    '/user/orders',
+    '/user/invoices',
+    '/user/chats',
+    '/user/notifications',
+    '/user/reports'
+  ];
+
+  // التحقق من الصفحات المحمية للمدير
+  if (adminProtectedPaths.some(path => pathname.startsWith(path))) {
+    if (!isLoggedIn || userRole !== 'admin') {
+      console.log('Unauthorized access to admin page, redirecting to login');
+      return NextResponse.redirect(new URL('/login', request.url));
+    }
+  }
+
+  // التحقق من الصفحات المحمية لصاحب الموهبة
+  if (talentProtectedPaths.some(path => pathname.startsWith(path))) {
+    if (!isLoggedIn || userRole !== 'talent') {
+      console.log('Unauthorized access to talent page, redirecting to login');
+      return NextResponse.redirect(new URL('/login', request.url));
+    }
+  }
+
+  // التحقق من الصفحات المحمية للمستخدم العادي
+  if (userProtectedPaths.some(path => pathname.startsWith(path))) {
+    if (!isLoggedIn || userRole !== 'user') {
+      console.log('Unauthorized access to user page, redirecting to login');
+      return NextResponse.redirect(new URL('/login', request.url));
+    }
+  }
   
   return NextResponse.next();
 }

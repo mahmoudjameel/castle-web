@@ -43,6 +43,8 @@ model User {
   reportsSent Report[] @relation("ReportsAsReporter")
   reportsReceived Report[] @relation("ReportsAsReported")
   phone      String? // رقم الهاتف
+  resetToken String? // رمز إعادة تعيين كلمة المرور
+  resetTokenExpiry DateTime? // تاريخ انتهاء صلاحية الرمز
 }
 
 model Category {

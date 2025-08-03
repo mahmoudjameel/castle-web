@@ -27,16 +27,20 @@ const Login = () => {
       if (res.ok && data.user) {
         // حفظ بيانات المستخدم في localStorage
         localStorage.setItem('user', JSON.stringify(data.user));
-        // التوجيه حسب الدور
-        if (data.user.role === 'talent') {
-          router.push('/talent');
-        } else if (data.user.role === 'admin') {
-          router.push('/admin');
-        } else if (data.user.role === 'user') {
-          router.push('/user');
-        } else {
-          router.push('/');
-        }
+        
+        // تأخير قصير لضمان حفظ cookies
+        setTimeout(() => {
+          // التوجيه حسب الدور
+          if (data.user.role === 'talent') {
+            router.push('/talent');
+          } else if (data.user.role === 'admin') {
+            router.push('/admin');
+          } else if (data.user.role === 'user') {
+            router.push('/user');
+          } else {
+            router.push('/');
+          }
+        }, 100);
       } else {
         setMessage(data.message || 'بيانات الدخول غير صحيحة.');
       }
@@ -128,6 +132,16 @@ const Login = () => {
                       {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                     </button>
                   </div>
+                </div>
+
+                {/* رابط نسيان كلمة المرور */}
+                <div className="text-left">
+                  <a 
+                    href="/forgot-password" 
+                    className="text-orange-400 hover:text-pink-400 text-sm transition-colors duration-200 hover:underline"
+                  >
+                    نسيت كلمة المرور؟
+                  </a>
                 </div>
 
                 {/* زر تسجيل الدخول */}

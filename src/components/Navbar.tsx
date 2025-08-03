@@ -50,11 +50,38 @@ const Navbar = () => {
     setAnchorEl(event.currentTarget);
   };
   const handleMenuClose = () => setAnchorEl(null);
-  const handleLogout = () => {
-    localStorage.removeItem('user');
-    setUser(null);
-    setAnchorEl(null);
-    window.location.reload();
+  const handleLogout = async () => {
+    try {
+      // تسجيل الخروج من الخادم
+      const response = await fetch('/api/logout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      });
+
+      if (response.ok) {
+        // حذف البيانات المحلية
+        localStorage.removeItem('user');
+        setUser(null);
+        setAnchorEl(null);
+        
+        // إعادة تحميل الصفحة للانتقال إلى الصفحة الرئيسية
+        window.location.href = '/';
+      } else {
+        console.error('فشل في تسجيل الخروج');
+        // حتى لو فشل، نحذف البيانات المحلية
+        localStorage.removeItem('user');
+        setUser(null);
+        setAnchorEl(null);
+        window.location.href = '/';
+      }
+    } catch (error) {
+      console.error('خطأ في تسجيل الخروج:', error);
+      // حتى لو حدث خطأ، نحذف البيانات المحلية
+      localStorage.removeItem('user');
+      setUser(null);
+      setAnchorEl(null);
+      window.location.href = '/';
+    }
   };
 
   const toggleLang = () => {

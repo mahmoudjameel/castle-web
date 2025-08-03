@@ -13,11 +13,39 @@ export async function POST(req: Request) {
     if (!user || user.password !== password) {
       return NextResponse.json({ message: 'بيانات الدخول غير صحيحة.' }, { status: 401 });
     }
-    if (!user.approved && user.role !== 'user') {
+    if (!user.approved && user.role !== 'user' && user.role !== 'admin') {
       return NextResponse.json({ message: 'حسابك بانتظار موافقة الإدارة.' }, { status: 403 });
     }
-    // تسجيل دخول ناجح (يمكنك هنا إنشاء session أو JWT)
-    return NextResponse.json({ message: 'تم تسجيل الدخول بنجاح.', user: { id: user.id, name: user.name, email: user.email, role: user.role } });
+    
+    // إنشاء response مع cookies
+    const response = NextResponse.json({ 
+      message: 'تم تسجيل الدخول بنجاح.', 
+      user: { id: user.id, name: user.name, email: user.email, role: user.role } 
+    });
+
+    // حفظ معلومات المستخدم في cookies
+    response.cookies.set('user_id', user.id.toString(), {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 60 * 60 * 24 * 7 // أسبوع واحد
+    });
+
+    response.cookies.set('user_role', user.role, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 60 * 60 * 24 * 7 // أسبوع واحد
+    });
+
+    response.cookies.set('user_name', user.name, {
+      httpOnly: false,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 60 * 60 * 24 * 7 // أسبوع واحد
+    });
+
+    return response;
   } catch {
     return NextResponse.json({ message: 'حدث خطأ أثناء تسجيل الدخول.' }, { status: 500 });
   }

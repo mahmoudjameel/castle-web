@@ -23,6 +23,7 @@ const CastingPlatform = () => {
   const [lang, setLang] = useState('ar');
   const [showLangModal, setShowLangModal] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [showVideoModal, setShowVideoModal] = useState(false);
 
   // heroSlides الافتراضية للاحتياط
   const defaultHeroSlides = [
@@ -509,15 +510,29 @@ const CastingPlatform = () => {
                   {heroSlide.subtitle}
                 </p>
                 <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-6 mb-8">
-                  <button className="group relative px-8 py-4 bg-gradient-to-r from-orange-400 to-pink-500 text-white font-semibold rounded-xl overflow-hidden transition-all duration-300 hover:shadow-lg hover:shadow-orange-500/25">
+                  <button 
+                    onClick={() => router.push('/register')}
+                    className="group relative px-8 py-4 bg-gradient-to-r from-orange-400 to-pink-500 text-white font-semibold rounded-xl overflow-hidden transition-all duration-300 hover:shadow-lg hover:shadow-orange-500/25"
+                  >
                     <span className="relative z-10">{heroSlide.cta}</span>
                     <div className="absolute inset-0 bg-gradient-to-r from-orange-500 to-pink-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                   </button>
-                  <button className="group flex items-center gap-3 px-8 py-4 bg-white/10 border border-white/20 rounded-xl hover:bg-white/20 transition-all duration-300">
-                    <div className="w-12 h-12 bg-gradient-to-r from-orange-400 to-pink-500 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-                      <Play className="w-5 h-5 ml-1" />
+                  <button 
+                    onClick={() => setShowVideoModal(true)}
+                    className="group relative flex items-center gap-3 px-8 py-4 bg-white/10 border border-white/20 rounded-xl hover:bg-white/20 transition-all duration-300 overflow-hidden hover:shadow-lg hover:shadow-orange-500/25"
+                  >
+                    <div className="relative">
+                      <div className="w-12 h-12 bg-gradient-to-r from-orange-400 to-pink-500 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shadow-lg">
+                        <Play className="w-5 h-5 ml-1 text-white group-hover:translate-x-0.5 transition-transform duration-300" />
+                      </div>
+                      <div className="absolute inset-0 bg-gradient-to-r from-orange-500 to-pink-600 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                      {/* Pulse Effect */}
+                      <div className="absolute inset-0 bg-gradient-to-r from-orange-400 to-pink-500 rounded-full opacity-20 video-pulse"></div>
                     </div>
-                    <span className="font-medium">{t('hero.video')}</span>
+                    <span className="font-medium text-white group-hover:text-orange-300 transition-colors duration-300">{t('hero.video')}</span>
+                    <div className="absolute inset-0 bg-gradient-to-r from-orange-400/10 to-pink-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-xl"></div>
+                    {/* Shine Effect */}
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 rounded-xl"></div>
                   </button>
                 </div>
               </div>
@@ -1074,6 +1089,57 @@ const CastingPlatform = () => {
           </div>
         </div>
       </footer>
+      {/* Video Modal */}
+      {showVideoModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          {/* Backdrop */}
+          <div 
+            className="absolute inset-0 bg-black/80 backdrop-blur-sm"
+            onClick={() => setShowVideoModal(false)}
+          ></div>
+          
+          {/* Modal Content */}
+          <div className="relative w-full max-w-4xl mx-auto modal-fade-in">
+            <div className="relative bg-gradient-to-br from-indigo-900/95 to-purple-900/95 rounded-2xl border border-white/20 shadow-2xl overflow-hidden">
+              {/* Header */}
+              <div className="flex items-center justify-between p-6 border-b border-white/10">
+                <h3 className="text-2xl font-bold text-white flex items-center gap-3">
+                  <div className="w-8 h-8 bg-gradient-to-r from-orange-400 to-pink-500 rounded-lg flex items-center justify-center">
+                    <Play className="w-4 h-4 text-white" />
+                  </div>
+                  تعرف على منصة طوق
+                </h3>
+                <button 
+                  onClick={() => setShowVideoModal(false)}
+                  className="w-10 h-10 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center transition-all duration-300 group"
+                >
+                  <X className="w-5 h-5 text-white group-hover:text-orange-400 transition-colors" />
+                </button>
+              </div>
+              
+              {/* Video Container */}
+              <div className="relative aspect-video bg-black">
+                <iframe
+                  src="https://www.youtube.com/embed/dQw4w9WgXcQ?autoplay=1&rel=0&modestbranding=1"
+                  title="منصة طوق - تعرف على المنصة"
+                  className="w-full h-full"
+                  frameBorder="0"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                ></iframe>
+              </div>
+              
+              {/* Footer */}
+              <div className="p-6 bg-gradient-to-r from-orange-400/10 to-pink-500/10">
+                <p className="text-blue-200 text-center text-lg">
+                  اكتشف كيف يمكن لمنصة طوق أن تساعدك في تطوير موهبتك أو العثور على المواهب المناسبة
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Floating WhatsApp Button */}
       <a
         href="https://wa.me/966551448433"
