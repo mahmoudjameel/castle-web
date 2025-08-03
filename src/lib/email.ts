@@ -1,9 +1,9 @@
-import nodemailer from 'nodemailer';
+import nodemailer from "nodemailer";
 
 // إنشاء transporter للبريد الإلكتروني
-const transporter = nodemailer.createTransporter({
-  host: process.env.SMTP_HOST || 'smtp.gmail.com',
-  port: parseInt(process.env.SMTP_PORT || '587'),
+const transporter = nodemailer.createTransport({
+  host: process.env.SMTP_HOST || "smtp.gmail.com",
+  port: parseInt(process.env.SMTP_PORT || "587"),
   secure: false, // true for 465, false for other ports
   auth: {
     user: process.env.SMTP_USER,
@@ -30,10 +30,10 @@ export async function sendEmail({
     };
 
     const info = await transporter.sendMail(mailOptions);
-    console.log('تم إرسال البريد الإلكتروني:', info.messageId);
+    console.log("تم إرسال البريد الإلكتروني:", info.messageId);
     return { success: true, messageId: info.messageId };
   } catch (error) {
-    console.error('خطأ في إرسال البريد الإلكتروني:', error);
+    console.error("خطأ في إرسال البريد الإلكتروني:", error);
     throw error;
   }
 }
@@ -48,7 +48,7 @@ export async function sendPasswordResetEmail({
   name: string;
   resetUrl: string;
 }) {
-  const subject = 'إعادة تعيين كلمة المرور';
+  const subject = "إعادة تعيين كلمة المرور";
   const html = `
     <!DOCTYPE html>
     <html dir="rtl" lang="ar">
@@ -193,4 +193,4 @@ export async function sendPasswordResetEmail({
   `;
 
   return sendEmail({ to, subject, html });
-} 
+}

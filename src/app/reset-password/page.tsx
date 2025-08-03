@@ -1,10 +1,10 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { Lock, Eye, EyeOff, ArrowLeft, ArrowRight, CheckCircle, AlertCircle } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 
-const ResetPassword = () => {
+const ResetPasswordForm = () => {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -34,7 +34,7 @@ const ResetPassword = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (password !== confirmPassword) {
       setMessageType('error');
       setMessage('كلمة المرور وتأكيدها غير متطابقين.');
@@ -49,16 +49,16 @@ const ResetPassword = () => {
 
     setLoading(true);
     setMessage('');
-    
+
     try {
       const res = await fetch('/api/reset-password', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ token, password }),
       });
-      
+
       const data = await res.json();
-      
+
       if (res.ok) {
         setMessageType('success');
         setMessage(data.message);
@@ -74,7 +74,7 @@ const ResetPassword = () => {
       setMessageType('error');
       setMessage('تعذر الاتصال بالخادم.');
     }
-    
+
     setLoading(false);
   };
 
@@ -140,17 +140,15 @@ const ResetPassword = () => {
               <form onSubmit={handleSubmit} className="space-y-6">
                 {/* حقل كلمة المرور الجديدة */}
                 <div className="relative">
-                  <label className={`absolute right-4 transition-all duration-200 pointer-events-none ${
-                    focusedField === 'password' || password 
-                      ? 'top-2 text-xs text-orange-400' 
+                  <label className={`absolute right-4 transition-all duration-200 pointer-events-none ${focusedField === 'password' || password
+                      ? 'top-2 text-xs text-orange-400'
                       : 'top-4 text-base text-blue-200/60'
-                  }`}>
+                    }`}>
                     كلمة المرور الجديدة
                   </label>
                   <div className="relative">
-                    <Lock className={`absolute left-12 top-4 w-5 h-5 transition-colors duration-200 ${
-                      focusedField === 'password' ? 'text-orange-400' : 'text-blue-200/60'
-                    }`} />
+                    <Lock className={`absolute left-12 top-4 w-5 h-5 transition-colors duration-200 ${focusedField === 'password' ? 'text-orange-400' : 'text-blue-200/60'
+                      }`} />
                     <input
                       type={showPassword ? 'text' : 'password'}
                       value={password}
@@ -172,17 +170,15 @@ const ResetPassword = () => {
 
                 {/* حقل تأكيد كلمة المرور */}
                 <div className="relative">
-                  <label className={`absolute right-4 transition-all duration-200 pointer-events-none ${
-                    focusedField === 'confirmPassword' || confirmPassword 
-                      ? 'top-2 text-xs text-orange-400' 
+                  <label className={`absolute right-4 transition-all duration-200 pointer-events-none ${focusedField === 'confirmPassword' || confirmPassword
+                      ? 'top-2 text-xs text-orange-400'
                       : 'top-4 text-base text-blue-200/60'
-                  }`}>
+                    }`}>
                     تأكيد كلمة المرور
                   </label>
                   <div className="relative">
-                    <Lock className={`absolute left-12 top-4 w-5 h-5 transition-colors duration-200 ${
-                      focusedField === 'confirmPassword' ? 'text-orange-400' : 'text-blue-200/60'
-                    }`} />
+                    <Lock className={`absolute left-12 top-4 w-5 h-5 transition-colors duration-200 ${focusedField === 'confirmPassword' ? 'text-orange-400' : 'text-blue-200/60'
+                      }`} />
                     <input
                       type={showConfirmPassword ? 'text' : 'password'}
                       value={confirmPassword}
@@ -221,11 +217,10 @@ const ResetPassword = () => {
 
               {/* رسالة النتيجة */}
               {message && (
-                <div className={`mt-4 p-4 rounded-lg border text-center text-sm animate-fade-in flex items-center justify-center gap-2 ${
-                  messageType === 'success' 
-                    ? 'bg-green-500/10 border-green-400/20 text-green-300' 
+                <div className={`mt-4 p-4 rounded-lg border text-center text-sm animate-fade-in flex items-center justify-center gap-2 ${messageType === 'success'
+                    ? 'bg-green-500/10 border-green-400/20 text-green-300'
                     : 'bg-red-500/10 border-red-400/20 text-orange-300'
-                }`}>
+                  }`}>
                   {messageType === 'success' && <CheckCircle className="w-5 h-5" />}
                   {message}
                 </div>
@@ -263,6 +258,18 @@ const ResetPassword = () => {
         }
       `}</style>
     </div>
+  );
+};
+
+const ResetPassword = () => {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
+        <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    }>
+      <ResetPasswordForm />
+    </Suspense>
   );
 };
 
