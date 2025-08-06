@@ -391,37 +391,58 @@ const CastingPlatform = () => {
 
       {/* Mobile Menu */}
       {isMenuOpen && (
-        <div className="md:hidden fixed top-20 left-0 right-0 z-40 bg-indigo-950/98 border-b border-blue-400/20 shadow-lg animate-slideDown">
-          <div className="container mx-auto px-4 py-6">
-            <div className="flex flex-col space-y-4">
-              <Link href="/#home" className="py-3 px-4 rounded-xl hover:bg-gradient-to-r hover:from-orange-400/20 hover:to-pink-500/20 transition-all duration-300 text-center font-medium">
-                {t('navigation.home')}
-              </Link>
-              <Link href="/#categories" className="py-3 px-4 rounded-xl hover:bg-gradient-to-r hover:from-orange-400/20 hover:to-pink-500/20 transition-all duration-300 text-center font-medium">
-                {t('navigation.categories')}
-              </Link>
-              <Link href="/#services" className="py-3 px-4 rounded-xl hover:bg-gradient-to-r hover:from-orange-400/20 hover:to-pink-500/20 transition-all duration-300 text-center font-medium">
-                {t('navigation.services')}
-              </Link>
-              <Link href="/#about" className="py-3 px-4 rounded-xl hover:bg-gradient-to-r hover:from-orange-400/20 hover:to-pink-500/20 transition-all duration-300 text-center font-medium">
-                {t('navigation.about')}
-              </Link>
-              <Link href="/#contact" className="py-3 px-4 rounded-xl hover:bg-gradient-to-r hover:from-orange-400/20 hover:to-pink-500/20 transition-all duration-300 text-center font-medium">
-                {t('navigation.contact')}
-              </Link>
-              {!user && (
-                <div className="flex flex-col space-y-3 pt-4 border-t border-blue-400/20">
-                  <Link href="/login" className="py-3 bg-blue-600/30 rounded-xl border border-blue-400/30 text-center font-medium hover:bg-blue-600/50 transition-all duration-300">
-                    {t('navigation.login')}
-                  </Link>
-                  <Link href="/register" className="py-3 bg-gradient-to-r from-orange-400 to-pink-500 text-white rounded-xl text-center font-medium hover:from-orange-500 hover:to-pink-600 transition-all duration-300">
-                    {t('navigation.joinNow')}
-                  </Link>
-                </div>
-              )}
+        <>
+          {/* Overlay خلفية داكنة تغطي الشاشة */}
+          <div className="fixed inset-0 z-30 bg-[#0f172a]/90 backdrop-blur-sm md:hidden" onClick={() => setIsMenuOpen(false)} />
+          {/* القائمة نفسها */}
+          <div className="md:hidden fixed top-20 left-0 right-0 z-40 bg-indigo-950/98 border-b border-blue-400/20 shadow-lg animate-slideDown">
+            <div className="container mx-auto px-4 py-6">
+              <div className="flex flex-col space-y-4">
+                <Link href="/#home" className="py-3 px-4 rounded-xl hover:bg-gradient-to-r hover:from-orange-400/20 hover:to-pink-500/20 transition-all duration-300 text-center font-medium">
+                  {t('navigation.home')}
+                </Link>
+                <Link href="/#categories" className="py-3 px-4 rounded-xl hover:bg-gradient-to-r hover:from-orange-400/20 hover:to-pink-500/20 transition-all duration-300 text-center font-medium">
+                  {t('navigation.categories')}
+                </Link>
+                <Link href="/#services" className="py-3 px-4 rounded-xl hover:bg-gradient-to-r hover:from-orange-400/20 hover:to-pink-500/20 transition-all duration-300 text-center font-medium">
+                  {t('navigation.services')}
+                </Link>
+                <Link href="/#about" className="py-3 px-4 rounded-xl hover:bg-gradient-to-r hover:from-orange-400/20 hover:to-pink-500/20 transition-all duration-300 text-center font-medium">
+                  {t('navigation.about')}
+                </Link>
+                <Link href="/#contact" className="py-3 px-4 rounded-xl hover:bg-gradient-to-r hover:from-orange-400/20 hover:to-pink-500/20 transition-all duration-300 text-center font-medium">
+                  {t('navigation.contact')}
+                </Link>
+                {/* عناصر خاصة بالمستخدم المسجل فقط */}
+                {user ? (
+                  <div className="flex flex-col space-y-3 pt-4 border-t border-blue-400/20">
+                    <button
+                      className="py-3 bg-blue-600/30 rounded-xl border border-blue-400/30 text-center font-medium hover:bg-blue-600/50 transition-all duration-300 text-white"
+                      onClick={() => { setIsMenuOpen(false); router.push(dashboardLink); }}
+                    >
+                      لوحة التحكم
+                    </button>
+                    <button
+                      className="py-3 bg-gradient-to-r from-red-500 to-orange-400 text-white rounded-xl text-center font-medium hover:from-red-600 hover:to-orange-500 transition-all duration-300"
+                      onClick={() => { setIsMenuOpen(false); handleLogout(); }}
+                    >
+                      تسجيل خروج
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex flex-col space-y-3 pt-4 border-t border-blue-400/20">
+                    <Link href="/login" className="py-3 bg-blue-600/30 rounded-xl border border-blue-400/30 text-center font-medium hover:bg-blue-600/50 transition-all duration-300">
+                      {t('navigation.login')}
+                    </Link>
+                    <Link href="/register" className="py-3 bg-gradient-to-r from-orange-400 to-pink-500 text-white rounded-xl text-center font-medium hover:from-orange-500 hover:to-pink-600 transition-all duration-300">
+                      {t('navigation.joinNow')}
+                    </Link>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
-        </div>
+        </>
       )}
 
       {/* Language Selection Modal */}
