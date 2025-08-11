@@ -5,12 +5,13 @@ import Image from "next/image";
 
 interface PortfolioItem {
   id: number;
-  mediaType: string;
+  mediaType?: string; // توافق قديم
+  type?: string;      // الحقل الفعلي من الـ API
   title?: string;
   mediaData?: string;
   mediaUrl?: string;
   createdAt: string;
-  workLink?: string;
+  // workLink?: string; // محذوف من الواجهة
 }
 
 export default function TalentPortfolio() {
@@ -22,10 +23,11 @@ export default function TalentPortfolio() {
   const [title, setTitle] = useState('');
   const [file, setFile] = useState<File | null>(null);
   const [mediaUrl, setMediaUrl] = useState('');
-  const [workLink, setWorkLink] = useState('');
   const [message, setMessage] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [files, setFiles] = useState<File[]>([]);
+  // اختيار طريقة إدخال الفيديو: رابط أو ملف
+  const [videoInputType, setVideoInputType] = useState<'url'|'file'>('url');
 
   useEffect(() => {
     // جلب userId من localStorage
@@ -52,7 +54,8 @@ export default function TalentPortfolio() {
     e.preventDefault();
     if (!userId) return setMessage('يجب تسجيل الدخول');
     if (type === 'image' && files.length === 0) return setMessage('يرجى اختيار صورة واحدة على الأقل');
-    if (type === 'video' && !mediaUrl) return setMessage('يرجى إدخال رابط الفيديو');
+    if (type === 'video' && videoInputType === 'url' && !mediaUrl) return setMessage('يرجى إدخال رابط الفيديو');
+    if (type === 'video' && videoInputType === 'file' && !file) return setMessage('يرجى اختيار ملف فيديو');
     setUploading(true);
     setMessage('');
     if (type === 'image') {
@@ -77,7 +80,6 @@ export default function TalentPortfolio() {
             type,
             title,
             mediaData: mediaDataBase64,
-            workLink: workLink || undefined,
           }),
         });
         if (res.ok) {
@@ -91,7 +93,7 @@ export default function TalentPortfolio() {
         }
       }
       setItems([...uploadedItems, ...items]);
-      setTitle(''); setFiles([]); setFile(null); setMediaUrl(''); setWorkLink('');
+      setTitle(''); setFiles([]); setFile(null); setMediaUrl('');
       if (fileInputRef.current) fileInputRef.current.value = '';
       setMessage('تم رفع جميع الأعمال بنجاح!');
       setUploading(false);
@@ -99,6 +101,43 @@ export default function TalentPortfolio() {
     }
     // Handle video upload
     if (type === 'video') {
+      // إذا كان الفيديو كملف مرفوع
+      if (videoInputType === 'file' && file) {
+        const mediaDataBase64 = await new Promise<string | undefined>((resolve) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve((reader.result as string)?.split(',')[1]);
+          reader.onerror = () => resolve(undefined);
+          reader.readAsDataURL(file);
+        });
+        if (!mediaDataBase64) {
+          setMessage('فشل قراءة ملف الفيديو.');
+          setUploading(false);
+          return;
+        }
+        const res = await fetch('/api/portfolio', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userId,
+            type,
+            title,
+            mediaData: mediaDataBase64,
+          }),
+        });
+        if (res.ok) {
+          const newItem = await res.json();
+          setItems([newItem, ...items]);
+          setTitle(''); setMediaUrl(''); setFile(null);
+          if (fileInputRef.current) fileInputRef.current.value = '';
+          setMessage('تم رفع العمل بنجاح!');
+        } else {
+          const err = await res.json();
+          setMessage(err.message || 'حدث خطأ أثناء الرفع.');
+        }
+        setUploading(false);
+        return;
+      }
+      // إذا كان الفيديو كرابط
       const res = await fetch('/api/portfolio', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -107,13 +146,12 @@ export default function TalentPortfolio() {
           type,
           title,
           mediaUrl: mediaUrl,
-          workLink: workLink || undefined,
         }),
       });
       if (res.ok) {
         const newItem = await res.json();
         setItems([newItem, ...items]);
-        setTitle(''); setMediaUrl(''); setWorkLink('');
+        setTitle(''); setMediaUrl(''); setFile(null);
         setMessage('تم رفع العمل بنجاح!');
       } else {
         const err = await res.json();
@@ -169,20 +207,30 @@ export default function TalentPortfolio() {
           )}
           {type === 'video' && (
             <div>
-              <label className="block mb-2 text-blue-100">رابط الفيديو (YouTube, Vimeo...)</label>
-              <input type="url" value={mediaUrl} onChange={e => setMediaUrl(e.target.value)} className="w-full px-4 py-3 rounded-lg bg-blue-900/40 border border-blue-400/20 text-white" placeholder="https://youtube.com/..." />
+              <div className="flex gap-2 mb-3">
+                <button type="button" onClick={()=>setVideoInputType('url')} className={`px-3 py-2 rounded-lg text-sm border ${videoInputType==='url' ? 'border-orange-400 bg-orange-500/20 text-orange-200' : 'border-blue-400/30 text-blue-100'}`}>رابط فيديو</button>
+                <button type="button" onClick={()=>setVideoInputType('file')} className={`px-3 py-2 rounded-lg text-sm border ${videoInputType==='file' ? 'border-orange-400 bg-orange-500/20 text-orange-200' : 'border-blue-400/30 text-blue-100'}`}>ملف فيديو</button>
+              </div>
+              {videoInputType === 'url' ? (
+                <>
+                  <label className="block mb-2 text-blue-100">رابط الفيديو (YouTube, Vimeo...)</label>
+                  <input type="url" value={mediaUrl} onChange={e => setMediaUrl(e.target.value)} className="w-full px-4 py-3 rounded-lg bg-blue-900/40 border border-blue-400/20 text-white" placeholder="https://youtube.com/..." />
+                </>
+              ) : (
+                <>
+                  <label className="block mb-2 text-blue-100">اختر ملف فيديو (MP4)</label>
+                  <input
+                    type="file"
+                    accept="video/mp4"
+                    ref={fileInputRef}
+                    onChange={e => setFile((e.target.files && e.target.files[0]) || null)}
+                    className="w-full text-blue-100"
+                  />
+                </>
+              )}
             </div>
           )}
-          <div>
-            <label className="block mb-2 text-blue-100">رابط العمل (اختياري)</label>
-            <input
-              type="url"
-              value={workLink}
-              onChange={e => setWorkLink(e.target.value)}
-              className="w-full px-4 py-3 rounded-lg bg-blue-900/40 border border-blue-400/20 text-white"
-              placeholder="https://mysite.com/project..."
-            />
-          </div>
+          {/* تم حذف رابط العمل (اختياري) */}
           <button type="submit" disabled={uploading} className="w-full py-3 bg-gradient-to-r from-orange-400 to-pink-500 rounded-lg font-bold text-lg text-white hover:from-orange-500 hover:to-pink-600 transition-all disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2">
             {uploading && <Loader2 className="animate-spin" size={20} />} رفع العمل
           </button>
@@ -208,8 +256,17 @@ export default function TalentPortfolio() {
                     className="w-full h-40 object-cover rounded-lg mb-2"
                   />
                 )}
+                {(item.type === 'image' && item.mediaData) && (
+                  <Image
+                    src={`data:image/png;base64,${item.mediaData}`}
+                    alt={item.title || 'عمل'}
+                    width={200}
+                    height={100}
+                    className="w-full h-40 object-cover rounded-lg mb-2"
+                  />
+                )}
                 {/* لا تعرض أي صورة إذا لم يوجد mediaData */}
-                {item.mediaType === 'video' && item.mediaUrl && (
+                {(item.mediaType === 'video' || item.type === 'video') && item.mediaUrl && (
                   <iframe
                     src={item.mediaUrl.replace('watch?v=', 'embed/')}
                     title={item.title || 'فيديو'}
@@ -217,18 +274,15 @@ export default function TalentPortfolio() {
                     allowFullScreen
                   />
                 )}
-                <div className="font-bold text-center text-blue-100 mb-1 text-sm truncate w-full">{item.title}</div>
-                {item.workLink && (
-                  <a
-                    href={item.workLink}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-orange-400 hover:underline text-xs mb-1 break-all"
-                    title="رابط العمل"
-                  >
-                    {item.workLink}
-                  </a>
+                {(item.mediaType === 'video' || item.type === 'video') && item.mediaData && (
+                  <video
+                    controls
+                    className="w-full h-40 rounded-lg mb-2"
+                    src={`data:video/mp4;base64,${item.mediaData}`}
+                  />
                 )}
+                <div className="font-bold text-center text-blue-100 mb-1 text-sm truncate w-full">{item.title}</div>
+                {/* تم حذف عرض رابط العمل */}
                 <button className="absolute top-2 left-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-all" onClick={() => handleDelete(item.id)} title="حذف العمل"><Trash2 size={18} /></button>
               </div>
             ))}

@@ -25,14 +25,22 @@ export default function TalentProfile() {
     name: "",
     age: "",
     bio: "",
-    categoryId: "",
-    socialLinks: { instagram: "", tiktok: "", youtube: "", twitter: "" },
+    categories: [] as string[],
     profileImage: undefined as File | undefined,
     profileImageData: undefined as string | undefined,
     jobTitle: "",
     services: [] as { name: string; price: string }[],
     workArea: "",
     canTravelAbroad: false,
+    eyeColor: "",
+    hairStyle: "",
+    height: "",
+    weight: "",
+    skinColor: "",
+    language: "",
+    accent: "",
+    features: "",
+    hairColor: "",
   });
   const [newService, setNewService] = useState({ name: "", price: "" });
   const [message, setMessage] = useState("");
@@ -42,13 +50,13 @@ export default function TalentProfile() {
 
   // تعريف جدول أيام الأسبوع الافتراضي
   const defaultSchedule = {
-    sunday:    { from: '', to: '', active: false },
-    monday:    { from: '', to: '', active: false },
-    tuesday:   { from: '', to: '', active: false },
-    wednesday: { from: '', to: '', active: false },
-    thursday:  { from: '', to: '', active: false },
-    friday:    { from: '', to: '', active: false },
-    saturday:  { from: '', to: '', active: false },
+    sunday:    { from: '', to: '', active: false, allDay: false },
+    monday:    { from: '', to: '', active: false, allDay: false },
+    tuesday:   { from: '', to: '', active: false, allDay: false },
+    wednesday: { from: '', to: '', active: false, allDay: false },
+    thursday:  { from: '', to: '', active: false, allDay: false },
+    friday:    { from: '', to: '', active: false, allDay: false },
+    saturday:  { from: '', to: '', active: false, allDay: false },
   };
 
   const daysAr: Record<string, string> = {
@@ -62,6 +70,47 @@ export default function TalentProfile() {
   };
 
   const [workingSchedule, setWorkingSchedule] = useState<any>(defaultSchedule);
+
+  // دوال مساعدة للتحويل بين 24 ساعة و12 ساعة
+  const convert24To12 = (time24: string) => {
+    if (!time24 || !/^\d{2}:\d{2}$/.test(time24)) return { hour: '12', minute: '00', period: 'AM' };
+    const [hStr, m] = time24.split(':');
+    let h = parseInt(hStr, 10);
+    const period = h >= 12 ? 'PM' : 'AM';
+    h = h % 12;
+    if (h === 0) h = 12;
+    const hour = h.toString().padStart(2, '0');
+    return { hour, minute: m, period };
+  };
+
+  const convert12To24 = (hour12: string, minute: string, period: 'AM'|'PM') => {
+    let h = parseInt(hour12 || '12', 10);
+    if (period === 'AM') {
+      if (h === 12) h = 0;
+    } else {
+      if (h !== 12) h = h + 12;
+    }
+    return `${h.toString().padStart(2, '0')}:${(minute || '00').padStart(2, '0')}`;
+  };
+
+  const hours12 = Array.from({ length: 12 }, (_, i) => (i + 1).toString().padStart(2, '0'));
+  const minutesList = ['00', '15', '30', '45'];
+  const periods: Array<'AM'|'PM'> = ['AM', 'PM'];
+
+  // دالة لتطبيع الجدول وضمان وجود allDay لكل يوم
+  const normalizeSchedule = (schedule: any) => {
+    const result: any = {};
+    Object.keys(defaultSchedule).forEach((dayKey) => {
+      const day = schedule?.[dayKey] || {};
+      result[dayKey] = {
+        from: typeof day.from === 'string' ? day.from : '',
+        to: typeof day.to === 'string' ? day.to : '',
+        active: typeof day.active === 'boolean' ? day.active : false,
+        allDay: typeof day.allDay === 'boolean' ? day.allDay : false,
+      };
+    });
+    return result;
+  };
 
   useEffect(() => {
     setMounted(true);
@@ -88,10 +137,6 @@ export default function TalentProfile() {
           .then((users) => {
             const found = users.find((acc: any) => String(acc.id) === String(u.id));
             if (found) {
-              let socialLinks = { instagram: "", tiktok: "", youtube: "", twitter: "" };
-              try {
-                if (found.socialLinks) socialLinks = JSON.parse(found.socialLinks);
-              } catch {}
               let profileImageData: string | undefined = undefined;
               try {
                 if (found.profileImageData) {
@@ -105,17 +150,25 @@ export default function TalentProfile() {
                 name: found.name || "",
                 age: found.age ? String(found.age) : "",
                 bio: found.bio || "",
-                categoryId: found.categoryId || "",
-                socialLinks,
+                categories: found.categories ? found.categories.map((c: any) => c.id || c.category?.id) : [],
                 profileImageData,
                 jobTitle: found.jobTitle || "",
                 services: found.services ? JSON.parse(found.services) : [],
                 workArea: found.workArea || "",
                 canTravelAbroad: found.canTravelAbroad || false,
+                eyeColor: found.eyeColor || "",
+                hairStyle: found.hairStyle || "",
+                height: found.height ? String(found.height) : "",
+                weight: found.weight ? String(found.weight) : "",
+                skinColor: found.skinColor || "",
+                language: found.language || "",
+                accent: found.accent || "",
+                features: found.features || "",
+                hairColor: found.hairColor || "",
               }));
               let schedule = defaultSchedule;
               try {
-                if (found.workingSchedule) schedule = JSON.parse(found.workingSchedule);
+                if (found.workingSchedule) schedule = normalizeSchedule(JSON.parse(found.workingSchedule));
               } catch {}
               setWorkingSchedule(schedule);
             }
@@ -149,8 +202,8 @@ export default function TalentProfile() {
     e.preventDefault();
     if (!user) return setMessage("يجب تسجيل الدخول أولاً.");
     
-    if (!form.categoryId) {
-      setCategoryError("يجب اختيار التصنيف!");
+    if (!form.categories || form.categories.length === 0) {
+      setCategoryError("يجب اختيار تصنيف واحد على الأقل!");
       setMessage("");
       return;
     } else {
@@ -165,14 +218,22 @@ export default function TalentProfile() {
       name: form.name,
       age: form.age ? Number(form.age) : undefined,
       bio: form.bio,
-      categoryId: form.categoryId,
-      socialLinks: JSON.stringify(form.socialLinks),
+      categories: form.categories,
       profileImageData: form.profileImageData,
       workingSchedule: JSON.stringify(workingSchedule),
       jobTitle: form.jobTitle,
       services: JSON.stringify(form.services),
       workArea: form.workArea,
       canTravelAbroad: form.canTravelAbroad,
+      eyeColor: form.eyeColor,
+      hairStyle: form.hairStyle,
+      height: form.height ? Number(form.height) : undefined,
+      weight: form.weight ? Number(form.weight) : undefined,
+      skinColor: form.skinColor,
+      language: form.language,
+      accent: form.accent,
+      features: form.features,
+      hairColor: form.hairColor,
     };
 
     const res = await fetch("/api/accounts", {
@@ -326,20 +387,30 @@ export default function TalentProfile() {
               <div className="grid md:grid-cols-2 gap-6">
                 <div>
                   <label className="block mb-2 text-blue-100 font-semibold">
-                    التصنيف <span className="text-red-400">*</span>
+                    التصنيفات <span className="text-red-400">*</span>
                   </label>
-                  <select
-                    value={form.categoryId}
-                    onChange={e => setForm(f => ({ ...f, categoryId: e.target.value }))}
-                    className={`w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white focus:outline-none focus:ring-2 focus:ring-orange-400/50 focus:border-orange-400/50 transition-all duration-200 ${categoryError ? 'border-red-400' : ''}`}
-                  >
-                    <option value="">اختر تصنيفك...</option>
-                    {categories.map(cat => (
-                      <option key={cat.id} value={cat.id} className="bg-blue-900 text-white">
+                  <div className="flex flex-wrap gap-2">
+                    {categories.map(cat => {
+                      const checked = form.categories.includes(cat.id);
+                      return (
+                        <label key={cat.id} className={`flex items-center gap-2 px-3 py-2 rounded-xl cursor-pointer border transition-all duration-150 ${checked ? 'bg-orange-400/20 border-orange-400 text-orange-300 font-bold' : 'bg-white/5 border-white/10 text-white'}`}> 
+                          <input
+                            type="checkbox"
+                            checked={checked}
+                            onChange={e => {
+                              if (e.target.checked) {
+                                setForm(f => ({ ...f, categories: [...f.categories, cat.id] }));
+                              } else {
+                                setForm(f => ({ ...f, categories: f.categories.filter(id => id !== cat.id) }));
+                              }
+                            }}
+                            className="accent-orange-400 w-5 h-5 rounded"
+                          />
                         {cat.name}
-                      </option>
-                    ))}
-                  </select>
+                        </label>
+                      );
+                    })}
+                  </div>
                   {categoryError && (
                     <div className="text-red-400 mt-2 text-sm font-semibold flex items-center gap-1">
                       <X className="w-4 h-4" />
@@ -474,14 +545,20 @@ export default function TalentProfile() {
 
               <div className="overflow-x-auto">
                 <div className="min-w-full">
-                  <div className="grid grid-cols-4 gap-4 mb-4 text-center font-semibold text-blue-200">
+                  <div className="grid grid-cols-7 gap-4 mb-4 text-center font-semibold text-blue-200">
                     <div>اليوم</div>
                     <div>نشط؟</div>
-                    <div>من</div>
+                    <div>من (ساعة)</div>
+                    <div>من (دقيقة)</div>
+                    <div>من (AM/PM)</div>
                     <div>إلى</div>
+                    <div>طوال اليوم</div>
                   </div>
-                  {Object.keys(daysAr).map(day => (
-                    <div key={day} className="grid grid-cols-4 gap-4 mb-3 items-center">
+                  {Object.keys(daysAr).map(day => {
+                    const from12 = convert24To12(workingSchedule[day].from);
+                    const to12 = convert24To12(workingSchedule[day].to);
+                    return (
+                    <div key={day} className="grid grid-cols-7 gap-4 mb-3 items-center">
                       <div className="text-blue-100 font-semibold">{daysAr[day]}</div>
                       <div className="flex justify-center">
                         <input
@@ -491,69 +568,226 @@ export default function TalentProfile() {
                           className="w-5 h-5 rounded border-2 border-white/20 bg-white/5 text-orange-400 focus:ring-orange-400/50"
                         />
                       </div>
-                      <div>
-                        <input
-                          type="time"
-                          value={workingSchedule[day].from}
-                          disabled={!workingSchedule[day].active}
-                          onChange={e => setWorkingSchedule((ws: any) => ({ ...ws, [day]: { ...ws[day], from: e.target.value } }))}
-                          className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white focus:outline-none focus:ring-2 focus:ring-orange-400/50 disabled:opacity-50 disabled:cursor-not-allowed"
-                        />
+                      <div className="grid grid-cols-3 gap-2">
+                        {/* من: ساعة */}
+                        <select
+                          value={from12.hour}
+                          disabled={!workingSchedule[day].active || workingSchedule[day].allDay}
+                          onChange={e => {
+                            const newFrom = convert12To24(e.target.value, from12.minute, from12.period);
+                            setWorkingSchedule((ws: any) => ({ ...ws, [day]: { ...ws[day], from: newFrom } }));
+                          }}
+                          className="px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white focus:outline-none focus:ring-2 focus:ring-orange-400/50 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          {hours12.map(h => <option key={h} value={h} className="text-black">{h}</option>)}
+                        </select>
+                        {/* من: دقيقة */}
+                        <select
+                          value={from12.minute}
+                          disabled={!workingSchedule[day].active || workingSchedule[day].allDay}
+                          onChange={e => {
+                            const newFrom = convert12To24(from12.hour, e.target.value, from12.period);
+                            setWorkingSchedule((ws: any) => ({ ...ws, [day]: { ...ws[day], from: newFrom } }));
+                          }}
+                          className="px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white focus:outline-none focus:ring-2 focus:ring-orange-400/50 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          {minutesList.map(m => <option key={m} value={m} className="text-black">{m}</option>)}
+                        </select>
+                        {/* من: AM/PM */}
+                        <select
+                          value={from12.period}
+                          disabled={!workingSchedule[day].active || workingSchedule[day].allDay}
+                          onChange={e => {
+                            const newFrom = convert12To24(from12.hour, from12.minute, e.target.value as 'AM'|'PM');
+                            setWorkingSchedule((ws: any) => ({ ...ws, [day]: { ...ws[day], from: newFrom } }));
+                          }}
+                          className="px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white focus:outline-none focus:ring-2 focus:ring-orange-400/50 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          {periods.map(p => <option key={p} value={p} className="text-black">{p}</option>)}
+                        </select>
                       </div>
-                      <div>
+                      {/* إلى: وقت كامل بمدخل time للحفاظ على البساطة، لكن بحساب 12/24 عند التغيير */}
+                      <div className="grid grid-cols-3 gap-2">
+                        {/* إلى: ساعة */}
+                        <select
+                          value={to12.hour}
+                          disabled={!workingSchedule[day].active || workingSchedule[day].allDay}
+                          onChange={e => {
+                            const newTo = convert12To24(e.target.value, to12.minute, to12.period);
+                            setWorkingSchedule((ws: any) => ({ ...ws, [day]: { ...ws[day], to: newTo } }));
+                          }}
+                          className="px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white focus:outline-none focus:ring-2 focus:ring-orange-400/50 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          {hours12.map(h => <option key={h} value={h} className="text-black">{h}</option>)}
+                        </select>
+                        {/* إلى: دقيقة */}
+                        <select
+                          value={to12.minute}
+                          disabled={!workingSchedule[day].active || workingSchedule[day].allDay}
+                          onChange={e => {
+                            const newTo = convert12To24(to12.hour, e.target.value, to12.period);
+                            setWorkingSchedule((ws: any) => ({ ...ws, [day]: { ...ws[day], to: newTo } }));
+                          }}
+                          className="px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white focus:outline-none focus:ring-2 focus:ring-orange-400/50 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          {minutesList.map(m => <option key={m} value={m} className="text-black">{m}</option>)}
+                        </select>
+                        {/* إلى: AM/PM */}
+                        <select
+                          value={to12.period}
+                          disabled={!workingSchedule[day].active || workingSchedule[day].allDay}
+                          onChange={e => {
+                            const newTo = convert12To24(to12.hour, to12.minute, e.target.value as 'AM'|'PM');
+                            setWorkingSchedule((ws: any) => ({ ...ws, [day]: { ...ws[day], to: newTo } }));
+                          }}
+                          className="px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white focus:outline-none focus:ring-2 focus:ring-orange-400/50 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          {periods.map(p => <option key={p} value={p} className="text-black">{p}</option>)}
+                        </select>
+                      </div>
+                      <div className="flex justify-center">
                         <input
-                          type="time"
-                          value={workingSchedule[day].to}
-                          disabled={!workingSchedule[day].active}
-                          onChange={e => setWorkingSchedule((ws: any) => ({ ...ws, [day]: { ...ws[day], to: e.target.value } }))}
-                          className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white focus:outline-none focus:ring-2 focus:ring-orange-400/50 disabled:opacity-50 disabled:cursor-not-allowed"
+                          type="checkbox"
+                          checked={Boolean(workingSchedule[day].allDay)}
+                          onChange={e => setWorkingSchedule((ws: any) => ({
+                            ...ws,
+                            [day]: {
+                              ...ws[day],
+                              allDay: e.target.checked,
+                              // عند اختيار طوال اليوم، فعّل اليوم واضبط الوقت إلى كامل اليوم
+                              active: e.target.checked ? true : ws[day].active,
+                              from: e.target.checked ? '00:00' : ws[day].from,
+                              to: e.target.checked ? '23:59' : ws[day].to,
+                            }
+                          }))}
+                          className="w-5 h-5 rounded border-2 border-white/20 bg-white/5 text-orange-400 focus:ring-orange-400/50"
                         />
                       </div>
                     </div>
-                  ))}
+                  );})}
                 </div>
               </div>
             </div>
 
-            {/* قسم روابط السوشيال ميديا */}
-            <div className="bg-white/5 backdrop-blur-xl rounded-3xl border border-white/10 p-8 shadow-2xl">
-              <h3 className="text-2xl font-bold text-white mb-6 flex items-center gap-3">
-                <div className="w-8 h-8 bg-gradient-to-r from-pink-400 to-purple-500 rounded-lg flex items-center justify-center">
-                  <Globe className="w-4 h-4 text-white" />
+            {/* لون العين */}
+            <div>
+              <label className="block mb-2 font-semibold text-blue-300">لون العين</label>
+              <select
+                value={form.eyeColor}
+                onChange={e => setForm(f => ({ ...f, eyeColor: e.target.value }))}
+                className="w-full px-4 py-3 rounded-xl bg-white/5 border border-blue-300/30 text-white focus:outline-none focus:ring-2 focus:ring-blue-300/40"
+              >
+                <option value="">اختر...</option>
+                <option>بني</option>
+                <option>أزرق</option>
+                <option>أخضر</option>
+                <option>عسلي</option>
+                <option>رمادي</option>
+                <option>أسود</option>
+              </select>
+            </div>
+            {/* تسريحة الشعر */}
+            <div>
+              <label className="block mb-2 font-semibold text-pink-300">تسريحة الشعر</label>
+              <select
+                value={form.hairStyle}
+                onChange={e => setForm(f => ({ ...f, hairStyle: e.target.value }))}
+                className="w-full px-4 py-3 rounded-xl bg-white/5 border border-pink-300/30 text-white focus:outline-none focus:ring-2 focus:ring-pink-300/40"
+              >
+                <option value="">اختر...</option>
+                <option>قصير</option>
+                <option>طويل</option>
+                <option>مموج</option>
+                <option>أملس</option>
+                <option>مجعد</option>
+              </select>
+            </div>
+            {/* لون الشعر */}
+            <div>
+              <label className="block mb-2 font-semibold text-red-300">لون الشعر</label>
+              <select
+                value={form.hairColor}
+                onChange={e => setForm(f => ({ ...f, hairColor: e.target.value }))}
+                className="w-full px-4 py-3 rounded-xl bg-white/5 border border-red-300/30 text-white focus:outline-none focus:ring-2 focus:ring-red-300/40"
+              >
+                <option value="">اختر...</option>
+                <option>أسود</option>
+                <option>بني</option>
+                <option>أشقر</option>
+                <option>أحمر</option>
+                <option>رمادي</option>
+                <option>أبيض</option>
+              </select>
+            </div>
+            {/* لون البشرة */}
+            <div>
+              <label className="block mb-2 font-semibold text-orange-300">لون البشرة</label>
+              <select
+                value={form.skinColor}
+                onChange={e => setForm(f => ({ ...f, skinColor: e.target.value }))}
+                className="w-full px-4 py-3 rounded-xl bg-white/5 border border-orange-300/30 text-white focus:outline-none focus:ring-2 focus:ring-orange-300/40"
+              >
+                <option value="">اختر...</option>
+                <option>فاتح</option>
+                <option>قمحي</option>
+                <option>أسمر</option>
+                <option>داكن</option>
+              </select>
                 </div>
-                روابط السوشيال ميديا
-              </h3>
-
-              <div className="grid sm:grid-cols-2 gap-4">
-                <input
-                  type="url"
-                  value={form.socialLinks.instagram}
-                  onChange={e => setForm(f => ({ ...f, socialLinks: { ...f.socialLinks, instagram: e.target.value } }))}
-                  className="px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white focus:outline-none focus:ring-2 focus:ring-orange-400/50 placeholder:text-blue-200/60"
-                  placeholder="رابط Instagram"
-                />
-                <input
-                  type="url"
-                  value={form.socialLinks.tiktok}
-                  onChange={e => setForm(f => ({ ...f, socialLinks: { ...f.socialLinks, tiktok: e.target.value } }))}
-                  className="px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white focus:outline-none focus:ring-2 focus:ring-orange-400/50 placeholder:text-blue-200/60"
-                  placeholder="رابط TikTok"
-                />
-                <input
-                  type="url"
-                  value={form.socialLinks.youtube}
-                  onChange={e => setForm(f => ({ ...f, socialLinks: { ...f.socialLinks, youtube: e.target.value } }))}
-                  className="px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white focus:outline-none focus:ring-2 focus:ring-orange-400/50 placeholder:text-blue-200/60"
-                  placeholder="رابط YouTube"
-                />
-                <input
-                  type="url"
-                  value={form.socialLinks.twitter}
-                  onChange={e => setForm(f => ({ ...f, socialLinks: { ...f.socialLinks, twitter: e.target.value } }))}
-                  className="px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white focus:outline-none focus:ring-2 focus:ring-orange-400/50 placeholder:text-blue-200/60"
-                  placeholder="رابط Twitter"
-                />
+            {/* اللغة */}
+            <div>
+              <label className="block mb-2 font-semibold text-purple-300">اللغة</label>
+              <select
+                value={form.language}
+                onChange={e => setForm(f => ({ ...f, language: e.target.value }))}
+                className="w-full px-4 py-3 rounded-xl bg-white/5 border border-purple-300/30 text-white focus:outline-none focus:ring-2 focus:ring-purple-300/40"
+              >
+                <option value="">اختر...</option>
+                <option>العربية</option>
+                <option>الإنجليزية</option>
+                <option>الفرنسية</option>
+                <option>الإسبانية</option>
+              </select>
               </div>
+            {/* اللهجة */}
+            <div>
+              <label className="block mb-2 font-semibold text-cyan-300">اللهجة</label>
+              <select
+                value={form.accent}
+                onChange={e => setForm(f => ({ ...f, accent: e.target.value }))}
+                className="w-full px-4 py-3 rounded-xl bg-white/5 border border-cyan-300/30 text-white focus:outline-none focus:ring-2 focus:ring-cyan-300/40"
+              >
+                <option value="">اختر...</option>
+                <option>نجدية</option>
+                <option>حجازية</option>
+                <option>جنوبية</option>
+                <option>شرقاوية</option>
+                <option>شمالية</option>
+                <option>تهامية</option>
+                <option>حائلية</option>
+                <option>جازانية</option>
+                <option>عسيرية</option>
+                <option>قطرية</option>
+                <option>إماراتية</option>
+                <option>كويتية</option>
+                <option>بحرينية</option>
+                <option>عمانية</option>
+                <option>شامية</option>
+                <option>مصرية</option>
+                <option>مغربية</option>
+                <option>ليبية</option>
+                <option>تونسية</option>
+                <option>جزائرية</option>
+                <option>سودانية</option>
+                <option>يمنية</option>
+                <option>موريتانية</option>
+                <option>فلسطينية</option>
+                <option>لبنانية</option>
+                <option>عراقية</option>
+                <option>سورية</option>
+                <option>أردنية</option>
+                <option>أخرى</option>
+              </select>
             </div>
 
             {/* زر الحفظ */}

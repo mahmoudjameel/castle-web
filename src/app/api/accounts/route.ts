@@ -7,22 +7,28 @@ export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url!);
     const id = searchParams.get('id');
-    const categoryId = searchParams.get('categoryId');
     const role = searchParams.get('role');
     const where: any = {};
     if (id) where.id = Number(id);
-    if (categoryId) where.categoryId = categoryId;
     if (role) {
       where.role = role;
     }
-    // إذا لم يتم تحديد دور، سيتم جلب جميع المستخدمين
-    const users = await prisma.user.findMany({ where });
+    // جلب المستخدمين مع التصنيفات المرتبطة
+    const users = await prisma.user.findMany({
+      where,
+      include: {
+        categories: {
+          include: { category: true }
+        }
+      }
+    });
     // تحويل profileImageData إلى base64 إذا كانت موجودة
     const usersWithImage = users.map(u => {
+      const categories = u.categories.map(uc => uc.category);
       if (u.profileImageData && typeof u.profileImageData !== 'string') {
-        return { ...u, profileImageData: Buffer.from(u.profileImageData).toString('base64') };
+        return { ...u, profileImageData: Buffer.from(u.profileImageData).toString('base64'), categories };
       }
-      return u;
+      return { ...u, categories };
     });
     return NextResponse.json(usersWithImage);
   } catch (err) {
@@ -33,7 +39,7 @@ export async function GET(req: Request) {
 export async function PATCH(req: Request) {
   try {
     const body = await req.json();
-    let { id, approved, age, bio, socialLinks, categoryId, profileImageData, workingSchedule, jobTitle, services, name, workArea, canTravelAbroad, role } = body;
+    let { id, approved, age, bio, socialLinks, categories, profileImageData, workingSchedule, jobTitle, services, name, workArea, canTravelAbroad, role, eyeColor, hairStyle, height, weight, skinColor, language, accent, features, hairColor } = body;
     if (!id) {
       return NextResponse.json({ message: 'id مطلوب.' }, { status: 400 });
     }
@@ -47,7 +53,6 @@ export async function PATCH(req: Request) {
     if (typeof age === 'number') data.age = age;
     if (typeof bio === 'string') data.bio = bio;
     if (socialLinks) data.socialLinks = typeof socialLinks === 'string' ? socialLinks : JSON.stringify(socialLinks);
-    if (typeof categoryId === 'string') data.categoryId = categoryId || null;
     if (typeof profileImageData === 'string') data.profileImageData = Buffer.from(profileImageData, 'base64');
     if (typeof workingSchedule === 'string') data.workingSchedule = workingSchedule;
     if (typeof jobTitle === 'string') data.jobTitle = jobTitle;
@@ -56,8 +61,33 @@ export async function PATCH(req: Request) {
     if (typeof workArea === 'string') data.workArea = workArea;
     if (typeof canTravelAbroad === 'boolean') data.canTravelAbroad = canTravelAbroad;
     if (typeof role === 'string' && ['user', 'talent', 'admin'].includes(role)) data.role = role;
+    if (typeof eyeColor === 'string') data.eyeColor = eyeColor;
+    if (typeof hairStyle === 'string') data.hairStyle = hairStyle;
+    if (typeof height === 'number' || (typeof height === 'string' && height !== '')) data.height = Number(height);
+    if (typeof weight === 'number' || (typeof weight === 'string' && weight !== '')) data.weight = Number(weight);
+    if (typeof skinColor === 'string') data.skinColor = skinColor;
+    if (typeof language === 'string') data.language = language;
+    if (typeof accent === 'string') data.accent = accent;
+    if (typeof features === 'string') data.features = features;
+    if (typeof hairColor === 'string') data.hairColor = hairColor;
+    // تحديث بيانات المستخدم
     const user = await prisma.user.update({ where: { id }, data });
-    return NextResponse.json(user);
+    // تحديث التصنيفات المرتبطة
+    if (Array.isArray(categories)) {
+      await prisma.userCategory.deleteMany({ where: { userId: id } });
+      for (const categoryId of categories) {
+        await prisma.userCategory.create({ data: { userId: id, categoryId } });
+      }
+    }
+    // جلب المستخدم مع التصنيفات بعد التحديث
+    const updatedUser = await prisma.user.findUnique({
+      where: { id },
+      include: {
+        categories: { include: { category: true } }
+      }
+    });
+    const categoriesArr = updatedUser?.categories.map(uc => uc.category) || [];
+    return NextResponse.json({ ...updatedUser, categories: categoriesArr });
   } catch (err) {
     console.error('PATCH /api/accounts error:', err);
     const errorMessage = err instanceof Error ? err.message : JSON.stringify(err);

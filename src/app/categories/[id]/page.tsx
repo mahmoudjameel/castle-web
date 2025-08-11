@@ -12,6 +12,12 @@ interface Talent {
   price?: number;
   jobTitle?: string;
   profileImageData?: string;
+  eyeColor?: string;
+  hairColor?: string;
+  skinColor?: string;
+  hairStyle?: string;
+  language?: string;
+  accent?: string;
 }
 
 interface Category {
@@ -42,6 +48,13 @@ export default function CategoryTalentsPage() {
   const [ageFrom, setAgeFrom] = useState("");
   const [ageTo, setAgeTo] = useState("");
   const [showFilters, setShowFilters] = useState(false);
+  // فلاتر السمات الشخصية
+  const [filterEyeColor, setFilterEyeColor] = useState("");
+  const [filterHairColor, setFilterHairColor] = useState("");
+  const [filterSkinColor, setFilterSkinColor] = useState("");
+  const [filterHairStyle, setFilterHairStyle] = useState("");
+  const [filterLanguage, setFilterLanguage] = useState("");
+  const [filterAccent, setFilterAccent] = useState("");
 
   useEffect(() => {
     if (!categoryId) return;
@@ -75,7 +88,23 @@ export default function CategoryTalentsPage() {
       talent.bio?.toLowerCase().includes(search.toLowerCase());
     const matchesAgeFrom = ageFrom ? (talent.age || 0) >= Number(ageFrom) : true;
     const matchesAgeTo = ageTo ? (talent.age || 0) <= Number(ageTo) : true;
-    return matchesSearch && matchesAgeFrom && matchesAgeTo;
+    const matchesEyeColor = filterEyeColor ? (talent.eyeColor === filterEyeColor) : true;
+    const matchesHairColor = filterHairColor ? (talent.hairColor === filterHairColor) : true;
+    const matchesSkinColor = filterSkinColor ? (talent.skinColor === filterSkinColor) : true;
+    const matchesHairStyle = filterHairStyle ? (talent.hairStyle === filterHairStyle) : true;
+    const matchesLanguage = filterLanguage ? (talent.language === filterLanguage) : true;
+    const matchesAccent = filterAccent ? (talent.accent === filterAccent) : true;
+    return (
+      matchesSearch &&
+      matchesAgeFrom &&
+      matchesAgeTo &&
+      matchesEyeColor &&
+      matchesHairColor &&
+      matchesSkinColor &&
+      matchesHairStyle &&
+      matchesLanguage &&
+      matchesAccent
+    );
   });
 
   const getSortedTalents = () => {
@@ -194,6 +223,129 @@ export default function CategoryTalentsPage() {
                       placeholder="إلى"
                       className="w-20 px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white focus:outline-none focus:ring-2 focus:ring-orange-400/50 placeholder:text-blue-200/60"
                     />
+                  </div>
+                </div>
+
+                {/* فلاتر السمات الشخصية */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-6">
+                  <div>
+                    <label className="block mb-2 text-blue-200 font-semibold">لون العين</label>
+                    <select
+                      value={filterEyeColor}
+                      onChange={e => setFilterEyeColor(e.target.value)}
+                      className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white focus:outline-none focus:ring-2 focus:ring-orange-400/50"
+                    >
+                      <option value="">الكل</option>
+                      <option>بني</option>
+                      <option>أزرق</option>
+                      <option>أخضر</option>
+                      <option>عسلي</option>
+                      <option>رمادي</option>
+                      <option>أسود</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block mb-2 text-blue-200 font-semibold">لون الشعر</label>
+                    <select
+                      value={filterHairColor}
+                      onChange={e => setFilterHairColor(e.target.value)}
+                      className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white focus:outline-none focus:ring-2 focus:ring-orange-400/50"
+                    >
+                      <option value="">الكل</option>
+                      <option>أسود</option>
+                      <option>بني</option>
+                      <option>أشقر</option>
+                      <option>أحمر</option>
+                      <option>رمادي</option>
+                      <option>أبيض</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block mb-2 text-blue-200 font-semibold">لون البشرة</label>
+                    <select
+                      value={filterSkinColor}
+                      onChange={e => setFilterSkinColor(e.target.value)}
+                      className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white focus:outline-none focus:ring-2 focus:ring-orange-400/50"
+                    >
+                      <option value="">الكل</option>
+                      <option>فاتح</option>
+                      <option>قمحي</option>
+                      <option>أسمر</option>
+                      <option>داكن</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block mb-2 text-blue-200 font-semibold">تسريحة الشعر</label>
+                    <select
+                      value={filterHairStyle}
+                      onChange={e => setFilterHairStyle(e.target.value)}
+                      className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white focus:outline-none focus:ring-2 focus:ring-orange-400/50"
+                    >
+                      <option value="">الكل</option>
+                      <option>قصير</option>
+                      <option>طويل</option>
+                      <option>مموج</option>
+                      <option>أملس</option>
+                      <option>مجعد</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block mb-2 text-blue-200 font-semibold">اللغة</label>
+                    <select
+                      value={filterLanguage}
+                      onChange={e => setFilterLanguage(e.target.value)}
+                      className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white focus:outline-none focus:ring-2 focus:ring-orange-400/50"
+                    >
+                      <option value="">الكل</option>
+                      <option>العربية</option>
+                      <option>الإنجليزية</option>
+                      <option>الفرنسية</option>
+                      <option>الإسبانية</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block mb-2 text-blue-200 font-semibold">اللهجة</label>
+                    <select
+                      value={filterAccent}
+                      onChange={e => setFilterAccent(e.target.value)}
+                      className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white focus:outline-none focus:ring-2 focus:ring-orange-400/50"
+                    >
+                      <option value="">الكل</option>
+                      <option>نجدية</option>
+                      <option>حجازية</option>
+                      <option>جنوبية</option>
+                      <option>شرقاوية</option>
+                      <option>شمالية</option>
+                      <option>تهامية</option>
+                      <option>حائلية</option>
+                      <option>جازانية</option>
+                      <option>عسيرية</option>
+                      <option>قطرية</option>
+                      <option>إماراتية</option>
+                      <option>كويتية</option>
+                      <option>بحرينية</option>
+                      <option>عمانية</option>
+                      <option>شامية</option>
+                      <option>مصرية</option>
+                      <option>مغربية</option>
+                      <option>ليبية</option>
+                      <option>تونسية</option>
+                      <option>جزائرية</option>
+                      <option>سودانية</option>
+                      <option>يمنية</option>
+                      <option>موريتانية</option>
+                      <option>فلسطينية</option>
+                      <option>لبنانية</option>
+                      <option>عراقية</option>
+                      <option>سورية</option>
+                      <option>أردنية</option>
+                      <option>أخرى</option>
+                    </select>
                   </div>
                 </div>
               </div>

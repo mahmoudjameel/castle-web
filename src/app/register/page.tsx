@@ -13,8 +13,6 @@ const Register = () => {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
-  const [agreed, setAgreed] = useState(false);
-  const [userAgreed, setUserAgreed] = useState(false);
   const [focusedField, setFocusedField] = useState('');
   const router = useRouter();
 
@@ -176,115 +174,11 @@ const Register = () => {
                   </div>
                 </div>
 
-                {/* الشروط والأحكام للموهبة */}
-                {role === 'talent' && (
-                  <div className="bg-gradient-to-r from-orange-400/10 to-pink-500/10 border border-orange-400/20 rounded-2xl p-6 backdrop-blur-sm">
-                    <div className="flex items-center gap-3 mb-4">
-                      <div className="w-8 h-8 bg-gradient-to-r from-orange-400 to-pink-500 rounded-lg flex items-center justify-center">
-                        <Star className="w-4 h-4 text-white" />
-                      </div>
-                      <h3 className="font-bold text-orange-400">اتفاقية وشروط التسجيل للموهبة</h3>
-                    </div>
-                    <div className="space-y-3 text-sm text-blue-100 mb-4">
-                      <div className="flex items-start gap-2">
-                        <div className="w-1.5 h-1.5 bg-orange-400 rounded-full mt-2 flex-shrink-0"></div>
-                        <span>يتم خصم <span className="text-orange-400 font-bold">30%</span> من قيمة كل عملية بيع لصالح المنصة.</span>
-                      </div>
-                      <div className="flex items-start gap-2">
-                        <div className="w-1.5 h-1.5 bg-orange-400 rounded-full mt-2 flex-shrink-0"></div>
-                        <span>يجب الالتزام بجودة الخدمة المقدمة للعميل.</span>
-                      </div>
-                      <div className="flex items-start gap-2">
-                        <div className="w-1.5 h-1.5 bg-orange-400 rounded-full mt-2 flex-shrink-0"></div>
-                        <span>يمنع التواصل خارج المنصة بشأن الطلبات.</span>
-                      </div>
-                      <div className="flex items-start gap-2">
-                        <div className="w-1.5 h-1.5 bg-orange-400 rounded-full mt-2 flex-shrink-0"></div>
-                        <span>يحق للمنصة إيقاف الحساب في حال مخالفة الشروط.</span>
-                      </div>
-                      <div className="flex items-start gap-2">
-                        <div className="w-1.5 h-1.5 bg-orange-400 rounded-full mt-2 flex-shrink-0"></div>
-                        <span>أي شروط أخرى تراها المنصة ضرورية سيتم إعلامك بها.</span>
-                      </div>
-                    </div>
-                    <label className="flex items-center gap-3 cursor-pointer group">
-                      <div className="relative">
-                        <input 
-                          type="checkbox" 
-                          checked={agreed} 
-                          onChange={(e) => setAgreed(e.target.checked)} 
-                          className="sr-only"
-                        />
-                        <div className={`w-5 h-5 rounded border-2 transition-all duration-200 ${
-                          agreed 
-                            ? 'bg-gradient-to-r from-orange-400 to-pink-500 border-orange-400' 
-                            : 'border-blue-400/40 bg-white/5'
-                        }`}>
-                          {agreed && <CheckCircle className="w-5 h-5 text-white" />}
-                        </div>
-                      </div>
-                      <span className="text-blue-100 text-sm group-hover:text-white transition-colors">
-                        أوافق على جميع الشروط والأحكام أعلاه
-                      </span>
-                    </label>
-                  </div>
-                )}
-
-                {/* الشروط والأحكام للمستخدم */}
-                {role === 'user' && (
-                  <div className="bg-gradient-to-r from-blue-400/10 to-purple-500/10 border border-blue-400/20 rounded-2xl p-6 backdrop-blur-sm">
-                    <div className="flex items-center gap-3 mb-4">
-                      <div className="w-8 h-8 bg-gradient-to-r from-blue-400 to-purple-500 rounded-lg flex items-center justify-center">
-                        <User className="w-4 h-4 text-white" />
-                      </div>
-                      <h3 className="font-bold text-blue-400">اتفاقية وشروط التسجيل للمستخدم</h3>
-                    </div>
-                    <div className="space-y-3 text-sm text-blue-100 mb-4">
-                      <div className="flex items-start gap-2">
-                        <div className="w-1.5 h-1.5 bg-blue-400 rounded-full mt-2 flex-shrink-0"></div>
-                        <span>يتم فرض ضريبة بنسبة <span className="text-blue-400 font-bold">15%</span> على قيمة المبلغ المدفوع.</span>
-                      </div>
-                      <div className="flex items-start gap-2">
-                        <div className="w-1.5 h-1.5 bg-blue-400 rounded-full mt-2 flex-shrink-0"></div>
-                        <span>يجب الالتزام باستخدام المنصة بشكل قانوني وعدم إساءة الاستخدام.</span>
-                      </div>
-                      <div className="flex items-start gap-2">
-                        <div className="w-1.5 h-1.5 bg-blue-400 rounded-full mt-2 flex-shrink-0"></div>
-                        <span>يحق للمنصة إيقاف الحساب في حال مخالفة الشروط.</span>
-                      </div>
-                      <div className="flex items-start gap-2">
-                        <div className="w-1.5 h-1.5 bg-blue-400 rounded-full mt-2 flex-shrink-0"></div>
-                        <span>أي شروط أخرى تراها المنصة ضرورية سيتم إعلامك بها.</span>
-                      </div>
-                    </div>
-                    <label className="flex items-center gap-3 cursor-pointer group">
-                      <div className="relative">
-                        <input 
-                          type="checkbox" 
-                          checked={userAgreed} 
-                          onChange={(e) => setUserAgreed(e.target.checked)} 
-                          className="sr-only"
-                        />
-                        <div className={`w-5 h-5 rounded border-2 transition-all duration-200 ${
-                          userAgreed 
-                            ? 'bg-gradient-to-r from-blue-400 to-purple-500 border-blue-400' 
-                            : 'border-blue-400/40 bg-white/5'
-                        }`}>
-                          {userAgreed && <CheckCircle className="w-5 h-5 text-white" />}
-                        </div>
-                      </div>
-                      <span className="text-blue-100 text-sm group-hover:text-white transition-colors">
-                        أوافق على جميع الشروط والأحكام أعلاه
-                      </span>
-                    </label>
-                  </div>
-                )}
-
                 {/* زر التسجيل */}
                 <div
                   onClick={handleSubmit}
                   className={`group w-full py-4 rounded-xl font-bold text-lg text-white transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center gap-2 cursor-pointer ${
-                    loading || (role === 'talent' ? !agreed : role === 'user' ? !userAgreed : false)
+                    loading || (role === 'talent' ? false : false)
                       ? 'bg-gray-500/50 opacity-60 cursor-not-allowed' 
                       : 'bg-gradient-to-r from-orange-400 to-pink-500 hover:from-orange-500 hover:to-pink-600'
                   }`}

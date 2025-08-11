@@ -10,7 +10,6 @@ import Checkbox from '@mui/material/Checkbox';
 import FormControlLabel from '@mui/material/FormControlLabel';
 import TextField from '@mui/material/TextField';
 import Button from '@mui/material/Button';
-import { FaInstagram, FaTiktok, FaYoutube, FaTwitter } from "react-icons/fa";
 import Image from 'next/image';
 
 export default function TalentPublicProfile() {
@@ -38,6 +37,10 @@ export default function TalentPublicProfile() {
   const [errorMessage, setErrorMessage] = useState('');
   const [reportReason, setReportReason] = useState('');
   const [reportDescription, setReportDescription] = useState('');
+  const [showVideoModal, setShowVideoModal] = useState(false);
+  const [modalVideo, setModalVideo] = useState<{ embedUrl?: string; dataSrc?: string; title?: string } | null>(null);
+  const [showImageModal, setShowImageModal] = useState(false);
+  const [modalImage, setModalImage] = useState<{ src: string; title?: string } | null>(null);
 
   const clearPendingOrderData = () => {
     if (typeof window !== 'undefined') {
@@ -228,6 +231,36 @@ export default function TalentPublicProfile() {
     return slots;
   };
 
+  // تحويل روابط YouTube/Vimeo إلى صيغة embed
+  const getEmbedUrl = (url: string) => {
+    if (!url) return '';
+    try {
+      const u = new URL(url);
+      const host = u.hostname.replace('www.', '');
+      // YouTube
+      if (host.includes('youtube.com')) {
+        const videoId = u.searchParams.get('v');
+        if (videoId) return `https://www.youtube.com/embed/${videoId}`;
+        // shorts
+        if (u.pathname.startsWith('/shorts/')) {
+          return `https://www.youtube.com/embed/${u.pathname.split('/shorts/')[1]}`;
+        }
+      }
+      if (host === 'youtu.be') {
+        const id = u.pathname.slice(1);
+        if (id) return `https://www.youtube.com/embed/${id}`;
+      }
+      // Vimeo
+      if (host.includes('vimeo.com')) {
+        const id = u.pathname.split('/').filter(Boolean)[0];
+        if (id) return `https://player.vimeo.com/video/${id}`;
+      }
+      return url;
+    } catch {
+      return url;
+    }
+  };
+
   if (loading || !talent) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-blue-900 to-purple-900 flex items-center justify-center">
@@ -244,8 +277,6 @@ export default function TalentPublicProfile() {
   const daysAr: Record<string, string> = {
     sunday: 'الأحد', monday: 'الإثنين', tuesday: 'الثلاثاء', wednesday: 'الأربعاء', thursday: 'الخميس', friday: 'الجمعة', saturday: 'السبت',
   };
-  let socialLinks: Record<string, string> = {};
-  try { if (talent.socialLinks) socialLinks = JSON.parse(talent.socialLinks); } catch {}
 
   const reviewsCount = reviews.length;
   const avgRating = reviewsCount > 0 ? (reviews.reduce((sum, r) => sum + (r.rating || 0), 0) / reviewsCount).toFixed(1) : null;
@@ -337,6 +368,8 @@ export default function TalentPublicProfile() {
                   )}
                 </div>
               )}
+
+              {/* Personal Traits Card moved to right column */}
 
               {/* Action Buttons */}
               <div className="flex flex-col sm:flex-row justify-center gap-4">
@@ -438,25 +471,62 @@ export default function TalentPublicProfile() {
                     {portfolio.map(item => (
                       <div key={item.id} className="group relative overflow-hidden rounded-xl shadow-md hover:shadow-lg transition-all duration-200">
                         <div className="aspect-video bg-white/15">
-                          {item.type === 'image' && item.mediaData && (
-                            <Image 
-                              src={`data:image/png;base64,${item.mediaData}`} 
-                              alt={item.title || 'عمل'} 
-                              width={400} 
-                              height={225} 
-                              className="w-full h-full object-cover"
-                            />
+                          {(item.mediaData && ((item.type === 'image') || (item as any).mediaType === 'image')) && (
+                            <div className="group relative w-full h-full">
+                              <Image 
+                                src={`data:image/png;base64,${item.mediaData}`} 
+                                alt={item.title || 'عمل'} 
+                                width={400} 
+                                height={225} 
+                                className="w-full h-full object-cover"
+                              />
+                              <button
+                                type="button"
+                                aria-label="عرض الصورة"
+                                onClick={() => {
+                                  setModalImage({ src: `data:image/png;base64,${item.mediaData}`, title: item.title });
+                                  setShowImageModal(true);
+                                }}
+                                className="absolute inset-0 cursor-zoom-in z-10"
+                              />
+                              <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+                              <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                                <div className="px-3 py-1 rounded-full bg-white/85 text-gray-900 text-sm font-semibold">عرض الصورة</div>
+                              </div>
+                            </div>
                           )}
                           {item.type === 'video' && item.mediaUrl && (
-                            <iframe 
-                              src={item.mediaUrl.replace('watch?v=', 'embed/')} 
-                              title={item.title || 'فيديو'} 
-                              className="w-full h-full" 
-                              allowFullScreen 
-                            />
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setModalVideo({ embedUrl: getEmbedUrl(item.mediaUrl as string), title: item.title });
+                                setShowVideoModal(true);
+                              }}
+                              className="relative w-full h-full flex items-center justify-center group"
+                            >
+                              <div className="absolute inset-0 bg-black/40 group-hover:bg-black/50 transition-colors" />
+                              <div className="w-16 h-16 rounded-full bg-white/80 group-hover:bg-white flex items-center justify-center z-10">
+                                <span className="ml-1 border-l-8 border-y-8 border-y-transparent border-l-red-600"></span>
+                              </div>
+                            </button>
+                          )}
+                          {item.type === 'video' && item.mediaData && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setModalVideo({ dataSrc: `data:video/mp4;base64,${item.mediaData}`, title: item.title });
+                                setShowVideoModal(true);
+                              }}
+                              className="relative w-full h-full flex items-center justify-center group"
+                            >
+                              <div className="absolute inset-0 bg-black/40 group-hover:bg-black/50 transition-colors" />
+                              <div className="w-16 h-16 rounded-full bg-white/80 group-hover:bg-white flex items-center justify-center z-10">
+                                <span className="ml-1 border-l-8 border-y-8 border-y-transparent border-l-red-600"></span>
+                              </div>
+                            </button>
                           )}
                         </div>
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none">
                           <div className="absolute bottom-4 left-4 right-4">
                             <h3 className="text-white font-bold text-lg mb-1">{item.title}</h3>
                             <div className="flex items-center gap-2">
@@ -528,6 +598,62 @@ export default function TalentPublicProfile() {
 
             {/* Right Column */}
             <div className="space-y-6">
+              {/* Personal Traits Card */}
+              {(talent.eyeColor || talent.hairColor || talent.skinColor || talent.hairStyle || talent.language || talent.accent) && (
+                <div className="bg-white/10 rounded-2xl p-5 border border-white/20">
+                  <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-3 flex-wrap">
+                    <div className="w-8 h-8 bg-gradient-to-r from-pink-400 to-blue-500 rounded-lg flex items-center justify-center">
+                      <Settings className="w-4 h-4 text-white" />
+                    </div>
+                    <span>السمات الشخصية</span>
+                  </h2>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {talent.eyeColor && (
+                      <div className="flex items-center gap-2 bg-white/5 rounded-xl px-3 py-2 border border-white/10">
+                        <span className="w-3 h-3 rounded-full bg-blue-300 inline-block"></span>
+                        <span className="text-blue-200 font-semibold">لون العين:</span>
+                        <span className="text-white">{talent.eyeColor}</span>
+                      </div>
+                    )}
+                    {talent.hairColor && (
+                      <div className="flex items-center gap-2 bg-white/5 rounded-xl px-3 py-2 border border-white/10">
+                        <span className="w-3 h-3 rounded-full bg-red-300 inline-block"></span>
+                        <span className="text-red-200 font-semibold">لون الشعر:</span>
+                        <span className="text-white">{talent.hairColor}</span>
+                      </div>
+                    )}
+                    {talent.skinColor && (
+                      <div className="flex items-center gap-2 bg-white/5 rounded-xl px-3 py-2 border border-white/10">
+                        <span className="w-3 h-3 rounded-full bg-orange-300 inline-block"></span>
+                        <span className="text-orange-200 font-semibold">لون البشرة:</span>
+                        <span className="text-white">{talent.skinColor}</span>
+                      </div>
+                    )}
+                    {talent.hairStyle && (
+                      <div className="flex items-center gap-2 bg-white/5 rounded-xl px-3 py-2 border border-white/10">
+                        <span className="w-3 h-3 rounded-full bg-pink-300 inline-block"></span>
+                        <span className="text-pink-200 font-semibold">تسريحة الشعر:</span>
+                        <span className="text-white">{talent.hairStyle}</span>
+                      </div>
+                    )}
+                    {talent.language && (
+                      <div className="flex items-center gap-2 bg-white/5 rounded-xl px-3 py-2 border border-white/10">
+                        <span className="w-3 h-3 rounded-full bg-purple-300 inline-block"></span>
+                        <span className="text-purple-200 font-semibold">اللغة:</span>
+                        <span className="text-white">{talent.language}</span>
+                      </div>
+                    )}
+                    {talent.accent && (
+                      <div className="flex items-center gap-2 bg-white/5 rounded-xl px-3 py-2 border border-white/10">
+                        <span className="w-3 h-3 rounded-full bg-cyan-300 inline-block"></span>
+                        <span className="text-cyan-200 font-semibold">اللهجة:</span>
+                        <span className="text-white">{talent.accent}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
               {/* Services & Pricing */}
               <div className="bg-white/10 rounded-2xl p-5 border border-white/20 lg:sticky lg:top-8">
                 <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-3 flex-wrap">
@@ -595,73 +721,6 @@ export default function TalentPublicProfile() {
                   ))}
                 </div>
               </div>
-
-              {/* Social Media */}
-              {(socialLinks.instagram || socialLinks.tiktok || socialLinks.youtube || socialLinks.twitter) && (
-                <div className="bg-white/10 rounded-2xl p-5 border border-white/20">
-                  <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-3 flex-wrap">
-                    <div className="w-8 h-8 bg-gradient-to-r from-pink-500 to-red-500 rounded-lg flex items-center justify-center">
-                      <FaInstagram className="w-4 h-4 text-white" />
-                    </div>
-                    <span>تابعني على</span>
-                  </h2>
-                  
-                  <div className="space-y-3">
-              {socialLinks.instagram && (
-                      <a 
-                        href={socialLinks.instagram} 
-                        target="_blank" 
-                        rel="noopener noreferrer" 
-                        className="block bg-white/5 rounded-xl p-3 border border-white/10 hover:bg-white/10 transition-all duration-200"
-                      >
-                        <div className="flex items-center gap-3">
-                          <FaInstagram size={20} className="text-pink-400" />
-                          <span className="font-semibold text-white text-sm">Instagram</span>
-                        </div>
-                </a>
-              )}
-              {socialLinks.tiktok && (
-                      <a 
-                        href={socialLinks.tiktok} 
-                        target="_blank" 
-                        rel="noopener noreferrer" 
-                        className="block bg-white/5 rounded-xl p-3 border border-white/10 hover:bg-white/10 transition-all duration-200"
-                      >
-                        <div className="flex items-center gap-3">
-                          <FaTiktok size={20} className="text-gray-300" />
-                          <span className="font-semibold text-white text-sm">TikTok</span>
-                        </div>
-                </a>
-              )}
-              {socialLinks.youtube && (
-                      <a 
-                        href={socialLinks.youtube} 
-                        target="_blank" 
-                        rel="noopener noreferrer" 
-                        className="block bg-white/5 rounded-xl p-3 border border-white/10 hover:bg-white/10 transition-all duration-200"
-                      >
-                        <div className="flex items-center gap-3">
-                          <FaYoutube size={20} className="text-red-400" />
-                          <span className="font-semibold text-white text-sm">YouTube</span>
-                        </div>
-                </a>
-              )}
-              {socialLinks.twitter && (
-                      <a 
-                        href={socialLinks.twitter} 
-                        target="_blank" 
-                        rel="noopener noreferrer" 
-                        className="block bg-white/5 rounded-xl p-3 border border-white/10 hover:bg-white/10 transition-all duration-200"
-                      >
-                        <div className="flex items-center gap-3">
-                          <FaTwitter size={20} className="text-blue-400" />
-                          <span className="font-semibold text-white text-sm">Twitter</span>
-                        </div>
-                      </a>
-                    )}
-                  </div>
-                </div>
-              )}
             </div>
           </div>
         </div>
@@ -921,6 +980,89 @@ export default function TalentPublicProfile() {
       )}
 
       {/* Report Modal */}
+      {/* Video Modal */}
+      <Dialog open={showVideoModal} onClose={() => { setShowVideoModal(false); setModalVideo(null); }} PaperProps={{
+        style: {
+          borderRadius: 16,
+          background: '#0b1220',
+          color: '#fff',
+          minWidth: 300,
+          maxWidth: 900,
+          width: '90vw'
+        }
+      }}>
+        <DialogTitle sx={{
+          fontWeight: 700,
+          fontSize: { xs: '1.1rem', sm: '1.25rem' },
+          color: '#fff',
+          textAlign: 'center',
+          background: 'linear-gradient(45deg, rgba(255,255,255,0.08), rgba(255,255,255,0.04))',
+          borderBottom: '1px solid rgba(255,255,255,0.08)'
+        }}>
+          {modalVideo?.title || 'فيديو'}
+        </DialogTitle>
+        <DialogContent sx={{ p: { xs: 1.5, sm: 2 } }}>
+          <div className="w-full">
+            {modalVideo?.embedUrl && (
+              <div className="relative w-full" style={{ paddingTop: '56.25%' }}>
+                <iframe
+                  src={modalVideo.embedUrl}
+                  title={modalVideo.title || 'فيديو'}
+                  className="absolute inset-0 w-full h-full rounded-xl"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  allowFullScreen
+                />
+              </div>
+            )}
+            {modalVideo?.dataSrc && (
+              <video controls className="w-full rounded-xl" src={modalVideo.dataSrc} />
+            )}
+          </div>
+        </DialogContent>
+        <DialogActions sx={{ justifyContent: 'center', pb: 2 }}>
+          <Button onClick={() => { setShowVideoModal(false); setModalVideo(null); }} sx={{
+            background: 'linear-gradient(45deg, #f59e0b, #d97706)',
+            color: '#fff', fontWeight: 700, borderRadius: '12px', px: 3, py: 1,
+            '&:hover': { background: 'linear-gradient(45deg, #d97706, #b45309)' }
+          }}>إغلاق</Button>
+        </DialogActions>
+      </Dialog>
+      {/* End Video Modal */}
+      {/* Image Modal */}
+      <Dialog open={showImageModal} onClose={() => { setShowImageModal(false); setModalImage(null); }} PaperProps={{
+        style: {
+          borderRadius: 16,
+          background: '#0b1220',
+          color: '#fff',
+          minWidth: 300,
+          maxWidth: 1000,
+          width: '95vw'
+        }
+      }}>
+        <DialogTitle sx={{
+          fontWeight: 700,
+          fontSize: { xs: '1.1rem', sm: '1.25rem' },
+          color: '#fff',
+          textAlign: 'center',
+          background: 'linear-gradient(45deg, rgba(255,255,255,0.08), rgba(255,255,255,0.04))',
+          borderBottom: '1px solid rgba(255,255,255,0.08)'
+        }}>
+          {modalImage?.title || 'صورة'}
+        </DialogTitle>
+        <DialogContent sx={{ p: { xs: 1.5, sm: 2 } }}>
+          {modalImage?.src && (
+            <img src={modalImage.src} alt={modalImage?.title || 'صورة'} className="w-full h-auto rounded-xl" />
+          )}
+        </DialogContent>
+        <DialogActions sx={{ justifyContent: 'center', pb: 2 }}>
+          <Button onClick={() => { setShowImageModal(false); setModalImage(null); }} sx={{
+            background: 'linear-gradient(45deg, #f59e0b, #d97706)',
+            color: '#fff', fontWeight: 700, borderRadius: '12px', px: 3, py: 1,
+            '&:hover': { background: 'linear-gradient(45deg, #d97706, #b45309)' }
+          }}>إغلاق</Button>
+        </DialogActions>
+      </Dialog>
+      {/* End Image Modal */}
       <Dialog open={showReportModal} onClose={()=>setShowReportModal(false)} PaperProps={{
         style: {
           borderRadius: 16,
