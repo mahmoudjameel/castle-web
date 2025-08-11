@@ -473,13 +473,13 @@ export default function TalentPublicProfile() {
                         <div className="aspect-video bg-white/15">
                           {(item.mediaData && ((item.type === 'image') || (item as any).mediaType === 'image')) && (
                             <div className="group relative w-full h-full">
-                              <Image 
-                                src={`data:image/png;base64,${item.mediaData}`} 
-                                alt={item.title || 'عمل'} 
-                                width={400} 
-                                height={225} 
-                                className="w-full h-full object-cover"
-                              />
+                            <Image 
+                              src={`data:image/png;base64,${item.mediaData}`} 
+                              alt={item.title || 'عمل'} 
+                              width={400} 
+                              height={225} 
+                              className="w-full h-full object-cover"
+                            />
                               <button
                                 type="button"
                                 aria-label="عرض الصورة"
@@ -522,7 +522,7 @@ export default function TalentPublicProfile() {
                               <div className="absolute inset-0 bg-black/40 group-hover:bg-black/50 transition-colors" />
                               <div className="w-16 h-16 rounded-full bg-white/80 group-hover:bg-white flex items-center justify-center z-10">
                                 <span className="ml-1 border-l-8 border-y-8 border-y-transparent border-l-red-600"></span>
-                              </div>
+                        </div>
                             </button>
                           )}
                         </div>
@@ -721,8 +721,8 @@ export default function TalentPublicProfile() {
                   ))}
                 </div>
               </div>
-            </div>
-          </div>
+                    </div>
+                        </div>
         </div>
       </div>
 
