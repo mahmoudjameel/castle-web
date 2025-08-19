@@ -13,18 +13,16 @@ export async function GET(req: Request) {
     if (role) {
       where.role = role;
     }
-    // جلب المستخدمين مع التصنيفات المرتبطة
+    // جلب المستخدمين مع التصنيفات المرتبطة (عبر جدول الربط UserCategory)
     const users = await prisma.user.findMany({
       where,
       include: {
-        categories: {
-          include: { category: true }
-        }
+        userCategories: { include: { category: true } }
       }
     });
-    // تحويل profileImageData إلى base64 إذا كانت موجودة
+    // تحويل profileImageData إلى base64 إذا كانت موجودة مع إرجاع قائمة التصنيفات المسطحة
     const usersWithImage = users.map(u => {
-      const categories = u.categories.map(uc => uc.category);
+      const categories = (u as any).userCategories?.map((uc: any) => uc.category) || [];
       if (u.profileImageData && typeof u.profileImageData !== 'string') {
         return { ...u, profileImageData: Buffer.from(u.profileImageData).toString('base64'), categories };
       }
@@ -62,12 +60,18 @@ export async function PATCH(req: Request) {
     if (typeof canTravelAbroad === 'boolean') data.canTravelAbroad = canTravelAbroad;
     if (typeof role === 'string' && ['user', 'talent', 'admin'].includes(role)) data.role = role;
     if (typeof eyeColor === 'string') data.eyeColor = eyeColor;
-    if (typeof hairStyle === 'string') data.hairStyle = hairStyle;
+    // hairStyle can be string or array; store arrays as JSON string
+    if (Array.isArray(hairStyle)) data.hairStyle = JSON.stringify(hairStyle);
+    else if (typeof hairStyle === 'string') data.hairStyle = hairStyle;
     if (typeof height === 'number' || (typeof height === 'string' && height !== '')) data.height = Number(height);
     if (typeof weight === 'number' || (typeof weight === 'string' && weight !== '')) data.weight = Number(weight);
     if (typeof skinColor === 'string') data.skinColor = skinColor;
-    if (typeof language === 'string') data.language = language;
-    if (typeof accent === 'string') data.accent = accent;
+    // language can be string or array; store arrays as JSON string
+    if (Array.isArray(language)) data.language = JSON.stringify(language);
+    else if (typeof language === 'string') data.language = language;
+    // accent can be string or array; store arrays as JSON string
+    if (Array.isArray(accent)) data.accent = JSON.stringify(accent);
+    else if (typeof accent === 'string') data.accent = accent;
     if (typeof features === 'string') data.features = features;
     if (typeof hairColor === 'string') data.hairColor = hairColor;
     // تحديث بيانات المستخدم
@@ -83,10 +87,10 @@ export async function PATCH(req: Request) {
     const updatedUser = await prisma.user.findUnique({
       where: { id },
       include: {
-        categories: { include: { category: true } }
+        userCategories: { include: { category: true } }
       }
     });
-    const categoriesArr = updatedUser?.categories.map(uc => uc.category) || [];
+    const categoriesArr = (updatedUser as any)?.userCategories?.map((uc: any) => uc.category) || [];
     return NextResponse.json({ ...updatedUser, categories: categoriesArr });
   } catch (err) {
     console.error('PATCH /api/accounts error:', err);

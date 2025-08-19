@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
 import { Star, MapPin, Globe, Calendar, Clock, MessageCircle, Camera, Video, Award, Users, Settings, AlertTriangle, CheckCircle } from "lucide-react";
 import Dialog from '@mui/material/Dialog';
@@ -211,25 +211,33 @@ export default function TalentPublicProfile() {
     }
   };
 
-  const getAvailableSlots = () => {
-    let slots: { label: string, value: string }[] = [];
-    try {
-      if (!talent?.workingSchedule) return slots;
-      const schedule = JSON.parse(talent.workingSchedule);
-      const daysAr: Record<string, string> = {
-        sunday: 'الأحد', monday: 'الإثنين', tuesday: 'الثلاثاء', wednesday: 'الأربعاء', thursday: 'الخميس', friday: 'الجمعة', saturday: 'السبت',
-      };
-      Object.keys(schedule).forEach(day => {
-        if (schedule[day]?.active && schedule[day].from && schedule[day].to) {
-          slots.push({
-            label: `${daysAr[day]} (${schedule[day].from} - ${schedule[day].to})`,
-            value: `${day}:${schedule[day].from}-${schedule[day].to}`
-          });
+  // مشتقات مُكثّفة الأداء: جدولة العمل، الخدمات، القيم المتاحة للحجز
+  const workingScheduleMemo = useMemo(() => {
+    try { return talent?.workingSchedule ? JSON.parse(talent.workingSchedule) : {}; } catch { return {}; }
+  }, [talent?.workingSchedule]);
+
+  const servicesList = useMemo(() => {
+    try { return talent?.services ? JSON.parse(talent.services) : []; } catch { return []; }
+  }, [talent?.services]);
+
+  const availableSlots = useMemo(() => {
+    const slots: { label: string; value: string }[] = [];
+    const schedule = workingScheduleMemo || {};
+    const daysAr: Record<string, string> = {
+      sunday: 'الأحد', monday: 'الإثنين', tuesday: 'الثلاثاء', wednesday: 'الأربعاء', thursday: 'الخميس', friday: 'الجمعة', saturday: 'السبت',
+    };
+    Object.keys(schedule).forEach((day) => {
+      const d = schedule[day];
+      if (d?.active) {
+        if (d.allDay) {
+          slots.push({ label: `${daysAr[day]} (متاح طوال اليوم)`, value: `${day}:00:00-23:59` });
+        } else if (d.from && d.to) {
+          slots.push({ label: `${daysAr[day]} (${d.from} - ${d.to})`, value: `${day}:${d.from}-${d.to}` });
         }
-      });
-    } catch {}
+      }
+    });
     return slots;
-  };
+  }, [workingScheduleMemo]);
 
   // تحويل روابط YouTube/Vimeo إلى صيغة embed
   const getEmbedUrl = (url: string) => {
@@ -272,8 +280,7 @@ export default function TalentPublicProfile() {
     );
   }
 
-  let workingSchedule: Record<string, any> = {};
-  try { if (talent.workingSchedule) workingSchedule = JSON.parse(talent.workingSchedule); } catch {}
+  let workingSchedule: Record<string, any> = workingScheduleMemo;
   const daysAr: Record<string, string> = {
     sunday: 'الأحد', monday: 'الإثنين', tuesday: 'الثلاثاء', wednesday: 'الأربعاء', thursday: 'الخميس', friday: 'الجمعة', saturday: 'السبت',
   };
@@ -281,12 +288,9 @@ export default function TalentPublicProfile() {
   const reviewsCount = reviews.length;
   const avgRating = reviewsCount > 0 ? (reviews.reduce((sum, r) => sum + (r.rating || 0), 0) / reviewsCount).toFixed(1) : null;
 
-  const servicesArr: any[] = selectedServices.map(name => {
-    if (!talent?.services) return null;
-    let arr = [];
-    try { arr = JSON.parse(talent.services); } catch {}
-    return arr.find((srv:any) => srv.name === name);
-  }).filter(Boolean);
+  const servicesArr: any[] = selectedServices
+    .map(name => (servicesList || []).find((srv:any) => srv.name === name))
+    .filter(Boolean);
   const subtotal = servicesArr.reduce((sum, srv: any) => srv ? sum + Number(srv.price || 0) : sum, 0);
   const tax = Math.round(subtotal * 0.15);
   const totalWithTax = subtotal + tax;
@@ -630,24 +634,84 @@ export default function TalentPublicProfile() {
                       </div>
                     )}
                     {talent.hairStyle && (
-                      <div className="flex items-center gap-2 bg-white/5 rounded-xl px-3 py-2 border border-white/10">
+                      <div className="flex items-start gap-2 bg-white/5 rounded-xl px-3 py-2 border border-white/10">
                         <span className="w-3 h-3 rounded-full bg-pink-300 inline-block"></span>
                         <span className="text-pink-200 font-semibold">تسريحة الشعر:</span>
-                        <span className="text-white">{talent.hairStyle}</span>
+                        {(() => {
+                          let list: string[] = [];
+                          try {
+                            if (Array.isArray(talent.hairStyle)) list = talent.hairStyle as string[];
+                            else if (typeof talent.hairStyle === 'string') {
+                              const s = talent.hairStyle.trim();
+                              if (s.startsWith('[')) {
+                                const a = JSON.parse(s);
+                                if (Array.isArray(a)) list = a;
+                              }
+                              if (list.length === 0 && s) list = s.split(',').map(v => v.trim()).filter(Boolean);
+                            }
+                          } catch {}
+                          return (
+                            <div className="flex flex-wrap gap-1.5">
+                              {list.map((v, i) => (
+                                <span key={i} className="px-2 py-1 text-xs rounded-full bg-white/10 border border-white/20 text-white">{v}</span>
+                              ))}
+                            </div>
+                          );
+                        })()}
                       </div>
                     )}
                     {talent.language && (
-                      <div className="flex items-center gap-2 bg-white/5 rounded-xl px-3 py-2 border border-white/10">
+                      <div className="flex items-start gap-2 bg-white/5 rounded-xl px-3 py-2 border border-white/10">
                         <span className="w-3 h-3 rounded-full bg-purple-300 inline-block"></span>
                         <span className="text-purple-200 font-semibold">اللغة:</span>
-                        <span className="text-white">{talent.language}</span>
+                        {(() => {
+                          let list: string[] = [];
+                          try {
+                            if (Array.isArray(talent.language)) list = talent.language as string[];
+                            else if (typeof talent.language === 'string') {
+                              const s = talent.language.trim();
+                              if (s.startsWith('[')) {
+                                const a = JSON.parse(s);
+                                if (Array.isArray(a)) list = a;
+                              }
+                              if (list.length === 0 && s) list = s.split(',').map(v => v.trim()).filter(Boolean);
+                            }
+                          } catch {}
+                          return (
+                            <div className="flex flex-wrap gap-1.5">
+                              {list.map((v, i) => (
+                                <span key={i} className="px-2 py-1 text-xs rounded-full bg-white/10 border border-white/20 text-white">{v}</span>
+                              ))}
+                            </div>
+                          );
+                        })()}
                       </div>
                     )}
                     {talent.accent && (
-                      <div className="flex items-center gap-2 bg-white/5 rounded-xl px-3 py-2 border border-white/10">
+                      <div className="flex items-start gap-2 bg-white/5 rounded-xl px-3 py-2 border border-white/10">
                         <span className="w-3 h-3 rounded-full bg-cyan-300 inline-block"></span>
                         <span className="text-cyan-200 font-semibold">اللهجة:</span>
-                        <span className="text-white">{talent.accent}</span>
+                        {(() => {
+                          let list: string[] = [];
+                          try {
+                            if (Array.isArray(talent.accent)) list = talent.accent as string[];
+                            else if (typeof talent.accent === 'string') {
+                              const s = talent.accent.trim();
+                              if (s.startsWith('[')) {
+                                const a = JSON.parse(s);
+                                if (Array.isArray(a)) list = a;
+                              }
+                              if (list.length === 0 && s) list = s.split(',').map(v => v.trim()).filter(Boolean);
+                            }
+                          } catch {}
+                          return (
+                            <div className="flex flex-wrap gap-1.5">
+                              {list.map((v, i) => (
+                                <span key={i} className="px-2 py-1 text-xs rounded-full bg-white/10 border border-white/20 text-white">{v}</span>
+                              ))}
+                            </div>
+                          );
+                        })()}
                       </div>
                     )}
                   </div>
@@ -711,9 +775,11 @@ export default function TalentPublicProfile() {
                           </div>
                           <div className="flex items-center gap-2 text-blue-200">
                             <Clock className="w-3 h-3" />
-                            <span className="font-medium text-xs">
-                              {workingSchedule[day].from} - {workingSchedule[day].to}
-                            </span>
+                            {workingSchedule[day]?.allDay ? (
+                              <span className="font-medium text-xs">متاح طوال اليوم</span>
+                            ) : (
+                              <span className="font-medium text-xs">{workingSchedule[day].from} - {workingSchedule[day].to}</span>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -794,7 +860,7 @@ export default function TalentPublicProfile() {
               className="w-full px-3 sm:px-4 py-2 sm:py-3 rounded-lg bg-white/10 border border-white/20 text-white focus:border-yellow-400 focus:ring-2 focus:ring-yellow-400/50 outline-none text-sm sm:text-base"
             >
               <option value="" className="text-gray-800">اختر موعداً...</option>
-                {getAvailableSlots().map(slot => (
+                {availableSlots.map(slot => (
                 <option key={slot.value} value={slot.value} className="text-gray-800">
                   {slot.label}
                 </option>

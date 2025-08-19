@@ -1,9 +1,13 @@
 "use client";
-import React, { useEffect, useState } from "react";
-import { useParams, useSearchParams } from "next/navigation";
-import { Star, Search, Filter, SortAsc, Eye, Award, TrendingUp, Clock, Users } from "lucide-react";
 
-// تعريف أنواع البيانات
+import React, { useEffect, useState } from "react";
+import { Search, Filter, SortAsc, Eye, Award, TrendingUp, Clock, Users, Star } from "lucide-react";
+
+interface TalentCategory {
+  id: string;
+  name: string;
+}
+
 interface Talent {
   id: number;
   name: string;
@@ -18,13 +22,12 @@ interface Talent {
   hairStyle?: string | string[];
   language?: string | string[];
   accent?: string | string[];
+  categories?: TalentCategory[];
 }
 
 interface Category {
   id: string;
   name: string;
-  imageUrl?: string;
-  imageData?: string;
 }
 
 interface TalentStats {
@@ -34,12 +37,9 @@ interface TalentStats {
   };
 }
 
-export default function CategoryTalentsPage() {
-  const params = useParams();
-  const searchParams = useSearchParams();
-  const categoryId = params?.id as string;
-  const categoryNameFromQuery = searchParams.get("name");
-  const [category, setCategory] = useState<Category | null>(null);
+export default function AllTalentsPage() {
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState<string>("");
   const [talents, setTalents] = useState<Talent[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -48,7 +48,6 @@ export default function CategoryTalentsPage() {
   const [ageFrom, setAgeFrom] = useState("");
   const [ageTo, setAgeTo] = useState("");
   const [showFilters, setShowFilters] = useState(false);
-  // فلاتر السمات الشخصية
   const [filterEyeColor, setFilterEyeColor] = useState("");
   const [filterHairColor, setFilterHairColor] = useState("");
   const [filterSkinColor, setFilterSkinColor] = useState("");
@@ -57,36 +56,35 @@ export default function CategoryTalentsPage() {
   const [filterAccent, setFilterAccent] = useState("");
 
   useEffect(() => {
-    if (!categoryId) return;
     setLoading(true);
     fetch(`/api/categories`)
       .then(res => res.json())
-      .then((data: Category[]) => {
-        const cat = data.find(c => c.id === categoryId);
-        setCategory(cat || null);
-      });
-    fetch(`/api/accounts?categoryId=${categoryId}&role=talent`)
+      .then((data: Category[]) => setCategories(data || []));
+    fetch(`/api/accounts?role=talent`)
       .then(res => res.json())
       .then(async (data: Talent[]) => {
-        setTalents(data);
+        setTalents(Array.isArray(data) ? data : []);
         const stats: TalentStats = {};
-        await Promise.all(data.map(async (talent: Talent) => {
-          const res = await fetch(`/api/reviews?userId=${talent.id}`);
-          const reviews = await res.json();
-          const count = reviews.length;
-          const avg = count > 0 ? (reviews.reduce((sum: number, r: any) => sum + (r.rating || 0), 0) / count).toFixed(1) : null;
-          stats[talent.id] = { avg, count };
+        await Promise.all((Array.isArray(data) ? data : []).map(async (talent: Talent) => {
+          try {
+            const res = await fetch(`/api/reviews?userId=${talent.id}`);
+            const reviews = await res.json();
+            const count = Array.isArray(reviews) ? reviews.length : 0;
+            const avg = count > 0 ? (reviews.reduce((sum: number, r: any) => sum + (r.rating || 0), 0) / count).toFixed(1) : null;
+            stats[talent.id] = { avg, count };
+          } catch {
+            stats[talent.id] = { avg: null, count: 0 };
+          }
         }));
         setTalentStats(stats);
       })
       .finally(() => setLoading(false));
-  }, [categoryId]);
+  }, []);
 
   const includesValue = (field?: string | string[], value?: string) => {
     if (!value) return true;
     if (!field) return false;
     if (Array.isArray(field)) return field.includes(value);
-    // محاولة فك JSON Array مخزّن كنص
     try {
       if (typeof field === 'string' && field.trim().startsWith('[')) {
         const arr = JSON.parse(field);
@@ -98,8 +96,8 @@ export default function CategoryTalentsPage() {
 
   const filteredTalents = talents.filter((talent: Talent) => {
     const matchesSearch =
-      talent.name?.toLowerCase().includes(search.toLowerCase()) ||
-      talent.bio?.toLowerCase().includes(search.toLowerCase());
+      (talent.name || '').toLowerCase().includes(search.toLowerCase()) ||
+      (talent.bio || '').toLowerCase().includes(search.toLowerCase());
     const matchesAgeFrom = ageFrom ? (talent.age || 0) >= Number(ageFrom) : true;
     const matchesAgeTo = ageTo ? (talent.age || 0) <= Number(ageTo) : true;
     const matchesEyeColor = filterEyeColor ? (talent.eyeColor === filterEyeColor) : true;
@@ -108,6 +106,9 @@ export default function CategoryTalentsPage() {
     const matchesHairStyle = includesValue(talent.hairStyle, filterHairStyle);
     const matchesLanguage = includesValue(talent.language, filterLanguage);
     const matchesAccent = includesValue(talent.accent, filterAccent);
+    const matchesCategory = selectedCategory
+      ? (Array.isArray(talent.categories) && talent.categories.some(c => c.id === selectedCategory))
+      : true;
     return (
       matchesSearch &&
       matchesAgeFrom &&
@@ -117,7 +118,8 @@ export default function CategoryTalentsPage() {
       matchesSkinColor &&
       matchesHairStyle &&
       matchesLanguage &&
-      matchesAccent
+      matchesAccent &&
+      matchesCategory
     );
   });
 
@@ -145,7 +147,6 @@ export default function CategoryTalentsPage() {
 
   return (
     <div className="min-h-screen relative overflow-hidden bg-gradient-to-br from-indigo-900 via-blue-900 to-purple-900">
-      {/* خلفية مؤثرات بصرية */}
       <div className="absolute inset-0">
         <div className="absolute top-0 -left-4 w-96 h-96 bg-orange-400/5 rounded-full mix-blend-multiply filter blur-xl animate-pulse"></div>
         <div className="absolute top-0 -right-4 w-96 h-96 bg-pink-400/5 rounded-full mix-blend-multiply filter blur-xl animate-pulse delay-1000"></div>
@@ -154,21 +155,18 @@ export default function CategoryTalentsPage() {
 
       <div className="relative py-16 px-4">
         <div className="max-w-6xl mx-auto">
-          {/* العنوان الرئيسي */}
           <div className="text-center mb-12">
             <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-orange-400 to-pink-500 rounded-2xl mb-4 transform rotate-12 shadow-lg">
               <Users className="w-8 h-8 text-white transform -rotate-12" />
             </div>
             <h1 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-orange-400 via-pink-400 to-blue-400 bg-clip-text text-transparent">
-              {categoryNameFromQuery || category?.name || "..."}
+              جميع المواهب
             </h1>
-            <p className="text-blue-200/80 text-lg">اكتشف أفضل المواهب في هذا التصنيف</p>
+            <p className="text-blue-200/80 text-lg">استعرض كل المواهب عبر جميع التصنيفات</p>
           </div>
 
-          {/* شريط البحث والفلاتر */}
           <div className="bg-white/5 backdrop-blur-xl rounded-3xl border border-white/10 p-6 mb-8 shadow-2xl">
             <div className="flex flex-col lg:flex-row gap-6">
-              {/* البحث */}
               <div className="flex-1 relative">
                 <Search className="absolute right-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-blue-200/60" />
                 <input
@@ -180,7 +178,19 @@ export default function CategoryTalentsPage() {
                 />
               </div>
 
-              {/* أزرار الترتيب */}
+              <div className="w-full lg:w-64">
+                <select
+                  value={selectedCategory}
+                  onChange={e => setSelectedCategory(e.target.value)}
+                  className="w-full px-3 py-3 rounded-xl bg-white/5 border border-white/10 text-white focus:outline-none focus:ring-2 focus:ring-orange-400/50"
+                >
+                  <option value="">كل التصنيفات</option>
+                  {categories.map(cat => (
+                    <option key={cat.id} value={cat.id}>{cat.name}</option>
+                  ))}
+                </select>
+              </div>
+
               <div className="flex gap-2">
                 {[
                   { key: 'latest', label: 'الأحدث' },
@@ -202,7 +212,6 @@ export default function CategoryTalentsPage() {
                 ))}
               </div>
 
-              {/* زر الفلاتر */}
               <button
                 onClick={() => setShowFilters(!showFilters)}
                 className={`flex items-center gap-2 px-4 py-3 rounded-xl font-semibold transition-all duration-300 ${
@@ -216,7 +225,6 @@ export default function CategoryTalentsPage() {
               </button>
             </div>
 
-            {/* فلاتر العمر */}
             {showFilters && (
               <div className="mt-6 pt-6 border-t border-white/10 animate-fade-in">
                 <div className="flex flex-col sm:flex-row gap-4 items-center">
@@ -240,7 +248,6 @@ export default function CategoryTalentsPage() {
                   </div>
                 </div>
 
-                {/* فلاتر السمات الشخصية */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-6">
                   <div>
                     <label className="block mb-2 text-blue-200 font-semibold">لون العين</label>
@@ -366,7 +373,6 @@ export default function CategoryTalentsPage() {
             )}
           </div>
 
-          {/* إحصائيات سريعة */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
             <div className="bg-white/5 backdrop-blur-xl rounded-2xl border border-white/10 p-4 text-center">
               <div className="w-10 h-10 bg-gradient-to-r from-orange-400 to-pink-500 rounded-xl flex items-center justify-center mx-auto mb-2">
@@ -410,7 +416,6 @@ export default function CategoryTalentsPage() {
             </div>
           </div>
 
-          {/* عرض المواهب */}
           {loading ? (
             <div className="flex flex-col justify-center items-center min-h-[300px] gap-4">
               <div className="w-16 h-16 border-4 border-orange-400/30 border-t-orange-400 rounded-full animate-spin"></div>
@@ -428,8 +433,7 @@ export default function CategoryTalentsPage() {
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {getSortedTalents().map(talent => (
                 <div key={talent.id} className="group bg-white/5 backdrop-blur-xl rounded-3xl border border-white/10 overflow-hidden hover:bg-white/10 transition-all duration-300 hover:transform hover:-translate-y-2 hover:shadow-2xl">
-                  {/* صورة البروفايل */}
-                  <div className="relative p-6 pb-4">
+                  <div className="relative p-6 pb-2">
                     <div className="relative w-24 h-24 mx-auto mb-4">
                       {talent.profileImageData ? (
                         <img 
@@ -447,13 +451,11 @@ export default function CategoryTalentsPage() {
                       </div>
                     </div>
 
-                    {/* معلومات الموهبة */}
                     <div className="text-center">
                       <h3 className="text-xl font-bold text-white mb-2 group-hover:text-orange-400 transition-colors">
                         {talent.name}
                       </h3>
-                      
-                      {/* التقييم */}
+
                       <div className="flex items-center justify-center gap-1 mb-3">
                         <div className="flex gap-0.5">
                           {[1,2,3,4,5].map(i => (
@@ -476,21 +478,28 @@ export default function CategoryTalentsPage() {
                         </span>
                       </div>
 
-                      {/* المهنة */}
                       {talent.jobTitle && (
                         <div className="inline-block px-3 py-1 bg-blue-400/20 rounded-full text-blue-200 text-sm mb-3">
                           {talent.jobTitle}
                         </div>
                       )}
 
-                      {/* السعر */}
+                      {Array.isArray(talent.categories) && talent.categories.length > 0 && (
+                        <div className="flex flex-wrap gap-2 justify-center mb-4">
+                          {talent.categories.slice(0, 4).map(cat => (
+                            <span key={cat.id} className="px-2 py-1 text-xs rounded-full bg-white/10 border border-white/10 text-blue-100">
+                              {cat.name}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+
                       {talent.price && (
                         <div className="text-2xl font-bold text-orange-400 mb-4">
                           {talent.price} <span className="text-lg">ر.س</span>
                         </div>
                       )}
 
-                      {/* زر عرض البروفايل */}
                       <a 
                         href={`/profile/${talent.id}`}
                         className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-orange-400 to-pink-500 rounded-xl text-white font-semibold hover:from-orange-500 hover:to-pink-600 transition-all duration-300 group-hover:transform group-hover:scale-105 shadow-lg hover:shadow-xl"
@@ -519,3 +528,4 @@ export default function CategoryTalentsPage() {
     </div>
   );
 }
+

@@ -26,6 +26,7 @@ export async function POST(req: Request) {
     });
     return NextResponse.json({ message: 'تم إنشاء الحساب بنجاح! بانتظار موافقة الإدارة.' }, { status: 201 });
   } catch (err) {
+    console.error('Register API error:', err);
     return NextResponse.json({ message: 'حدث خطأ أثناء معالجة الطلب.' }, { status: 500 });
   }
 } 
