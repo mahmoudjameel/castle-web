@@ -33,12 +33,12 @@ export default function TalentProfile() {
     workArea: "",
     canTravelAbroad: false,
     eyeColor: "",
-    hairStyle: "",
+    hairStyle: [] as string[],
     height: "",
     weight: "",
     skinColor: "",
-    language: "",
-    accent: "",
+    language: [] as string[],
+    accent: [] as string[],
     features: "",
     hairColor: "",
   });
@@ -96,6 +96,19 @@ export default function TalentProfile() {
   const hours12 = Array.from({ length: 12 }, (_, i) => (i + 1).toString().padStart(2, '0'));
   const minutesList = ['00', '15', '30', '45'];
   const periods: Array<'AM'|'PM'> = ['AM', 'PM'];
+
+  // قوائم الخيارات المتاحة
+  const hairStyleOptions = [
+    'قصير', 'طويل', 'مموج', 'أملس', 'مجعد'
+  ];
+  const languageOptions = [
+    'العربية', 'الإنجليزية', 'الفرنسية', 'الإسبانية'
+  ];
+  const accentOptions = [
+    'نجدية','حجازية','جنوبية','شرقاوية','شمالية','تهامية','حائلية','جازانية','عسيرية',
+    'قطرية','إماراتية','كويتية','بحرينية','عمانية','شامية','مصرية','مغربية','ليبية',
+    'تونسية','جزائرية','سودانية','يمنية','موريتانية','فلسطينية','لبنانية','عراقية','سورية','أردنية','أخرى'
+  ];
 
   // دالة لتطبيع الجدول وضمان وجود allDay لكل يوم
   const normalizeSchedule = (schedule: any) => {
@@ -157,12 +170,51 @@ export default function TalentProfile() {
                 workArea: found.workArea || "",
                 canTravelAbroad: found.canTravelAbroad || false,
                 eyeColor: found.eyeColor || "",
-                hairStyle: found.hairStyle || "",
+                hairStyle: (() => {
+                  try {
+                    if (Array.isArray(found.hairStyle)) return found.hairStyle;
+                    if (typeof found.hairStyle === 'string') {
+                      const s = found.hairStyle.trim();
+                      if (s.startsWith('[')) {
+                        const arr = JSON.parse(s);
+                        if (Array.isArray(arr)) return arr;
+                      }
+                      if (s !== '') return s.split(',').map((v: string) => v.trim()).filter(Boolean);
+                    }
+                  } catch {}
+                  return [] as string[];
+                })(),
                 height: found.height ? String(found.height) : "",
                 weight: found.weight ? String(found.weight) : "",
                 skinColor: found.skinColor || "",
-                language: found.language || "",
-                accent: found.accent || "",
+                language: (() => {
+                  try {
+                    if (Array.isArray(found.language)) return found.language;
+                    if (typeof found.language === 'string') {
+                      const s = found.language.trim();
+                      if (s.startsWith('[')) {
+                        const arr = JSON.parse(s);
+                        if (Array.isArray(arr)) return arr;
+                      }
+                      if (s !== '') return s.split(',').map((v: string) => v.trim()).filter(Boolean);
+                    }
+                  } catch {}
+                  return [] as string[];
+                })(),
+                accent: (() => {
+                  try {
+                    if (Array.isArray(found.accent)) return found.accent;
+                    if (typeof found.accent === 'string') {
+                      const s = found.accent.trim();
+                      if (s.startsWith('[')) {
+                        const arr = JSON.parse(s);
+                        if (Array.isArray(arr)) return arr;
+                      }
+                      if (s !== '') return s.split(',').map((v: string) => v.trim()).filter(Boolean);
+                    }
+                  } catch {}
+                  return [] as string[];
+                })(),
                 features: found.features || "",
                 hairColor: found.hairColor || "",
               }));
@@ -645,7 +697,7 @@ export default function TalentProfile() {
                           {periods.map(p => <option key={p} value={p} className="text-black">{p}</option>)}
                         </select>
                       </div>
-                      <div className="flex justify-center">
+                      <label className="flex items-center justify-center gap-2 cursor-pointer select-none">
                         <input
                           type="checkbox"
                           checked={Boolean(workingSchedule[day].allDay)}
@@ -662,7 +714,8 @@ export default function TalentProfile() {
                           }))}
                           className="w-5 h-5 rounded border-2 border-white/20 bg-white/5 text-orange-400 focus:ring-orange-400/50"
                         />
-                      </div>
+                        <span className="text-blue-100 text-sm">متاح طوال اليوم</span>
+                      </label>
                     </div>
                   );})}
                 </div>
@@ -686,20 +739,21 @@ export default function TalentProfile() {
                 <option>أسود</option>
               </select>
             </div>
-            {/* تسريحة الشعر */}
+            {/* تسريحة الشعر (select متعدد) */}
             <div>
               <label className="block mb-2 font-semibold text-pink-300">تسريحة الشعر</label>
               <select
+                multiple
                 value={form.hairStyle}
-                onChange={e => setForm(f => ({ ...f, hairStyle: e.target.value }))}
+                onChange={e => {
+                  const opts = Array.from((e.target as HTMLSelectElement).selectedOptions).map(o => o.value);
+                  setForm(f => ({ ...f, hairStyle: opts }));
+                }}
                 className="w-full px-4 py-3 rounded-xl bg-white/5 border border-pink-300/30 text-white focus:outline-none focus:ring-2 focus:ring-pink-300/40"
               >
-                <option value="">اختر...</option>
-                <option>قصير</option>
-                <option>طويل</option>
-                <option>مموج</option>
-                <option>أملس</option>
-                <option>مجعد</option>
+                {hairStyleOptions.map(opt => (
+                  <option key={opt} value={opt} className="text-black">{opt}</option>
+                ))}
               </select>
             </div>
             {/* لون الشعر */}
@@ -734,59 +788,38 @@ export default function TalentProfile() {
                 <option>داكن</option>
               </select>
                 </div>
-            {/* اللغة */}
+            {/* اللغة (select متعدد) */}
             <div>
               <label className="block mb-2 font-semibold text-purple-300">اللغة</label>
               <select
+                multiple
                 value={form.language}
-                onChange={e => setForm(f => ({ ...f, language: e.target.value }))}
+                onChange={e => {
+                  const opts = Array.from((e.target as HTMLSelectElement).selectedOptions).map(o => o.value);
+                  setForm(f => ({ ...f, language: opts }));
+                }}
                 className="w-full px-4 py-3 rounded-xl bg-white/5 border border-purple-300/30 text-white focus:outline-none focus:ring-2 focus:ring-purple-300/40"
               >
-                <option value="">اختر...</option>
-                <option>العربية</option>
-                <option>الإنجليزية</option>
-                <option>الفرنسية</option>
-                <option>الإسبانية</option>
+                {languageOptions.map(opt => (
+                  <option key={opt} value={opt} className="text-black">{opt}</option>
+                ))}
               </select>
-              </div>
-            {/* اللهجة */}
+            </div>
+            {/* اللهجة (select متعدد) */}
             <div>
               <label className="block mb-2 font-semibold text-cyan-300">اللهجة</label>
               <select
+                multiple
                 value={form.accent}
-                onChange={e => setForm(f => ({ ...f, accent: e.target.value }))}
+                onChange={e => {
+                  const opts = Array.from((e.target as HTMLSelectElement).selectedOptions).map(o => o.value);
+                  setForm(f => ({ ...f, accent: opts }));
+                }}
                 className="w-full px-4 py-3 rounded-xl bg-white/5 border border-cyan-300/30 text-white focus:outline-none focus:ring-2 focus:ring-cyan-300/40"
               >
-                <option value="">اختر...</option>
-                <option>نجدية</option>
-                <option>حجازية</option>
-                <option>جنوبية</option>
-                <option>شرقاوية</option>
-                <option>شمالية</option>
-                <option>تهامية</option>
-                <option>حائلية</option>
-                <option>جازانية</option>
-                <option>عسيرية</option>
-                <option>قطرية</option>
-                <option>إماراتية</option>
-                <option>كويتية</option>
-                <option>بحرينية</option>
-                <option>عمانية</option>
-                <option>شامية</option>
-                <option>مصرية</option>
-                <option>مغربية</option>
-                <option>ليبية</option>
-                <option>تونسية</option>
-                <option>جزائرية</option>
-                <option>سودانية</option>
-                <option>يمنية</option>
-                <option>موريتانية</option>
-                <option>فلسطينية</option>
-                <option>لبنانية</option>
-                <option>عراقية</option>
-                <option>سورية</option>
-                <option>أردنية</option>
-                <option>أخرى</option>
+                {accentOptions.map(opt => (
+                  <option key={opt} value={opt} className="text-black">{opt}</option>
+                ))}
               </select>
             </div>
 

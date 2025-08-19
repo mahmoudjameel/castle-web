@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { FileText, AlertTriangle, Receipt, BarChart2, FolderPlus, UserCheck, ImageIcon, CreditCard, Home, LogOut, Settings, Award, AlertCircle } from 'lucide-react';
+import { FileText, AlertTriangle, Receipt, BarChart2, FolderPlus, UserCheck, ImageIcon, CreditCard, Home, LogOut, Settings, Award, AlertCircle, Mail } from 'lucide-react';
 
 const stats = [
   { 
@@ -31,6 +31,13 @@ const stats = [
 ];
 
 const adminSections = [
+  {
+    icon: <Settings className="w-8 h-8" />,
+    title: 'الخدمات الإدارية',
+    desc: 'وصول سريع لكل أدوات وإعدادات الإدارة',
+    link: '/admin/services',
+    color: 'from-orange-400 to-pink-500'
+  },
   { 
     icon: <UserCheck className="w-8 h-8" />, 
     title: 'إدارة الحسابات', 
@@ -79,6 +86,13 @@ const adminSections = [
     desc: 'تعديل صور ونصوص البانر في الصفحة الرئيسية', 
     link: '/admin/banners',
     color: 'from-teal-400 to-blue-500'
+  },
+  { 
+    icon: <Mail className="w-8 h-8" />, 
+    title: 'التواصلات والاستفسارات', 
+    desc: 'عرض رسائل نموذج تواصل معنا والرد عليها', 
+    link: '/admin/contacts',
+    color: 'from-teal-400 to-green-500'
   },
   { 
     icon: <CreditCard className="w-8 h-8" />, 

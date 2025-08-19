@@ -24,6 +24,7 @@ const CastingPlatform = () => {
   const [showLangModal, setShowLangModal] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [showVideoModal, setShowVideoModal] = useState(false);
+  const [contactStatus, setContactStatus] = useState<'idle'|'loading'|'success'|'error'>('idle');
 
   // heroSlides الافتراضية للاحتياط
   const defaultHeroSlides = [
@@ -201,7 +202,7 @@ const CastingPlatform = () => {
             </div>
 
             {/* Desktop Navigation */}
-            <div className="hidden lg:flex items-center space-x-8">
+            <div className="hidden lg:flex items-center gap-8">
               <a href="#home" className="relative py-2 px-1 group">
                 <span className="relative z-10 transition-colors duration-300 group-hover:text-orange-400">
                   {t('navigation.home')}
@@ -211,6 +212,12 @@ const CastingPlatform = () => {
               <a href="#categories" className="relative py-2 px-1 group">
                 <span className="relative z-10 transition-colors duration-300 group-hover:text-orange-400">
                   {t('navigation.categories')}
+                </span>
+                <div className="absolute bottom-0 left-0 w-0 h-0.5 bg-gradient-to-r from-orange-400 to-pink-500 transition-all duration-300 group-hover:w-full"></div>
+              </a>
+              <a href="/talents" className="relative py-2 px-1 group">
+                <span className="relative z-10 transition-colors duration-300 group-hover:text-orange-400">
+                  جميع المواهب
                 </span>
                 <div className="absolute bottom-0 left-0 w-0 h-0.5 bg-gradient-to-r from-orange-400 to-pink-500 transition-all duration-300 group-hover:w-full"></div>
               </a>
@@ -403,6 +410,9 @@ const CastingPlatform = () => {
                 </Link>
                 <Link href="/#categories" className="py-3 px-4 rounded-xl hover:bg-gradient-to-r hover:from-orange-400/20 hover:to-pink-500/20 transition-all duration-300 text-center font-medium">
                   {t('navigation.categories')}
+                </Link>
+                <Link href="/talents" className="py-3 px-4 rounded-xl hover:bg-gradient-to-r hover:from-orange-400/20 hover:to-pink-500/20 transition-all duration-300 text-center font-medium">
+                  جميع المواهب
                 </Link>
                 <Link href="/#services" className="py-3 px-4 rounded-xl hover:bg-gradient-to-r hover:from-orange-400/20 hover:to-pink-500/20 transition-all duration-300 text-center font-medium">
                   {t('navigation.services')}
@@ -1017,20 +1027,47 @@ const CastingPlatform = () => {
             <p className="text-lg text-blue-100 mb-8">{t('contact.description')}</p>
           </div>
           <div className="max-w-2xl mx-auto bg-indigo-800/30 rounded-xl p-6 border border-blue-400/30 mb-8">
-            <form className="space-y-6">
+            <form className="space-y-6" onSubmit={async (e) => {
+              e.preventDefault();
+              const form = e.currentTarget as HTMLFormElement;
+              const formData = new FormData(form);
+              const name = String(formData.get('name') || '');
+              const email = String(formData.get('email') || '');
+              const message = String(formData.get('message') || '');
+              if (!name || !email || !message) return;
+              try {
+                setContactStatus('loading');
+                const res = await fetch('/api/contact', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name, email, message }) });
+                if (!res.ok) throw new Error('failed');
+                form.reset();
+                setContactStatus('success');
+              } catch {
+                setContactStatus('error');
+              }
+            }}>
               <div>
                 <label className="block mb-2 text-blue-100">{t('contact.form.name')}</label>
-                <input type="text" className="w-full px-4 py-3 rounded-lg bg-blue-900/40 border border-blue-400/20 text-white focus:outline-none focus:ring-2 focus:ring-orange-400 placeholder:text-blue-200" placeholder={t('contact.form.namePlaceholder')} required />
+                <input name="name" type="text" className="w-full px-4 py-3 rounded-lg bg-blue-900/40 border border-blue-400/20 text-white focus:outline-none focus:ring-2 focus:ring-orange-400 placeholder:text-blue-200" placeholder={t('contact.form.namePlaceholder')} required />
               </div>
               <div>
                 <label className="block mb-2 text-blue-100">{t('contact.form.email')}</label>
-                <input type="email" className="w-full px-4 py-3 rounded-lg bg-blue-900/40 border border-blue-400/20 text-white focus:outline-none focus:ring-2 focus:ring-orange-400 placeholder:text-blue-200" placeholder={t('contact.form.emailPlaceholder')} required />
+                <input name="email" type="email" className="w-full px-4 py-3 rounded-lg bg-blue-900/40 border border-blue-400/20 text-white focus:outline-none focus:ring-2 focus:ring-orange-400 placeholder:text-blue-200" placeholder={t('contact.form.emailPlaceholder')} required />
               </div>
               <div>
                 <label className="block mb-2 text-blue-100">{t('contact.form.message')}</label>
-                <textarea className="w-full px-4 py-3 rounded-lg bg-blue-900/40 border border-blue-400/20 text-white focus:outline-none focus:ring-2 focus:ring-orange-400 placeholder:text-blue-200" rows={4} placeholder={t('contact.form.messagePlaceholder')} required />
+                <textarea name="message" className="w-full px-4 py-3 rounded-lg bg-blue-900/40 border border-blue-400/20 text-white focus:outline-none focus:ring-2 focus:ring-orange-400 placeholder:text-blue-200" rows={4} placeholder={t('contact.form.messagePlaceholder')} required />
               </div>
-              <button type="submit" className="w-full py-3 bg-gradient-to-r from-orange-400 to-pink-500 rounded-lg font-bold text-lg text-white hover:from-orange-500 hover:to-pink-600 transition-all">{t('contact.form.submit')}</button>
+              <button type="submit" disabled={contactStatus==='loading'} className="w-full py-3 bg-gradient-to-r from-orange-400 to-pink-500 rounded-lg font-bold text-lg text-white hover:from-orange-500 hover:to-pink-600 transition-all disabled:opacity-60">{contactStatus==='loading' ? 'جارٍ الإرسال...' : t('contact.form.submit')}</button>
+              {contactStatus==='success' && (
+                <div className="mt-3 p-3 rounded-lg bg-green-500/15 border border-green-400/30 text-green-200">
+                  تم إرسال استفسارك بنجاح، سنعود إليك قريباً. شكراً لتواصلك معنا.
+                </div>
+              )}
+              {contactStatus==='error' && (
+                <div className="mt-3 p-3 rounded-lg bg-red-500/15 border border-red-400/30 text-red-200">
+                  حدث خطأ أثناء الإرسال. الرجاء المحاولة مرة أخرى.
+                </div>
+              )}
             </form>
           </div>
           <div className="max-w-2xl mx-auto text-center">

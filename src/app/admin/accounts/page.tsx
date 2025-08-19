@@ -28,7 +28,8 @@ export default function AdminAccounts() {
   useEffect(() => {
     fetch('/api/accounts')
       .then(res => res.json())
-      .then(data => { setUsers(data); setLoading(false); });
+      .then(data => { setUsers(Array.isArray(data) ? data : []); setLoading(false); })
+      .catch(()=> { setUsers([]); setLoading(false); });
   }, []);
 
   const handleApprove = async (id: number) => {
@@ -107,8 +108,10 @@ export default function AdminAccounts() {
     });
 
     if (res.ok) {
-      const addedUser = await res.json();
-      setUsers([...users, addedUser]);
+      // بعد الإضافة، أعد الجلب لضمان التناسق
+      fetch('/api/accounts')
+        .then(r => r.json())
+        .then(list => setUsers(Array.isArray(list) ? list : users));
       setNewUser({ name: '', email: '', password: '', role: 'user', approved: true });
       setShowAddForm(false);
       setMessage('تم إضافة المستخدم بنجاح.');
