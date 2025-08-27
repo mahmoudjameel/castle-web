@@ -1,8 +1,8 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { Button, Snackbar, Alert, Box, Typography, Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
-import { Download, Notifications, NotificationsOff, Close, CheckCircle } from '@mui/icons-material';
+import { Button, Snackbar, Alert, Box, Typography, Dialog, DialogTitle, DialogContent, DialogActions, Chip } from '@mui/material';
+import { Download, Notifications, NotificationsOff, Close, CheckCircle, Info, Apple, Android } from '@mui/icons-material';
 
 interface PWAManagerProps {
   children: React.ReactNode;
@@ -18,8 +18,19 @@ const PWAManager: React.FC<PWAManagerProps> = ({ children }) => {
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
   const [installError, setInstallError] = useState<string | null>(null);
   const [notificationsActivated, setNotificationsActivated] = useState(false);
+  const [isIOS, setIsIOS] = useState(false);
+  const [isAndroid, setIsAndroid] = useState(false);
+  const [showIOSInstructions, setShowIOSInstructions] = useState(false);
 
   useEffect(() => {
+    // تحديد نوع الجهاز
+    const userAgent = navigator.userAgent;
+    const isIOSDevice = /iPad|iPhone|iPod/.test(userAgent);
+    const isAndroidDevice = /Android/.test(userAgent);
+    
+    setIsIOS(isIOSDevice);
+    setIsAndroid(isAndroidDevice);
+
     // التحقق من تثبيت التطبيق
     const checkInstallation = () => {
       // التحقق من عدة طرق للتثبيت
@@ -37,7 +48,7 @@ const PWAManager: React.FC<PWAManagerProps> = ({ children }) => {
     };
 
     // التحقق من نوع الجهاز (إخفاء على الأجهزة المكتبية)
-    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(userAgent);
     if (!isMobile) {
       console.log('Desktop device detected, hiding PWA buttons');
       setIsInstalled(true); // إخفاء الأزرار على الأجهزة المكتبية
@@ -45,7 +56,7 @@ const PWAManager: React.FC<PWAManagerProps> = ({ children }) => {
 
     checkInstallation();
 
-    // استقبال حدث تثبيت التطبيق
+    // استقبال حدث تثبيت التطبيق (Android فقط)
     const handleBeforeInstallPrompt = (e: any) => {
       console.log('beforeinstallprompt event fired');
       e.preventDefault();
@@ -54,7 +65,10 @@ const PWAManager: React.FC<PWAManagerProps> = ({ children }) => {
       setInstallError(null);
     };
 
-    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    // iOS لا يدعم beforeinstallprompt
+    if (!isIOSDevice) {
+      window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    }
 
     // التحقق من حالة الإشعارات
     if ('Notification' in window) {
@@ -93,12 +107,20 @@ const PWAManager: React.FC<PWAManagerProps> = ({ children }) => {
 
     // تنظيف عند إلغاء المكون
     return () => {
-      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+      if (!isIOSDevice) {
+        window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+      }
     };
   }, []);
 
   // تثبيت التطبيق
   const handleInstallApp = async () => {
+    if (isIOS) {
+      // على iOS، نعرض تعليمات التثبيت
+      setShowIOSInstructions(true);
+      return;
+    }
+
     if (!deferredPrompt) {
       console.log('No deferred prompt available');
       setInstallError('لا يمكن تثبيت التطبيق في الوقت الحالي');
@@ -144,18 +166,25 @@ const PWAManager: React.FC<PWAManagerProps> = ({ children }) => {
         setShowNotificationPrompt(false);
         
         if (permission === 'granted' && swRegistration) {
-          // طلب subscription للإشعارات
-          const subscription = await swRegistration.pushManager.subscribe({
-            userVisibleOnly: true,
-            applicationServerKey: urlBase64ToUint8Array(process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || '')
-          });
-          
-          // إرسال subscription للخادم
-          await fetch('/api/push-subscription', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ subscription })
-          });
+          // على iOS، لا نستطيع استخدام Push API
+          if (!isIOS) {
+            try {
+              // طلب subscription للإشعارات (Android فقط)
+              const subscription = await swRegistration.pushManager.subscribe({
+                userVisibleOnly: true,
+                applicationServerKey: urlBase64ToUint8Array(process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || '')
+              });
+              
+              // إرسال subscription للخادم
+              await fetch('/api/push-subscription', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ subscription })
+              });
+            } catch (error) {
+              console.log('Push subscription not supported on this device');
+            }
+          }
           
           // إخفاء زر "إشعار تجريبي" وإظهار رسالة النجاح
           setNotificationsActivated(true);
@@ -190,8 +219,8 @@ const PWAManager: React.FC<PWAManagerProps> = ({ children }) => {
       try {
         await swRegistration.showNotification('إشعار تجريبي', {
           body: 'هذا إشعار تجريبي من منصة طوق',
-          icon: '/logo.png',
-          badge: '/logo.png'
+          icon: '/Logo.jpg',
+          badge: '/Logo.jpg'
         });
       } catch (error) {
         console.error('Error showing notification:', error);
@@ -231,6 +260,45 @@ const PWAManager: React.FC<PWAManagerProps> = ({ children }) => {
         </DialogActions>
       </Dialog>
 
+      {/* نافذة تعليمات iOS */}
+      <Dialog open={showIOSInstructions} onClose={() => setShowIOSInstructions(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>
+          <Box display="flex" alignItems="center" gap={1}>
+            <Apple color="primary" />
+            تثبيت التطبيق على iPhone/iPad
+          </Box>
+        </DialogTitle>
+        <DialogContent>
+          <Typography variant="h6" gutterBottom>
+            اتبع هذه الخطوات:
+          </Typography>
+          <Box component="ol" sx={{ pl: 2, mt: 2 }}>
+            <Box component="li" sx={{ mb: 1 }}>
+              <Typography>اضغط على زر <Chip label="شارك" size="small" color="primary" /> في المتصفح</Typography>
+            </Box>
+            <Box component="li" sx={{ mb: 1 }}>
+              <Typography>اختر <Chip label="أضف إلى الشاشة الرئيسية" size="small" color="secondary" /></Typography>
+            </Box>
+            <Box component="li" sx={{ mb: 1 }}>
+              <Typography>اضغط <Chip label="إضافة" size="small" color="success" /></Typography>
+            </Box>
+            <Box component="li">
+              <Typography>سيظهر التطبيق في الشاشة الرئيسية</Typography>
+            </Box>
+          </Box>
+          <Alert severity="info" sx={{ mt: 2 }}>
+            <Typography variant="body2">
+              <strong>ملاحظة:</strong> على iOS، يجب إضافة التطبيق للشاشة الرئيسية يدوياً من خلال زر المشاركة
+            </Typography>
+          </Alert>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setShowIOSInstructions(false)} variant="contained" color="primary">
+            فهمت
+          </Button>
+        </DialogActions>
+      </Dialog>
+
       {/* نافذة طلب إذن الإشعارات */}
       <Dialog open={showNotificationPrompt} onClose={() => setShowNotificationPrompt(false)}>
         <DialogTitle>
@@ -243,6 +311,13 @@ const PWAManager: React.FC<PWAManagerProps> = ({ children }) => {
           <Typography>
             فعّل الإشعارات لتلقي تنبيهات فورية عن الطلبات الجديدة والتحديثات المهمة
           </Typography>
+          {isIOS && (
+            <Alert severity="warning" sx={{ mt: 2 }}>
+              <Typography variant="body2">
+                <strong>iOS:</strong> الإشعارات تعمل فقط عند فتح التطبيق من الشاشة الرئيسية
+              </Typography>
+            </Alert>
+          )}
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setShowNotificationPrompt(false)} color="inherit">
@@ -265,16 +340,18 @@ const PWAManager: React.FC<PWAManagerProps> = ({ children }) => {
           flexDirection="column"
           gap={1}
         >
+          {/* زر تثبيت التطبيق */}
           <Button
             variant="contained"
             color="primary"
-            startIcon={<Download />}
-            onClick={() => setShowInstallPrompt(true)}
+            startIcon={isIOS ? <Apple /> : <Download />}
+            onClick={() => isIOS ? setShowIOSInstructions(true) : setShowInstallPrompt(true)}
             sx={{ borderRadius: 2, boxShadow: 3 }}
           >
-            تثبيت التطبيق
+            {isIOS ? 'إضافة للشاشة الرئيسية' : 'تثبيت التطبيق'}
           </Button>
           
+          {/* زر تفعيل الإشعارات */}
           {notificationPermission !== 'granted' && (
             <Button
               variant="outlined"
@@ -287,8 +364,8 @@ const PWAManager: React.FC<PWAManagerProps> = ({ children }) => {
             </Button>
           )}
           
-          {/* إظهار رسالة نجاح بدلاً من زر "إشعار تجريبي" */}
-          {notificationsActivated && (
+          {/* رسالة نجاح - مخفية من الشاشة الرئيسية */}
+          {/* {notificationsActivated && (
             <Box
               sx={{
                 bgcolor: 'success.main',
@@ -306,7 +383,26 @@ const PWAManager: React.FC<PWAManagerProps> = ({ children }) => {
               <CheckCircle fontSize="small" />
               تم تفعيل الإشعارات بنجاح!
             </Box>
-          )}
+          )} */}
+
+          {/* معلومات الجهاز */}
+          <Box
+            sx={{
+              bgcolor: 'info.main',
+              color: 'white',
+              px: 2,
+              py: 1,
+              borderRadius: 2,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1,
+              fontSize: '0.75rem',
+              opacity: 0.8
+            }}
+          >
+            {isIOS ? <Apple fontSize="small" /> : <Android fontSize="small" />}
+            {isIOS ? 'iPhone/iPad' : 'Android'}
+          </Box>
         </Box>
       )}
 

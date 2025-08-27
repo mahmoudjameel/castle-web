@@ -6,7 +6,7 @@ const urlsToCache = [
   '/talent',
   '/talent/notifications',
   '/admin',
-  '/logo.png',
+  '/Logo.jpg',
   '/manifest.json',
   '/static/js/bundle.js',
   '/static/css/main.css'
@@ -95,8 +95,8 @@ self.addEventListener('push', (event) => {
   
   const options = {
     body: event.data ? event.data.text() : 'إشعار جديد من منصة طوق',
-    icon: '/logo.png',
-    badge: '/logo.png',
+    icon: '/Logo.jpg',
+    badge: '/Logo.jpg',
     data: {
       dateOfArrival: Date.now(),
       primaryKey: 1

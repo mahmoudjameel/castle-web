@@ -1,5 +1,5 @@
 {
-  "name": "طوق - منصة الكاستينج الرقمية",
+  "name": "طوق منصة الكاستينج",
   "short_name": "طوق",
   "description": "منصة رقمية متكاملة للكاستينج وإدارة المواهب",
   "start_url": "/",
@@ -13,51 +13,51 @@
   "prefer_related_applications": false,
   "icons": [
     {
-      "src": "/logo.png",
+      "src": "/Logo.jpg",
       "sizes": "72x72",
-      "type": "image/png",
+      "type": "image/jpeg",
       "purpose": "any"
     },
     {
-      "src": "/logo.png",
+      "src": "/Logo.jpg",
       "sizes": "96x96",
-      "type": "image/png",
+      "type": "image/jpeg",
       "purpose": "any"
     },
     {
-      "src": "/logo.png",
+      "src": "/Logo.jpg",
       "sizes": "128x128",
-      "type": "image/png",
+      "type": "image/jpeg",
       "purpose": "any"
     },
     {
-      "src": "/logo.png",
+      "src": "/Logo.jpg",
       "sizes": "144x144",
-      "type": "image/png",
+      "type": "image/jpeg",
       "purpose": "any"
     },
     {
-      "src": "/logo.png",
+      "src": "/Logo.jpg",
       "sizes": "152x152",
-      "type": "image/png",
+      "type": "image/jpeg",
       "purpose": "any"
     },
     {
-      "src": "/logo.png",
+      "src": "/Logo.jpg",
       "sizes": "192x192",
-      "type": "image/png",
+      "type": "image/jpeg",
       "purpose": "any maskable"
     },
     {
-      "src": "/logo.png",
+      "src": "/Logo.jpg",
       "sizes": "384x384",
-      "type": "image/png",
+      "type": "image/jpeg",
       "purpose": "any"
     },
     {
-      "src": "/logo.png",
+      "src": "/Logo.jpg",
       "sizes": "512x512",
-      "type": "image/png",
+      "type": "image/jpeg",
       "purpose": "any maskable"
     }
   ],
@@ -78,7 +78,7 @@
       "url": "/user",
       "icons": [
         {
-          "src": "/logo.png",
+          "src": "/Logo.jpg",
           "sizes": "96x96"
         }
       ]
@@ -90,7 +90,7 @@
       "url": "/user/notifications",
       "icons": [
         {
-          "src": "/logo.png",
+          "src": "/Logo.jpg",
           "sizes": "96x96"
         }
       ]
