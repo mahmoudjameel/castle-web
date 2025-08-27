@@ -15,12 +15,12 @@ const PWAManager: React.FC<PWAManagerProps> = ({ children }) => {
   const [notificationPermission, setNotificationPermission] = useState<NotificationPermission>('default');
   const [showNotificationPrompt, setShowNotificationPrompt] = useState(false);
   const [swRegistration, setSwRegistration] = useState<ServiceWorkerRegistration | null>(null);
-  const [showSuccessMessage, setShowSuccessMessage] = useState(false);
+  // const [showSuccessMessage, setShowSuccessMessage] = useState(false);
   const [installError, setInstallError] = useState<string | null>(null);
   const [notificationsActivated, setNotificationsActivated] = useState(false);
   const [isIOS, setIsIOS] = useState(false);
   const [isAndroid, setIsAndroid] = useState(false);
-  const [showIOSInstructions, setShowIOSInstructions] = useState(false);
+  // const [showIOSInstructions, setShowIOSInstructions] = useState(false);
 
   useEffect(() => {
     // تحديد نوع الجهاز
@@ -65,14 +65,8 @@ const PWAManager: React.FC<PWAManagerProps> = ({ children }) => {
       setInstallError(null);
     };
 
-    // iOS لا يدعم beforeinstallprompt - لا نضيف المستمع له
-    if (!isIOSDevice) {
-      window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-    } else {
-      console.log('iOS device detected - beforeinstallprompt not supported');
-      // على iOS، لا نحتاج deferredPrompt
-      setDeferredPrompt(null);
-    }
+    // إضافة مستمع لـ beforeinstallprompt (Android فقط)
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
 
     // التحقق من حالة الإشعارات
     if ('Notification' in window) {
@@ -83,17 +77,6 @@ const PWAManager: React.FC<PWAManagerProps> = ({ children }) => {
         setNotificationsActivated(true);
       }
     }
-
-    // مراقبة تغيير حالة الإشعارات
-    const handleNotificationPermissionChange = () => {
-      if ('Notification' in window) {
-        const currentPermission = Notification.permission;
-        setNotificationPermission(currentPermission);
-        if (currentPermission === 'granted') {
-          setNotificationsActivated(true);
-        }
-      }
-    };
 
     // تسجيل Service Worker
     if ('serviceWorker' in navigator) {
@@ -152,33 +135,31 @@ const PWAManager: React.FC<PWAManagerProps> = ({ children }) => {
       // فحص كل 2 ثانية للتأكد من حالة الإشعارات
       const permissionInterval = setInterval(checkPermission, 2000);
       
+      // فحص حالة التثبيت كل ثانية
+      const installationInterval = setInterval(checkInstallation, 1000);
+      
       // تنظيف عند إلغاء المكون
       return () => {
-        if (!isIOSDevice) {
-          window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-        }
+        window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
         mediaQuery.removeEventListener('change', handleDisplayModeChange);
         clearInterval(permissionInterval);
+        clearInterval(installationInterval);
       };
     } else {
+      // فحص حالة التثبيت كل ثانية
+      const installationInterval = setInterval(checkInstallation, 1000);
+      
       // تنظيف عند إلغاء المكون
       return () => {
-        if (!isIOSDevice) {
-          window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-        }
+        window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
         mediaQuery.removeEventListener('change', handleDisplayModeChange);
+        clearInterval(installationInterval);
       };
     }
   }, []);
 
   // تثبيت التطبيق
   const handleInstallApp = async () => {
-    if (isIOS) {
-      // على iOS، نعرض تعليمات التثبيت مباشرة
-      setShowIOSInstructions(true);
-      return;
-    }
-
     if (!deferredPrompt) {
       console.log('No deferred prompt available');
       setInstallError('لا يمكن تثبيت التطبيق في الوقت الحالي');
@@ -206,8 +187,10 @@ const PWAManager: React.FC<PWAManagerProps> = ({ children }) => {
           const isIOSStandalone = (window.navigator as any).standalone === true;
           if (isStandalone || isIOSStandalone) {
             console.log('Installation confirmed');
+            // تأكيد إضافي لإخفاء الزر
+            setIsInstalled(true);
           }
-        }, 2000);
+        }, 1000);
       } else {
         console.log('User dismissed the install prompt');
         setInstallError('تم رفض تثبيت التطبيق');
@@ -227,30 +210,27 @@ const PWAManager: React.FC<PWAManagerProps> = ({ children }) => {
         setShowNotificationPrompt(false);
         
         if (permission === 'granted' && swRegistration) {
-          // على iOS، لا نستطيع استخدام Push API
-          if (!isIOS) {
-            try {
-              // طلب subscription للإشعارات (Android فقط)
-              const subscription = await swRegistration.pushManager.subscribe({
-                userVisibleOnly: true,
-                applicationServerKey: urlBase64ToUint8Array(process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || '')
-              });
-              
-              // إرسال subscription للخادم
-              await fetch('/api/push-subscription', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ subscription })
-              });
-            } catch (error) {
-              console.log('Push subscription not supported on this device');
-            }
+          try {
+            // طلب subscription للإشعارات
+            const subscription = await swRegistration.pushManager.subscribe({
+              userVisibleOnly: true,
+              applicationServerKey: urlBase64ToUint8Array(process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || '')
+            });
+            
+            // إرسال subscription للخادم
+            await fetch('/api/push-subscription', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ subscription })
+            });
+          } catch (error) {
+            console.log('Push subscription not supported on this device');
           }
           
           // إخفاء زر "إشعار تجريبي" وإظهار رسالة النجاح
           setNotificationsActivated(true);
-          setShowSuccessMessage(true);
-          setTimeout(() => setShowSuccessMessage(false), 3000);
+          // setShowSuccessMessage(true);
+          // setTimeout(() => setShowSuccessMessage(false), 3000);
         }
       } catch (error) {
         console.error('Error requesting notification permission:', error);
@@ -321,8 +301,8 @@ const PWAManager: React.FC<PWAManagerProps> = ({ children }) => {
         </DialogActions>
       </Dialog>
 
-      {/* نافذة تعليمات iOS */}
-      <Dialog open={showIOSInstructions} onClose={() => setShowIOSInstructions(false)} maxWidth="sm" fullWidth>
+      {/* نافذة تعليمات iOS - مخفية لأن iOS لا يدعم التثبيت */}
+      {/* <Dialog open={showIOSInstructions} onClose={() => setShowIOSInstructions(false)} maxWidth="sm" fullWidth>
         <DialogTitle>
           <Box display="flex" alignItems="center" gap={1}>
             <Apple color="primary" />
@@ -340,7 +320,7 @@ const PWAManager: React.FC<PWAManagerProps> = ({ children }) => {
             <Box component="li" sx={{ mb: 1 }}>
               <Typography>اختر <Chip label="أضف إلى الشاشة الرئيسية" size="small" color="secondary" /></Typography>
             </Box>
-            <Box component="li" sx={{ mb: 1 }}>
+            <Box component="li" sx={{ mb:1 }}>
               <Typography>اضغط <Chip label="إضافة" size="small" color="success" /></Typography>
             </Box>
             <Box component="li">
@@ -363,7 +343,7 @@ const PWAManager: React.FC<PWAManagerProps> = ({ children }) => {
             فهمت
           </Button>
         </DialogActions>
-      </Dialog>
+      </Dialog> */}
 
       {/* نافذة طلب إذن الإشعارات */}
       <Dialog open={showNotificationPrompt} onClose={() => setShowNotificationPrompt(false)}>
@@ -377,13 +357,6 @@ const PWAManager: React.FC<PWAManagerProps> = ({ children }) => {
           <Typography>
             فعّل الإشعارات لتلقي تنبيهات فورية عن الطلبات الجديدة والتحديثات المهمة
           </Typography>
-          {isIOS && (
-            <Alert severity="warning" sx={{ mt: 2 }}>
-              <Typography variant="body2">
-                <strong>iOS:</strong> الإشعارات تعمل فقط عند فتح التطبيق من الشاشة الرئيسية
-              </Typography>
-            </Alert>
-          )}
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setShowNotificationPrompt(false)} color="inherit">
@@ -406,26 +379,21 @@ const PWAManager: React.FC<PWAManagerProps> = ({ children }) => {
           flexDirection="column"
           gap={1}
         >
-          {/* زر تثبيت التطبيق */}
-          <Button
-            variant="contained"
-            color="primary"
-            startIcon={isIOS ? <Apple /> : <Download />}
-            onClick={() => {
-              if (isIOS) {
-                setShowIOSInstructions(true);
-              } else {
-                setShowInstallPrompt(true);
-              }
-            }}
-            sx={{ 
-              borderRadius: 2, 
-              boxShadow: 3,
-              background: isIOS ? 'linear-gradient(45deg, #007AFF 30%, #5856D6 90%)' : undefined
-            }}
-          >
-            {isIOS ? 'إضافة للشاشة الرئيسية' : 'تثبيت التطبيق'}
-          </Button>
+          {/* زر تثبيت التطبيق - يظهر فقط على الأندرويد */}
+          {!isIOS && (
+            <Button
+              variant="contained"
+              color="primary"
+              startIcon={<Download />}
+              onClick={() => setShowInstallPrompt(true)}
+              sx={{ 
+                borderRadius: 2, 
+                boxShadow: 3
+              }}
+            >
+              تثبيت التطبيق
+            </Button>
+          )}
           
           {/* زر تفعيل الإشعارات */}
           {notificationPermission !== 'granted' && !notificationsActivated && (
@@ -482,8 +450,8 @@ const PWAManager: React.FC<PWAManagerProps> = ({ children }) => {
         </Box>
       )}
 
-      {/* رسائل الحالة */}
-      <Snackbar
+      {/* رسائل الحالة - مخفية */}
+      {/* <Snackbar
         open={showSuccessMessage}
         autoHideDuration={3000}
         onClose={() => setShowSuccessMessage(false)}
@@ -492,7 +460,7 @@ const PWAManager: React.FC<PWAManagerProps> = ({ children }) => {
         <Alert severity="success" icon={<Notifications />}>
           تم تفعيل الإشعارات بنجاح!
         </Alert>
-      </Snackbar>
+      </Snackbar> */}
     </>
   );
 };
