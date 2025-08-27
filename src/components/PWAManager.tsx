@@ -65,9 +65,13 @@ const PWAManager: React.FC<PWAManagerProps> = ({ children }) => {
       setInstallError(null);
     };
 
-    // iOS لا يدعم beforeinstallprompt
+    // iOS لا يدعم beforeinstallprompt - لا نضيف المستمع له
     if (!isIOSDevice) {
       window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    } else {
+      console.log('iOS device detected - beforeinstallprompt not supported');
+      // على iOS، لا نحتاج deferredPrompt
+      setDeferredPrompt(null);
     }
 
     // التحقق من حالة الإشعارات
@@ -79,6 +83,17 @@ const PWAManager: React.FC<PWAManagerProps> = ({ children }) => {
         setNotificationsActivated(true);
       }
     }
+
+    // مراقبة تغيير حالة الإشعارات
+    const handleNotificationPermissionChange = () => {
+      if ('Notification' in window) {
+        const currentPermission = Notification.permission;
+        setNotificationPermission(currentPermission);
+        if (currentPermission === 'granted') {
+          setNotificationsActivated(true);
+        }
+      }
+    };
 
     // تسجيل Service Worker
     if ('serviceWorker' in navigator) {
@@ -105,18 +120,61 @@ const PWAManager: React.FC<PWAManagerProps> = ({ children }) => {
         });
     }
 
-    // تنظيف عند إلغاء المكون
-    return () => {
-      if (!isIOSDevice) {
-        window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    // إضافة مستمع لتغيير حالة التطبيق
+    const handleDisplayModeChange = () => {
+      const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
+      const isIOSStandalone = (window.navigator as any).standalone === true;
+      const isInApp = window.navigator.userAgent.includes('wv');
+      
+      if (isStandalone || isIOSStandalone || isInApp) {
+        console.log('App became standalone/installed');
+        setIsInstalled(true);
+        setShowInstallPrompt(false);
+        setDeferredPrompt(null);
       }
     };
+
+    // مراقبة تغيير وضع العرض
+    const mediaQuery = window.matchMedia('(display-mode: standalone)');
+    mediaQuery.addEventListener('change', handleDisplayModeChange);
+
+    // مراقبة تغيير حالة الإشعارات
+    if ('Notification' in window) {
+      // مراقبة تغيير الإذن
+      const checkPermission = () => {
+        const permission = Notification.permission;
+        setNotificationPermission(permission);
+        if (permission === 'granted') {
+          setNotificationsActivated(true);
+        }
+      };
+      
+      // فحص كل 2 ثانية للتأكد من حالة الإشعارات
+      const permissionInterval = setInterval(checkPermission, 2000);
+      
+      // تنظيف عند إلغاء المكون
+      return () => {
+        if (!isIOSDevice) {
+          window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+        }
+        mediaQuery.removeEventListener('change', handleDisplayModeChange);
+        clearInterval(permissionInterval);
+      };
+    } else {
+      // تنظيف عند إلغاء المكون
+      return () => {
+        if (!isIOSDevice) {
+          window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+        }
+        mediaQuery.removeEventListener('change', handleDisplayModeChange);
+      };
+    }
   }, []);
 
   // تثبيت التطبيق
   const handleInstallApp = async () => {
     if (isIOS) {
-      // على iOS، نعرض تعليمات التثبيت
+      // على iOS، نعرض تعليمات التثبيت مباشرة
       setShowIOSInstructions(true);
       return;
     }
@@ -137,20 +195,23 @@ const PWAManager: React.FC<PWAManagerProps> = ({ children }) => {
       if (outcome === 'accepted') {
         console.log('User accepted the install prompt');
         setShowInstallPrompt(false);
-        // إعادة التحقق من التثبيت بعد فترة
+        setDeferredPrompt(null);
+        
+        // إخفاء الزر فوراً
+        setIsInstalled(true);
+        
+        // إعادة التحقق من التثبيت بعد فترة للتأكد
         setTimeout(() => {
           const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
           const isIOSStandalone = (window.navigator as any).standalone === true;
           if (isStandalone || isIOSStandalone) {
-            setIsInstalled(true);
+            console.log('Installation confirmed');
           }
         }, 2000);
       } else {
         console.log('User dismissed the install prompt');
         setInstallError('تم رفض تثبيت التطبيق');
       }
-      
-      setDeferredPrompt(null);
     } catch (error) {
       console.error('Error during install:', error);
       setInstallError('حدث خطأ أثناء التثبيت');
@@ -274,7 +335,7 @@ const PWAManager: React.FC<PWAManagerProps> = ({ children }) => {
           </Typography>
           <Box component="ol" sx={{ pl: 2, mt: 2 }}>
             <Box component="li" sx={{ mb: 1 }}>
-              <Typography>اضغط على زر <Chip label="شارك" size="small" color="primary" /> في المتصفح</Typography>
+              <Typography>اضغط على زر <Chip label="شارك" size="small" color="primary" /> في المتصفح (أسفل الشاشة)</Typography>
             </Box>
             <Box component="li" sx={{ mb: 1 }}>
               <Typography>اختر <Chip label="أضف إلى الشاشة الرئيسية" size="small" color="secondary" /></Typography>
@@ -288,7 +349,12 @@ const PWAManager: React.FC<PWAManagerProps> = ({ children }) => {
           </Box>
           <Alert severity="info" sx={{ mt: 2 }}>
             <Typography variant="body2">
-              <strong>ملاحظة:</strong> على iOS، يجب إضافة التطبيق للشاشة الرئيسية يدوياً من خلال زر المشاركة
+              <strong>ملاحظة:</strong> على iOS، يجب إضافة التطبيق للشاشة الرئيسية يدوياً من خلال زر المشاركة. هذا هو الطريقة الوحيدة المتاحة.
+            </Typography>
+          </Alert>
+          <Alert severity="success" sx={{ mt: 2 }}>
+            <Typography variant="body2">
+              <strong>مميزات التطبيق:</strong> بعد التثبيت، ستحصل على تجربة أسرع وأفضل مع إمكانية الوصول السريع من الشاشة الرئيسية.
             </Typography>
           </Alert>
         </DialogContent>
@@ -345,14 +411,24 @@ const PWAManager: React.FC<PWAManagerProps> = ({ children }) => {
             variant="contained"
             color="primary"
             startIcon={isIOS ? <Apple /> : <Download />}
-            onClick={() => isIOS ? setShowIOSInstructions(true) : setShowInstallPrompt(true)}
-            sx={{ borderRadius: 2, boxShadow: 3 }}
+            onClick={() => {
+              if (isIOS) {
+                setShowIOSInstructions(true);
+              } else {
+                setShowInstallPrompt(true);
+              }
+            }}
+            sx={{ 
+              borderRadius: 2, 
+              boxShadow: 3,
+              background: isIOS ? 'linear-gradient(45deg, #007AFF 30%, #5856D6 90%)' : undefined
+            }}
           >
             {isIOS ? 'إضافة للشاشة الرئيسية' : 'تثبيت التطبيق'}
           </Button>
           
           {/* زر تفعيل الإشعارات */}
-          {notificationPermission !== 'granted' && (
+          {notificationPermission !== 'granted' && !notificationsActivated && (
             <Button
               variant="outlined"
               color="secondary"
