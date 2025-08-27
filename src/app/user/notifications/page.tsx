@@ -8,8 +8,8 @@ import { useRouter } from "next/navigation";
 interface Notification {
   id: number;
   title: string;
-  message: string;
-  createdAt: string;
+  body: string;
+  date: string;
 }
 
 export default function UserNotificationsPage() {
@@ -51,8 +51,29 @@ export default function UserNotificationsPage() {
             {notifications.map((notif) => (
               <li key={notif.id} className="p-4 rounded-xl bg-blue-900/40 border border-blue-400/20 shadow-md">
                 <div className="font-bold text-orange-300 mb-1">{notif.title || "إشعار جديد"}</div>
-                <div className="text-blue-100 text-sm">{notif.message}</div>
-                <div className="text-xs text-blue-300 mt-2">{new Date(notif.createdAt).toLocaleString('ar-EG')}</div>
+                <div className="text-blue-100 text-sm">{notif.body}</div>
+                <div className="text-xs text-blue-300 mt-2">
+                  {(() => {
+                    try {
+                      if (!notif.date) {
+                        return 'تاريخ غير محدد';
+                      }
+                      const date = new Date(notif.date);
+                      if (isNaN(date.getTime())) {
+                        return 'تاريخ غير محدد';
+                      }
+                      return date.toLocaleString('ar-EG', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      });
+                    } catch {
+                      return 'تاريخ غير محدد';
+                    }
+                  })()}
+                </div>
               </li>
             ))}
           </ul>

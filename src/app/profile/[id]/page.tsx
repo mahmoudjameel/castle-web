@@ -293,7 +293,8 @@ export default function TalentPublicProfile() {
     .filter(Boolean);
   const subtotal = servicesArr.reduce((sum, srv: any) => srv ? sum + Number(srv.price || 0) : sum, 0);
   const tax = Math.round(subtotal * 0.15);
-  const totalWithTax = subtotal + tax;
+  const serviceFee = Math.round(subtotal * 0.20); // رسوم الخدمة 20%
+  const totalWithTax = subtotal + tax + serviceFee;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-blue-900 to-purple-900">
@@ -1028,10 +1029,14 @@ export default function TalentPublicProfile() {
                     <span>الضريبة (15%):</span>
                     <span>{tax} ر.س</span>
                   </div>
+                  <div className="flex justify-between items-center text-xs sm:text-sm text-gray-600 mt-1">
+                    <span>رسوم الخدمة (20%):</span>
+                    <span>{serviceFee} ر.س</span>
+                  </div>
                   <div className="flex justify-between items-center text-lg sm:text-xl font-bold text-green-600 mt-2 sm:mt-3 pt-2 sm:pt-3 border-t border-gray-200">
                     <span>الإجمالي:</span>
                     <span>{totalWithTax} ر.س</span>
-              </div>
+                  </div>
                 </div>
               </div>
               <button

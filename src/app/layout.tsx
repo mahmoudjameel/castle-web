@@ -4,6 +4,7 @@ import './globals.css';
 import { NextIntlClientProvider } from 'next-intl';
 import { useEffect } from 'react';
 import ThemeRegistry from '@/components/ThemeRegistry';
+import PWAManager from '@/components/PWAManager';
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   // تحديد اللغة من localStorage أو الافتراضية
@@ -26,7 +27,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body>
         <ThemeRegistry>
           <NextIntlClientProvider messages={messages} locale={lang} timeZone="Asia/Riyadh">
-            {children}
+            <PWAManager>
+              {children}
+            </PWAManager>
           </NextIntlClientProvider>
         </ThemeRegistry>
       </body>

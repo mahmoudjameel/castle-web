@@ -1,0 +1,62 @@
+{
+  "name": "طوق - منصة الكاستينج الرقمية",
+  "short_name": "طوق",
+  "description": "منصة رقمية متكاملة للكاستينج وإدارة المواهب",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#f59e0b",
+  "orientation": "portrait-primary",
+  "scope": "/",
+  "lang": "ar",
+  "dir": "rtl",
+  "icons": [
+    {
+      "src": "/logo.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["business", "productivity", "entertainment"],
+  "screenshots": [
+    {
+      "src": "/hero/Sliders-01.jpg",
+      "sizes": "1280x720",
+      "type": "image/jpeg",
+      "form_factor": "wide"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "لوحة التحكم",
+      "short_name": "التحكم",
+      "description": "الوصول السريع للوحة التحكم",
+      "url": "/user",
+      "icons": [
+        {
+          "src": "/logo.png",
+          "sizes": "96x96"
+        }
+      ]
+    },
+    {
+      "name": "الإشعارات",
+      "short_name": "إشعارات",
+      "description": "عرض الإشعارات الجديدة",
+      "url": "/user/notifications",
+      "icons": [
+        {
+          "src": "/logo.png",
+          "sizes": "96x96"
+        }
+      ]
+    }
+  ]
+}

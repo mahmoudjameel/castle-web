@@ -127,7 +127,14 @@ export default function ChatPage() {
           />
           <div>
             <div className="font-bold text-xl text-orange-300">{otherUser?.name || "..."}</div>
-            <div className="text-blue-100 text-sm">محادثة خاصة</div>
+            <div className="text-blue-100 text-sm flex items-center gap-2">
+              محادثة خاصة
+              {messages.some(msg => msg.content.startsWith('[رسالة من الإدارة]:')) && (
+                <span className="text-yellow-300 text-xs bg-yellow-400/20 px-2 py-1 rounded-full">
+                  🏢 تحتوي على رسائل من الإدارة
+                </span>
+              )}
+            </div>
           </div>
         </div>
         {/* الرسائل */}
@@ -137,27 +144,66 @@ export default function ChatPage() {
           ) : messages.length === 0 ? (
             <div className="text-blue-200 text-center">لا توجد رسائل بعد.</div>
           ) : (
-            messages.map(msg => {
-              const isMe = msg.senderId === currentUser.id;
-              return (
-                <div key={msg.id} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
-                  <div className={`max-w-[70%] flex items-end gap-2 ${isMe ? 'flex-row-reverse' : ''}`}>
-                    <Image
-                      src={(isMe ? myData?.profileImageData : otherData?.profileImageData) ? `data:image/png;base64,${isMe ? myData?.profileImageData : otherData?.profileImageData}` : "/logo.png"}
-                      alt={(isMe ? myData?.name : otherData?.name) || 'صورة المستخدم'}
-                      width={32}
-                      height={32}
-                      className="w-8 h-8 rounded-full object-cover border-2 border-orange-400"
-                    />
-                    <div className={`px-4 py-2 rounded-2xl shadow ${isMe ? 'bg-gradient-to-l from-orange-400 to-pink-500 text-white' : 'bg-blue-900/60 text-blue-100'} font-bold`}>
-                      <div className="text-sm mb-1">{isMe ? myData?.name : otherData?.name}</div>
-                      <div className="text-base whitespace-pre-line break-words">{msg.content}</div>
-                      <div className="text-xs text-blue-200 mt-1 text-left opacity-70">{new Date(msg.createdAt).toLocaleString("ar-EG")}</div>
-                    </div>
+            <>
+              {/* إشعار بوجود رسائل من الإدارة */}
+              {messages.some(msg => msg.content.startsWith('[رسالة من الإدارة]:')) && (
+                <div className="text-center mb-4">
+                  <div className="inline-flex items-center gap-2 bg-gradient-to-r from-green-400/20 to-blue-500/20 border border-green-400/30 rounded-lg px-4 py-2">
+                    <span className="text-green-400">🏢</span>
+                    <span className="text-green-400 text-sm">هذه المحادثة تحتوي على ردود من إدارة المنصة</span>
                   </div>
                 </div>
-              );
-            })
+                            )}
+              {messages.map(msg => {
+                const isMe = msg.senderId === currentUser.id;
+                const isAdminMessage = msg.content.startsWith('[رسالة من الإدارة]:');
+                
+                return (
+                  <div key={msg.id} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
+                    <div className={`max-w-[70%] flex items-end gap-2 ${isMe ? 'flex-row-reverse' : ''}`}>
+                      {/* صورة المستخدم */}
+                      <Image
+                        src={(isMe ? myData?.profileImageData : otherData?.profileImageData) ? `data:image/png;base64,${isMe ? myData?.profileImageData : otherData?.profileImageData}` : "/logo.png"}
+                        alt={(isMe ? myData?.name : otherData?.name) || 'صورة المستخدم'}
+                        width={32}
+                        height={32}
+                        className="w-8 h-8 rounded-full object-cover border-2 border-orange-400"
+                      />
+                      
+                      {/* محتوى الرسالة */}
+                      <div className={`px-4 py-2 rounded-2xl shadow font-bold ${
+                        isAdminMessage 
+                          ? 'bg-gradient-to-r from-green-400 to-blue-500 text-white border-2 border-yellow-400' // رسالة الإدارة
+                          : isMe 
+                            ? 'bg-gradient-to-l from-orange-400 to-pink-500 text-white' // رسالتي
+                            : 'bg-blue-900/60 text-blue-100' // رسالة الطرف الآخر
+                      }`}>
+                        
+                        {/* اسم المرسل مع تمييز الإدارة */}
+                        <div className="text-sm mb-1 flex items-center gap-2">
+                          {isAdminMessage && (
+                            <span className="text-yellow-300 text-xs bg-yellow-400/20 px-2 py-1 rounded-full">
+                              🏢 إدارة
+                            </span>
+                          )}
+                          {isMe ? myData?.name : otherData?.name}
+                        </div>
+                        
+                        {/* محتوى الرسالة */}
+                        <div className="text-base whitespace-pre-line break-words">
+                          {isAdminMessage ? msg.content.replace('[رسالة من الإدارة]: ', '') : msg.content}
+                        </div>
+                        
+                        {/* الوقت */}
+                        <div className="text-xs text-blue-200 mt-1 text-left opacity-70">
+                          {new Date(msg.createdAt).toLocaleString("ar-EG")}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </>
           )}
           <div ref={messagesEndRef} />
         </div>

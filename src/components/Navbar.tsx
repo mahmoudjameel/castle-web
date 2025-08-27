@@ -17,6 +17,7 @@ import ListItemText from '@mui/material/ListItemText';
 import Divider from '@mui/material/Divider';
 import MenuIcon from '@mui/icons-material/Menu';
 import TranslateIcon from '@mui/icons-material/Translate';
+import NotificationsIcon from '@mui/icons-material/Notifications';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import Image from 'next/image';
@@ -36,15 +37,47 @@ const Navbar = () => {
   const menuOpen = Boolean(anchorEl);
   const [lang, setLang] = useState('ar');
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [notificationsCount, setNotificationsCount] = useState(0);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const userStr = localStorage.getItem('user');
-      if (userStr) setUser(JSON.parse(userStr));
-      else setUser(null);
+      if (userStr) {
+        const userData = JSON.parse(userStr);
+        setUser(userData);
+        // جلب عدد الإشعارات إذا كان المستخدم مسجل
+        if (userData?.id) {
+          fetchNotificationsCount(userData.id);
+        }
+      } else {
+        setUser(null);
+      }
       setLang(typeof window !== 'undefined' ? localStorage.getItem('lang') || 'ar' : 'ar');
     }
   }, []);
+  
+  // وظيفة لجلب عدد الإشعارات
+  const fetchNotificationsCount = async (userId: number) => {
+    try {
+      const response = await fetch(`/api/notifications?userId=${userId}`);
+      const notifications = await response.json();
+      const unreadCount = notifications.filter((n: any) => !n.read).length;
+      setNotificationsCount(unreadCount);
+    } catch (error) {
+      console.error('Error fetching notifications count:', error);
+    }
+  };
+  
+  // تحديث مستمر للإشعارات كل دقيقة
+  useEffect(() => {
+    if (!user?.id) return;
+    
+    const interval = setInterval(() => {
+      fetchNotificationsCount(Number(user.id));
+    }, 60000); // تحديث كل دقيقة
+    
+    return () => clearInterval(interval);
+  }, [user?.id]);
 
   const handleAvatarClick = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
@@ -138,6 +171,52 @@ const Navbar = () => {
             </>
           ) : (
             <>
+              {/* أيقونة الإشعارات */}
+              <IconButton 
+                onClick={() => {
+                  if (user?.role === 'admin') router.push('/admin');
+                  else if (user?.role === 'talent') router.push('/talent/notifications');
+                  else if (user?.role === 'user') router.push('/user/notifications');
+                  else router.push('/user/notifications');
+                }}
+                sx={{ 
+                  p: 1, 
+                  ml: 1, 
+                  position: 'relative',
+                  color: '#1e293b',
+                  '&:hover': { 
+                    bgcolor: 'rgba(251, 146, 60, 0.1)',
+                    color: '#f59e42'
+                  }
+                }}
+                title="الإشعارات"
+              >
+                <NotificationsIcon />
+                {/* عداد الإشعارات */}
+                {notificationsCount > 0 && (
+                  <Box
+                    sx={{
+                      position: 'absolute',
+                      top: 4,
+                      right: 4,
+                      bgcolor: '#ef4444',
+                      color: 'white',
+                      fontSize: '0.75rem',
+                      fontWeight: 'bold',
+                      borderRadius: '50%',
+                      width: 20,
+                      height: 20,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      animation: 'pulse 2s infinite'
+                    }}
+                  >
+                    {notificationsCount > 99 ? '99+' : notificationsCount}
+                  </Box>
+                )}
+              </IconButton>
+              
               <IconButton onClick={handleAvatarClick} sx={{ p: 0, ml: 1 }}>
                 <Avatar
                   src={
