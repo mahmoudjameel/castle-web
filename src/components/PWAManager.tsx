@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { Button, Snackbar, Alert, Box, Typography, Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
-import { Download, Notifications, NotificationsOff, Close } from '@mui/icons-material';
+import { Download, Notifications, NotificationsOff, Close, CheckCircle } from '@mui/icons-material';
 
 interface PWAManagerProps {
   children: React.ReactNode;
@@ -16,57 +16,122 @@ const PWAManager: React.FC<PWAManagerProps> = ({ children }) => {
   const [showNotificationPrompt, setShowNotificationPrompt] = useState(false);
   const [swRegistration, setSwRegistration] = useState<ServiceWorkerRegistration | null>(null);
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
+  const [installError, setInstallError] = useState<string | null>(null);
+  const [notificationsActivated, setNotificationsActivated] = useState(false);
 
   useEffect(() => {
     // التحقق من تثبيت التطبيق
     const checkInstallation = () => {
-      if (window.matchMedia('(display-mode: standalone)').matches || 
-          (window.navigator as any).standalone === true) {
+      // التحقق من عدة طرق للتثبيت
+      const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
+      const isIOSStandalone = (window.navigator as any).standalone === true;
+      const isInApp = window.navigator.userAgent.includes('wv'); // WebView
+      
+      if (isStandalone || isIOSStandalone || isInApp) {
+        console.log('App is installed/standalone');
         setIsInstalled(true);
+      } else {
+        console.log('App is not installed');
+        setIsInstalled(false);
       }
     };
 
     // التحقق من نوع الجهاز (إخفاء على الأجهزة المكتبية)
     const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
     if (!isMobile) {
+      console.log('Desktop device detected, hiding PWA buttons');
       setIsInstalled(true); // إخفاء الأزرار على الأجهزة المكتبية
     }
 
     checkInstallation();
 
     // استقبال حدث تثبيت التطبيق
-    window.addEventListener('beforeinstallprompt', (e) => {
+    const handleBeforeInstallPrompt = (e: any) => {
+      console.log('beforeinstallprompt event fired');
       e.preventDefault();
       setDeferredPrompt(e);
       setShowInstallPrompt(true);
-    });
+      setInstallError(null);
+    };
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
 
     // التحقق من حالة الإشعارات
     if ('Notification' in window) {
-      setNotificationPermission(Notification.permission);
+      const permission = Notification.permission;
+      setNotificationPermission(permission);
+      // إذا كانت الإشعارات مفعلة، أخف زر "إشعار تجريبي"
+      if (permission === 'granted') {
+        setNotificationsActivated(true);
+      }
     }
 
     // تسجيل Service Worker
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/sw.js')
+      navigator.serviceWorker.register('/sw.js', { scope: '/' })
         .then((registration) => {
-          console.log('SW registered: ', registration);
+          console.log('SW registered successfully: ', registration);
           setSwRegistration(registration);
+          
+          // التحقق من تحديثات Service Worker
+          registration.addEventListener('updatefound', () => {
+            const newWorker = registration.installing;
+            if (newWorker) {
+              newWorker.addEventListener('statechange', () => {
+                if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                  console.log('New SW installed, prompting for update');
+                  // يمكن إضافة منطق لتحديث التطبيق
+                }
+              });
+            }
+          });
         })
         .catch((registrationError) => {
-          console.log('SW registration failed: ', registrationError);
+          console.error('SW registration failed: ', registrationError);
         });
     }
+
+    // تنظيف عند إلغاء المكون
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    };
   }, []);
 
   // تثبيت التطبيق
   const handleInstallApp = async () => {
-    if (deferredPrompt) {
+    if (!deferredPrompt) {
+      console.log('No deferred prompt available');
+      setInstallError('لا يمكن تثبيت التطبيق في الوقت الحالي');
+      return;
+    }
+
+    try {
+      console.log('Prompting for install...');
       deferredPrompt.prompt();
+      
       const { outcome } = await deferredPrompt.userChoice;
       console.log(`User response to the install prompt: ${outcome}`);
+      
+      if (outcome === 'accepted') {
+        console.log('User accepted the install prompt');
+        setShowInstallPrompt(false);
+        // إعادة التحقق من التثبيت بعد فترة
+        setTimeout(() => {
+          const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
+          const isIOSStandalone = (window.navigator as any).standalone === true;
+          if (isStandalone || isIOSStandalone) {
+            setIsInstalled(true);
+          }
+        }, 2000);
+      } else {
+        console.log('User dismissed the install prompt');
+        setInstallError('تم رفض تثبيت التطبيق');
+      }
+      
       setDeferredPrompt(null);
-      setShowInstallPrompt(false);
+    } catch (error) {
+      console.error('Error during install:', error);
+      setInstallError('حدث خطأ أثناء التثبيت');
     }
   };
 
@@ -92,7 +157,8 @@ const PWAManager: React.FC<PWAManagerProps> = ({ children }) => {
             body: JSON.stringify({ subscription })
           });
           
-          // إظهار رسالة النجاح وإخفاؤها بعد 3 ثواني
+          // إخفاء زر "إشعار تجريبي" وإظهار رسالة النجاح
+          setNotificationsActivated(true);
           setShowSuccessMessage(true);
           setTimeout(() => setShowSuccessMessage(false), 3000);
         }
@@ -149,6 +215,11 @@ const PWAManager: React.FC<PWAManagerProps> = ({ children }) => {
           <Typography>
             قم بتثبيت تطبيق طوق على جهازك للحصول على تجربة أفضل وأسرع
           </Typography>
+          {installError && (
+            <Alert severity="error" sx={{ mt: 2 }}>
+              {installError}
+            </Alert>
+          )}
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setShowInstallPrompt(false)} color="inherit">
@@ -216,16 +287,25 @@ const PWAManager: React.FC<PWAManagerProps> = ({ children }) => {
             </Button>
           )}
           
-          {notificationPermission === 'granted' && (
-            <Button
-              variant="outlined"
-              color="success"
-              startIcon={<Notifications />}
-              onClick={sendTestNotification}
-              sx={{ borderRadius: 2 }}
+          {/* إظهار رسالة نجاح بدلاً من زر "إشعار تجريبي" */}
+          {notificationsActivated && (
+            <Box
+              sx={{
+                bgcolor: 'success.main',
+                color: 'white',
+                px: 2,
+                py: 1,
+                borderRadius: 2,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 1,
+                fontSize: '0.875rem',
+                fontWeight: 'medium'
+              }}
             >
-              إشعار تجريبي
-            </Button>
+              <CheckCircle fontSize="small" />
+              تم تفعيل الإشعارات بنجاح!
+            </Box>
           )}
         </Box>
       )}
