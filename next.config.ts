@@ -15,6 +15,28 @@ const nextConfig: NextConfig = {
       "encrypted-tbn0.gstatic.com",
       // أضف دومينات أخرى إذا احتجت
     ],
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: '**',
+      },
+    ],
+  },
+  experimental: {
+    optimizePackageImports: ['@mui/material', '@mui/icons-material', 'lucide-react'],
+  },
+  headers: async () => {
+    return [
+      {
+        source: '/sw.js',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=0, must-revalidate',
+          },
+        ],
+      },
+    ];
   },
 };
 

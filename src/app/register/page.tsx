@@ -14,10 +14,18 @@ const Register = () => {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
   const [focusedField, setFocusedField] = useState('');
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
   const router = useRouter();
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!acceptedTerms) {
+      setMessage(t('auth.termsRequired'));
+      return;
+    }
+    
     setLoading(true);
     setMessage('');
     try {
@@ -28,11 +36,9 @@ const Register = () => {
       });
       const data = await res.json();
       if (res.ok) {
-        setMessage(role === 'user' ? t('auth.userRegisteredSuccess') : t('auth.talentRegisteredSuccess'));
+        setShowSuccessModal(true);
         setName(''); setEmail(''); setPassword('');
-        setTimeout(() => {
-          router.push('/login');
-        }, 1200);
+        setAcceptedTerms(false);
       } else {
         setMessage(data.message || t('auth.registrationError'));
       }
@@ -65,7 +71,7 @@ const Register = () => {
               <h2 className="text-3xl font-bold mb-2 bg-gradient-to-r from-orange-400 via-pink-400 to-blue-400 bg-clip-text text-transparent">
                 {t('auth.registerTitle')}
               </h2>
-              <p className="text-blue-200/80 text-sm">إنشاء حساب جديد</p>
+              <p className="text-blue-200/80 text-sm">{t('auth.createNewAccount')}</p>
             </div>
 
             {/* اختيار نوع الحساب */}
@@ -98,7 +104,7 @@ const Register = () => {
 
             {/* النموذج */}
             <div className="px-8 pb-8">
-              <div className="space-y-6">
+              <form onSubmit={handleSubmit} className="space-y-6">
                 {/* حقل الاسم */}
                 <div className="relative">
                   <label className={`absolute right-4 transition-all duration-200 pointer-events-none ${
@@ -174,11 +180,26 @@ const Register = () => {
                   </div>
                 </div>
 
+                {/* الموافقة على الشروط */}
+                <div className="flex items-start gap-3">
+                  <input
+                    type="checkbox"
+                    id="terms"
+                    checked={acceptedTerms}
+                    onChange={(e) => setAcceptedTerms(e.target.checked)}
+                    className="mt-1 w-5 h-5 text-orange-400 bg-white/5 border border-white/10 rounded focus:ring-orange-400/50 focus:ring-2"
+                  />
+                  <label htmlFor="terms" className="text-sm text-blue-200/80 leading-relaxed cursor-pointer">
+                    {t('auth.termsText')}
+                  </label>
+                </div>
+
                 {/* زر التسجيل */}
-                <div
-                  onClick={handleSubmit}
-                  className={`group w-full py-4 rounded-xl font-bold text-lg text-white transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center gap-2 cursor-pointer ${
-                    loading || (role === 'talent' ? false : false)
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className={`group w-full py-4 rounded-xl font-bold text-lg text-white transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center gap-2 ${
+                    loading
                       ? 'bg-gray-500/50 opacity-60 cursor-not-allowed' 
                       : 'bg-gradient-to-r from-orange-400 to-pink-500 hover:from-orange-500 hover:to-pink-600'
                   }`}
@@ -191,8 +212,8 @@ const Register = () => {
                       <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform duration-200" />
                     </>
                   )}
-                </div>
-              </div>
+                </button>
+              </form>
 
               {/* رسالة النجاح/الخطأ */}
               {message && (
@@ -209,7 +230,7 @@ const Register = () => {
               <div className="mt-8 text-center">
                 <div className="flex items-center justify-center gap-4 mb-4">
                   <div className="flex-1 h-px bg-white/10"></div>
-                  <span className="text-blue-200/60 text-sm">أو</span>
+                  <span className="text-blue-200/60 text-sm">{t('auth.or')}</span>
                   <div className="flex-1 h-px bg-white/10"></div>
                 </div>
                 <p className="text-blue-200/80 text-sm">
@@ -233,6 +254,49 @@ const Register = () => {
           </div>
         </div>
       </div>
+
+      {/* موديل النجاح */}
+      {showSuccessModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          {/* خلفية داكنة */}
+          <div 
+            className="absolute inset-0 bg-black/80 backdrop-blur-sm"
+            onClick={() => setShowSuccessModal(false)}
+          ></div>
+          
+          {/* محتوى الموديل */}
+          <div className="relative w-full max-w-md mx-auto modal-fade-in">
+            <div className="relative bg-gradient-to-br from-indigo-900/95 to-purple-900/95 rounded-2xl border border-white/20 shadow-2xl overflow-hidden">
+              {/* الهيدر */}
+              <div className="px-8 pt-8 pb-6 text-center">
+                <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-green-400 to-blue-500 rounded-2xl flex items-center justify-center shadow-lg">
+                  <CheckCircle className="w-8 h-8 text-white" />
+                </div>
+                <h3 className="text-2xl font-bold text-white mb-2">
+                  {t('auth.successTitle')}
+                </h3>
+                <p className="text-blue-200/80 text-sm">
+                  {t('auth.successMessage')}
+                </p>
+              </div>
+              
+              {/* الأزرار */}
+              <div className="px-8 pb-8">
+                <button
+                  onClick={() => {
+                    setShowSuccessModal(false);
+                    router.push('/login');
+                  }}
+                  className="w-full py-4 bg-gradient-to-r from-orange-400 to-pink-500 rounded-xl font-bold text-lg text-white hover:from-orange-500 hover:to-pink-600 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center gap-2"
+                >
+                  <span>{t('auth.continueToLogin')}</span>
+                  <ArrowRight className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       <style jsx>{`
         @keyframes fade-in {

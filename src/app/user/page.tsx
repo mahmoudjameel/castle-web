@@ -1,32 +1,36 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { User, ClipboardList, Bell, LogOut, Home, Settings, Award, AlertCircle, MessageCircle, AlertTriangle } from "lucide-react";
+import { User, ClipboardList, Bell, LogOut, Home, Settings, Award, AlertCircle, MessageCircle, AlertTriangle, BarChart2 } from "lucide-react";
 
 const stats = [
   { 
     label: 'طلبات نشطة', 
-    value: 5, 
+    value: 0, 
     icon: <ClipboardList className="w-6 h-6 text-white" />,
-    color: 'from-orange-400 to-pink-500'
+    color: 'from-orange-400 to-pink-500',
+    key: 'activeOrders'
   },
   { 
     label: 'إشعارات جديدة', 
-    value: 3, 
+    value: 0, 
     icon: <Bell className="w-6 h-6 text-white" />,
-    color: 'from-blue-400 to-purple-500'
+    color: 'from-blue-400 to-purple-500',
+    key: 'newNotifications'
   },
   { 
     label: 'محادثات نشطة', 
-    value: 2, 
+    value: 0, 
     icon: <MessageCircle className="w-6 h-6 text-white" />,
-    color: 'from-green-400 to-blue-500'
+    color: 'from-green-400 to-blue-500',
+    key: 'activeConversations'
   },
   { 
     label: 'بلاغات مرسلة', 
-    value: 2, 
+    value: 0, 
     icon: <AlertTriangle className="w-6 h-6 text-white" />,
-    color: 'from-red-400 to-orange-500'
+    color: 'from-red-400 to-orange-500',
+    key: 'sentReports'
   },
 ];
 
@@ -50,7 +54,8 @@ const userFeatures = [
     title: 'الإشعارات', 
     desc: 'شاهد أحدث الإشعارات والتنبيهات الخاصة بك', 
     href: '/user/notifications',
-    color: 'from-green-400 to-blue-500'
+    color: 'from-green-400 to-blue-500',
+    badge: true
   },
   { 
     icon: <MessageCircle className="w-8 h-8" />, 
@@ -76,7 +81,10 @@ const userFeatures = [
 ];
 
 export default function UserDashboardHome() {
-  const [user, setUser] = useState<{name?: string, profileImageData?: string} | null>(null);
+  const [user, setUser] = useState<{name?: string, profileImageData?: string, id?: number} | null>(null);
+  const [statsData, setStatsData] = useState<any>({});
+  const [statsLoading, setStatsLoading] = useState(true);
+  const [notificationsCount, setNotificationsCount] = useState(0);
   
   useEffect(() => {
     // جلب بيانات المستخدم من localStorage
@@ -84,10 +92,71 @@ export default function UserDashboardHome() {
       const userStr = localStorage.getItem('user');
       if (userStr) {
         const u = JSON.parse(userStr);
-        setUser({ name: u.name, profileImageData: u.profileImageData });
+        setUser({ name: u.name, profileImageData: u.profileImageData, id: u.id });
+        
+        // جلب الإحصائيات إذا كان لدينا معرف المستخدم
+        if (u.id) {
+          fetchStats(u.id);
+          // بدء التحديث المستمر للإشعارات
+          startNotificationsPolling(u.id);
+        }
       }
     } catch {}
+    
+    // تنظيف عند إغلاق الصفحة
+    return () => {
+      if (notificationsInterval.current) {
+        clearInterval(notificationsInterval.current);
+      }
+    };
   }, []);
+  
+  const notificationsInterval = React.useRef<NodeJS.Timeout | null>(null);
+  
+  const startNotificationsPolling = (userId: number) => {
+    // تحديث الإشعارات كل 30 ثانية
+    notificationsInterval.current = setInterval(() => {
+      fetchNotificationsCount(userId);
+    }, 30000);
+    
+    // جلب الإشعارات فوراً
+    fetchNotificationsCount(userId);
+  };
+  
+  const fetchNotificationsCount = async (userId: number) => {
+    try {
+      const response = await fetch(`/api/notifications?userId=${userId}`);
+      const notifications = await response.json();
+      const unreadCount = notifications.filter((n: any) => !n.read).length;
+      setNotificationsCount(unreadCount);
+    } catch (error) {
+      console.error('Error fetching notifications count:', error);
+    }
+  };
+  
+  // تحديث عدد الإشعارات عند العودة من صفحة الإشعارات
+  useEffect(() => {
+    const handleFocus = () => {
+      if (user?.id) {
+        fetchNotificationsCount(user.id);
+      }
+    };
+    
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
+  }, [user?.id]);
+
+  const fetchStats = async (userId: number) => {
+    try {
+      const response = await fetch(`/api/user/stats?userId=${userId}`);
+      const data = await response.json();
+      setStatsData(data);
+    } catch (error) {
+      console.error('Error fetching user stats:', error);
+    } finally {
+      setStatsLoading(false);
+    }
+  };
 
   const handleLogout = () => {
     localStorage.removeItem("user");
@@ -159,18 +228,70 @@ export default function UserDashboardHome() {
 
           {/* الإحصائيات */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            {stats.map((stat, i) => (
-              <div key={i} className="bg-white/5 rounded-xl border border-white/10 p-5 text-center group hover:bg-white/10 transition-all duration-300 shadow-lg hover:shadow-xl">
-                <div className={`w-12 h-12 bg-gradient-to-r ${stat.color} rounded-xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300`}>
-                  {stat.icon}
+            {statsLoading ? (
+              // حالة التحميل
+              Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="bg-white/5 rounded-xl border border-white/10 p-5 text-center">
+                  <div className="w-12 h-12 bg-gradient-to-r from-gray-400 to-gray-600 rounded-xl flex items-center justify-center mx-auto mb-4">
+                    <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                  </div>
+                  <div className="text-3xl font-bold text-white mb-2">
+                    <div className="w-16 h-4 bg-gray-600 rounded animate-pulse mx-auto"></div>
+                  </div>
+                  <div className="text-blue-200/80 text-sm font-medium">
+                    <div className="w-24 h-3 bg-gray-600 rounded animate-pulse mx-auto"></div>
+                  </div>
                 </div>
-                <div className="text-3xl font-bold text-white mb-2 group-hover:text-orange-400 transition-colors">
-                  {stat.value}
+              ))
+            ) : (
+              // عرض الإحصائيات الحقيقية
+              stats.map((stat, i) => (
+                <div key={i} className="bg-white/5 rounded-xl border border-white/10 p-5 text-center group hover:bg-white/10 transition-all duration-300 shadow-lg hover:shadow-xl">
+                  <div className={`w-12 h-12 bg-gradient-to-r ${stat.color} rounded-xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300 relative`}>
+                    {stat.icon}
+                    {stat.key === 'newNotifications' && notificationsCount > 0 && (
+                      <div className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center animate-pulse">
+                        {notificationsCount > 99 ? '99+' : notificationsCount}
+                      </div>
+                    )}
+                  </div>
+                  <div className="text-3xl font-bold text-white mb-2 group-hover:text-orange-400 transition-colors">
+                    {statsData[stat.key] || 0}
+                  </div>
+                  <div className="text-blue-200/80 text-sm font-medium">{stat.label}</div>
                 </div>
-                <div className="text-blue-200/80 text-sm font-medium">{stat.label}</div>
-              </div>
-            ))}
+              ))
+            )}
           </div>
+
+          {/* إحصائيات إضافية */}
+          {!statsLoading && (
+            <div className="bg-white/10 rounded-2xl border border-white/20 p-6 mb-8 shadow-lg">
+              <h3 className="text-2xl font-bold text-white mb-6 flex items-center gap-3">
+                <div className="w-8 h-8 bg-gradient-to-r from-green-400 to-blue-500 rounded-lg flex items-center justify-center">
+                  <BarChart2 className="w-4 h-4 text-white" />
+                </div>
+                إحصائيات إضافية
+              </h3>
+              
+              <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="bg-white/5 rounded-lg border border-white/10 p-4 text-center">
+                  <div className="text-2xl font-bold text-white mb-1">{statsData.totalOrders || 0}</div>
+                  <div className="text-blue-200/80 text-sm">إجمالي الطلبات</div>
+                </div>
+                
+                <div className="bg-white/5 rounded-lg border border-white/10 p-4 text-center">
+                  <div className="text-2xl font-bold text-white mb-1">{statsData.completedOrders || 0}</div>
+                  <div className="text-blue-200/80 text-sm">الطلبات المكتملة</div>
+                </div>
+                
+                <div className="bg-white/5 rounded-lg border border-white/10 p-4 text-center">
+                  <div className="text-2xl font-bold text-white mb-1">{statsData.totalMessages || 0}</div>
+                  <div className="text-blue-200/80 text-sm">إجمالي الرسائل</div>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* الخدمات الرئيسية */}
           <div className="bg-white/10 rounded-2xl border border-white/20 p-6 mb-8 shadow-lg">
@@ -192,10 +313,15 @@ export default function UserDashboardHome() {
                   <div className={`absolute inset-0 bg-gradient-to-r ${feature.color} opacity-0 group-hover:opacity-10 transition-opacity duration-300 rounded-xl`}></div>
                   
                   <div className="relative">
-                    <div className={`w-14 h-14 bg-gradient-to-r ${feature.color} rounded-lg flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300 shadow-lg`}>
+                    <div className={`w-14 h-14 bg-gradient-to-r ${feature.color} rounded-lg flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300 shadow-lg relative`}>
                       <div className="text-white">
                         {feature.icon}
                       </div>
+                      {feature.badge && notificationsCount > 0 && (
+                        <div className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center animate-pulse">
+                          {notificationsCount > 99 ? '99+' : notificationsCount}
+                        </div>
+                      )}
                     </div>
                     
                     <h4 className="text-xl font-bold text-white mb-3 group-hover:text-orange-400 transition-colors">

@@ -190,6 +190,7 @@
   "navigation": {
     "home": "Home",
     "categories": "Categories",
+    "talents": "All Talents",
     "services": "Services",
     "about": "About Us",
     "contact": "Contact",
@@ -236,9 +237,27 @@
     "talent": "Talent",
     "successUser": "Welcome to our community! Your account has been created successfully. You can now log in.",
     "successTalent": "Talent account created successfully! You will be redirected to the talent dashboard.",
-
+    "userRegisteredSuccess": "Your account has been created successfully! Waiting for admin approval.",
+    "talentRegisteredSuccess": "Talent account created successfully! Waiting for admin approval.",
+    "registrationError": "An error occurred during registration.",
+    "serverConnectionError": "Failed to connect to the server.",
     "error": "An error occurred during registration.",
     "serverError": "Failed to connect to the server.",
-    "invalidLogin": "Invalid login credentials."
+    "invalidLogin": "Invalid login credentials",
+    "loginTitle": "Login",
+    "loginBtn": "Login",
+    "noAccount": "Don't have an account?",
+    "goToRegister": "Join Now",
+    "createNewAccount": "Create New Account",
+    "or": "or",
+    "welcomeBack": "Welcome back",
+    "forgotPassword": "Forgot password?",
+    "termsTitle": "Registration Terms & Conditions",
+    "termsText": "I agree to the platform's terms and conditions and privacy policy. I commit to providing accurate and truthful information.",
+    "acceptTerms": "I agree to the terms",
+    "termsRequired": "You must accept the terms to continue",
+    "successTitle": "Registration Successful!",
+    "successMessage": "Your account has been created successfully. You will be redirected to the login page.",
+    "continueToLogin": "Continue to Login"
   }
 } 

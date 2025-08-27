@@ -8,11 +8,23 @@ export async function GET(req: Request) {
     const { searchParams } = new URL(req.url!);
     const id = searchParams.get('id');
     const role = searchParams.get('role');
+    const categoryId = searchParams.get('categoryId');
+    
     const where: any = {};
     if (id) where.id = Number(id);
     if (role) {
       where.role = role;
     }
+    
+    // إذا تم تحديد categoryId، نبحث فقط عن المستخدمين الذين لديهم هذا التصنيف
+    if (categoryId) {
+      where.userCategories = {
+        some: {
+          categoryId: categoryId
+        }
+      };
+    }
+    
     // جلب المستخدمين مع التصنيفات المرتبطة (عبر جدول الربط UserCategory)
     const users = await prisma.user.findMany({
       where,
@@ -20,6 +32,7 @@ export async function GET(req: Request) {
         userCategories: { include: { category: true } }
       }
     });
+    
     // تحويل profileImageData إلى base64 إذا كانت موجودة مع إرجاع قائمة التصنيفات المسطحة
     const usersWithImage = users.map(u => {
       const categories = (u as any).userCategories?.map((uc: any) => uc.category) || [];
@@ -28,6 +41,7 @@ export async function GET(req: Request) {
       }
       return { ...u, categories };
     });
+    
     return NextResponse.json(usersWithImage);
   } catch (err) {
     return NextResponse.json({ message: 'خطأ في جلب الحسابات.' }, { status: 500 });

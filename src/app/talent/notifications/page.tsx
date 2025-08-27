@@ -73,7 +73,28 @@ export default function TalentNotifications() {
                 <div className="flex-1">
                   <div className="font-bold text-pink-300 mb-1">{notif.title || 'محادثة جديدة'}</div>
                   <div className="text-pink-100 mb-1">{notif.body}</div>
-                  <div className="text-xs text-pink-200">{new Date(notif.date).toLocaleString('ar-EG')}</div>
+                  <div className="text-xs text-pink-200">
+                    {(() => {
+                      try {
+                        if (!notif.date) {
+                          return 'تاريخ غير محدد';
+                        }
+                        const date = new Date(notif.date);
+                        if (isNaN(date.getTime())) {
+                          return 'تاريخ غير محدد';
+                        }
+                        return date.toLocaleString('ar-EG', {
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        });
+                      } catch {
+                        return 'تاريخ غير محدد';
+                      }
+                    })()}
+                  </div>
                 </div>
                 <div className="flex flex-col items-center gap-2 min-w-[120px]">
                   <span className="bg-pink-500 text-white text-xs font-bold rounded-full px-3 py-1">رسالة</span>
@@ -100,7 +121,26 @@ export default function TalentNotifications() {
                   </div>
                   <div className="flex flex-col items-center gap-2 min-w-[120px]">
                     <div className="text-xs text-blue-300">تاريخ الطلب</div>
-                    <div className="font-bold text-blue-100">{order.createdAt?.slice(0,10)}</div>
+                    <div className="font-bold text-blue-100">
+                      {(() => {
+                        try {
+                          if (!order.createdAt) {
+                            return 'غير محدد';
+                          }
+                          const date = new Date(order.createdAt);
+                          if (isNaN(date.getTime())) {
+                            return 'غير محدد';
+                          }
+                          return date.toLocaleDateString('ar-EG', {
+                            year: 'numeric',
+                            month: 'short',
+                            day: 'numeric'
+                          });
+                        } catch {
+                          return 'غير محدد';
+                        }
+                      })()}
+                    </div>
                     <span className="bg-blue-500 text-white text-xs font-bold rounded-full px-3 py-1 mt-2">طلب</span>
                   </div>
                 </div>

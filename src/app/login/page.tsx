@@ -3,8 +3,10 @@
 import React, { useState } from 'react';
 import { Eye, EyeOff, Mail, Lock, ArrowRight } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 
 const Login = () => {
+  const t = useTranslations();
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -69,9 +71,9 @@ const Login = () => {
                 <Lock className="w-8 h-8 text-white transform -rotate-12" />
               </div>
               <h2 className="text-3xl font-bold mb-2 bg-gradient-to-r from-orange-400 via-pink-400 to-blue-400 bg-clip-text text-transparent">
-                تسجيل الدخول
+                {t('auth.loginTitle')}
               </h2>
-              <p className="text-blue-200/80 text-sm">مرحباً بك مرة أخرى</p>
+              <p className="text-blue-200/80 text-sm">{t('auth.welcomeBack')}</p>
             </div>
 
             {/* النموذج */}
@@ -84,7 +86,7 @@ const Login = () => {
                       ? 'top-2 text-xs text-orange-400' 
                       : 'top-4 text-base text-blue-200/60'
                   }`}>
-                    البريد الإلكتروني
+                    {t('auth.email')}
                   </label>
                   <div className="relative">
                     <Mail className={`absolute left-4 top-4 w-5 h-5 transition-colors duration-200 ${
@@ -109,8 +111,8 @@ const Login = () => {
                       ? 'top-2 text-xs text-orange-400' 
                       : 'top-4 text-base text-blue-200/60'
                   }`}>
-                    كلمة المرور
-                  </label>
+                    {t('auth.password')}
+                    </label>
                   <div className="relative">
                     <Lock className={`absolute left-12 top-4 w-5 h-5 transition-colors duration-200 ${
                       focusedField === 'password' ? 'text-orange-400' : 'text-blue-200/60'
@@ -140,7 +142,7 @@ const Login = () => {
                     href="/forgot-password" 
                     className="text-orange-400 hover:text-pink-400 text-sm transition-colors duration-200 hover:underline"
                   >
-                    نسيت كلمة المرور؟
+                    {t('auth.forgotPassword')}
                   </a>
                 </div>
 
@@ -154,7 +156,7 @@ const Login = () => {
                     <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
                   ) : (
                     <>
-                      <span>تسجيل الدخول</span>
+                      <span>{t('auth.loginBtn')}</span>
                       <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform duration-200" />
                     </>
                   )}
@@ -172,16 +174,16 @@ const Login = () => {
               <div className="mt-8 text-center">
                 <div className="flex items-center justify-center gap-4 mb-4">
                   <div className="flex-1 h-px bg-white/10"></div>
-                  <span className="text-blue-200/60 text-sm">أو</span>
+                  <span className="text-blue-200/60 text-sm">{t('auth.or')}</span>
                   <div className="flex-1 h-px bg-white/10"></div>
                 </div>
                 <p className="text-blue-200/80 text-sm">
-                  ليس لديك حساب؟
+                  {t('auth.noAccount')}
                   <a 
                     href="/register" 
                     className="text-orange-400 hover:text-pink-400 font-semibold mr-2 transition-colors duration-200 hover:underline"
                   >
-                    سجل الآن
+                    {t('auth.goToRegister')}
                   </a>
                 </p>
               </div>

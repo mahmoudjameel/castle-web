@@ -14,15 +14,23 @@ export async function GET(req: Request) {
       where: { userId: Number(userId) },
       orderBy: { date: 'desc' },
     });
-    return NextResponse.json(notifications);
-  } catch {
+    
+    // معالجة آمنة للتواريخ
+    const processedNotifications = notifications.map(notification => ({
+      ...notification,
+      date: notification.date ? notification.date.toISOString() : new Date().toISOString()
+    }));
+    
+    return NextResponse.json(processedNotifications);
+  } catch (error) {
+    console.error('Error fetching notifications:', error);
     return NextResponse.json([], { status: 200 });
   }
 }
 
 export async function POST(req: Request) {
   try {
-    const { userId, title, message } = await req.json();
+    const { userId, title, message, type, orderId } = await req.json();
     if (!userId || !title || !message) {
       return NextResponse.json({ error: 'بيانات الإشعار غير مكتملة' }, { status: 400 });
     }
@@ -40,8 +48,16 @@ export async function POST(req: Request) {
         read: false
       }
     });
-    return NextResponse.json(notification, { status: 201 });
+    
+    // إرجاع الإشعار مع تاريخ معالج بشكل صحيح
+    const processedNotification = {
+      ...notification,
+      date: notification.date.toISOString()
+    };
+    
+    return NextResponse.json(processedNotification, { status: 201 });
   } catch (error) {
+    console.error('Error creating notification:', error);
     return NextResponse.json({ error: 'فشل في إنشاء الإشعار', details: typeof error === 'object' && error && 'message' in error ? (error as any).message : '' }, { status: 500 });
   }
 } 
