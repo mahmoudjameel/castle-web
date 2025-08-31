@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { User, Star, Mail, Lock, UserPlus, CheckCircle, ArrowRight } from 'lucide-react';
+import { User, Star, Mail, Lock, Phone, UserPlus, CheckCircle, ArrowRight } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 
@@ -10,6 +10,7 @@ const Register = () => {
   const [role, setRole] = useState('talent');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
@@ -25,6 +26,18 @@ const Register = () => {
       setMessage(t('auth.termsRequired'));
       return;
     }
+
+    // التحقق من وجود رقم الجوال (مطلوب)
+    if (!phone) {
+      setMessage('رقم الجوال مطلوب');
+      return;
+    }
+
+    // التحقق من وجود إما البريد الإلكتروني أو رقم الهاتف
+    if (!email && !phone) {
+      setMessage('يجب إدخال البريد الإلكتروني أو رقم الهاتف');
+      return;
+    }
     
     setLoading(true);
     setMessage('');
@@ -32,12 +45,12 @@ const Register = () => {
       const res = await fetch('/api/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email, password, role }),
+        body: JSON.stringify({ name, email, phone, password, role }),
       });
       const data = await res.json();
       if (res.ok) {
         setShowSuccessModal(true);
-        setName(''); setEmail(''); setPassword('');
+        setName(''); setEmail(''); setPhone(''); setPassword('');
         setAcceptedTerms(false);
       } else {
         setMessage(data.message || t('auth.registrationError'));
@@ -107,75 +120,83 @@ const Register = () => {
               <form onSubmit={handleSubmit} className="space-y-6">
                 {/* حقل الاسم */}
                 <div className="relative">
-                  <label className={`absolute right-4 transition-all duration-200 pointer-events-none ${
-                    focusedField === 'name' || name 
-                      ? 'top-2 text-xs text-orange-400' 
-                      : 'top-4 text-base text-blue-200/60'
-                  }`}>
-                    {t('auth.fullName')}
+                  <label className="block text-sm font-medium text-blue-200/80 mb-2 text-right">
+                    {t('auth.fullName')} <span className="text-orange-400">*</span>
                   </label>
                   <div className="relative">
-                    <User className={`absolute left-4 top-4 w-5 h-5 transition-colors duration-200 ${
-                      focusedField === 'name' ? 'text-orange-400' : 'text-blue-200/60'
-                    }`} />
+                    <User className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-blue-200/60" />
                     <input
                       type="text"
                       value={name}
                       onChange={(e) => setName(e.target.value)}
                       onFocus={() => setFocusedField('name')}
                       onBlur={() => setFocusedField('')}
-                      className="w-full pl-12 pr-4 pt-6 pb-3 rounded-xl bg-white/5 border border-white/10 text-white focus:outline-none focus:ring-2 focus:ring-orange-400/50 focus:border-orange-400/50 transition-all duration-200"
+                      className="w-full pl-12 pr-4 py-4 rounded-xl bg-white/5 border border-white/10 text-white focus:outline-none focus:ring-2 focus:ring-orange-400/50 focus:border-orange-400/50 transition-all duration-200 text-right placeholder:text-blue-200/40 placeholder:text-sm"
                       required
+                      placeholder="أدخل اسمك الكامل"
+                      dir="rtl"
                     />
                   </div>
                 </div>
 
-                {/* حقل البريد الإلكتروني */}
+                {/* حقل رقم الجوال - مطلوب */}
                 <div className="relative">
-                  <label className={`absolute right-4 transition-all duration-200 pointer-events-none ${
-                    focusedField === 'email' || email 
-                      ? 'top-2 text-xs text-orange-400' 
-                      : 'top-4 text-base text-blue-200/60'
-                  }`}>
-                    {t('auth.email')}
+                  <label className="block text-sm font-medium text-blue-200/80 mb-2 text-right">
+                    رقم الجوال <span className="text-orange-400">*</span>
                   </label>
                   <div className="relative">
-                    <Mail className={`absolute left-4 top-4 w-5 h-5 transition-colors duration-200 ${
-                      focusedField === 'email' ? 'text-orange-400' : 'text-blue-200/60'
-                    }`} />
+                    <Phone className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-blue-200/60" />
+                    <input
+                      type="tel"
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
+                      onFocus={() => setFocusedField('phone')}
+                      onBlur={() => setFocusedField('')}
+                      className="w-full pl-12 pr-4 py-4 rounded-xl bg-white/5 border border-white/10 text-white focus:outline-none focus:ring-2 focus:ring-orange-400/50 focus:border-orange-400/50 transition-all duration-200 text-right placeholder:text-blue-200/40 placeholder:text-sm"
+                      required
+                      placeholder="+966 50 123 4567"
+                      dir="ltr"
+                    />
+                  </div>
+                </div>
+
+                {/* حقل البريد الإلكتروني - اختياري */}
+                <div className="relative">
+                  <label className="block text-sm font-medium text-blue-200/80 mb-2 text-right">
+                    {t('auth.email')} <span className="text-blue-200/60 text-xs">(اختياري)</span>
+                  </label>
+                  <div className="relative">
+                    <Mail className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-blue-200/60" />
                     <input
                       type="email"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       onFocus={() => setFocusedField('email')}
                       onBlur={() => setFocusedField('')}
-                      className="w-full pl-12 pr-4 pt-6 pb-3 rounded-xl bg-white/5 border border-white/10 text-white focus:outline-none focus:ring-2 focus:ring-orange-400/50 focus:border-orange-400/50 transition-all duration-200"
-                      required
+                      className="w-full pl-12 pr-4 py-4 rounded-xl bg-white/5 border border-white/10 text-white focus:outline-none focus:ring-2 focus:ring-orange-400/50 focus:border-orange-400/50 transition-all duration-200 text-right placeholder:text-blue-200/40 placeholder:text-sm"
+                      placeholder="example@email.com"
+                      dir="ltr"
                     />
                   </div>
                 </div>
 
                 {/* حقل كلمة المرور */}
                 <div className="relative">
-                  <label className={`absolute right-4 transition-all duration-200 pointer-events-none ${
-                    focusedField === 'password' || password 
-                      ? 'top-2 text-xs text-orange-400' 
-                      : 'top-4 text-base text-blue-200/60'
-                  }`}>
-                    {t('auth.password')}
+                  <label className="block text-sm font-medium text-blue-200/80 mb-2 text-right">
+                    {t('auth.password')} <span className="text-orange-400">*</span>
                   </label>
                   <div className="relative">
-                    <Lock className={`absolute left-4 top-4 w-5 h-5 transition-colors duration-200 ${
-                      focusedField === 'password' ? 'text-orange-400' : 'text-blue-200/60'
-                    }`} />
+                    <Lock className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-blue-200/60" />
                     <input
                       type="password"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       onFocus={() => setFocusedField('password')}
                       onBlur={() => setFocusedField('')}
-                      className="w-full pl-12 pr-4 pt-6 pb-3 rounded-xl bg-white/5 border border-white/10 text-white focus:outline-none focus:ring-2 focus:ring-orange-400/50 focus:border-orange-400/50 transition-all duration-200"
+                      className="w-full pl-12 pr-4 py-4 rounded-xl bg-white/5 border border-white/10 text-white focus:outline-none focus:ring-2 focus:ring-orange-400/50 focus:border-orange-400/50 transition-all duration-200 text-right placeholder:text-blue-200/40 placeholder:text-sm"
                       required
+                      placeholder="أدخل كلمة المرور"
+                      dir="rtl"
                     />
                   </div>
                 </div>
@@ -189,7 +210,7 @@ const Register = () => {
                     onChange={(e) => setAcceptedTerms(e.target.checked)}
                     className="mt-1 w-5 h-5 text-orange-400 bg-white/5 border border-white/10 rounded focus:ring-orange-400/50 focus:ring-2"
                   />
-                  <label htmlFor="terms" className="text-sm text-blue-200/80 leading-relaxed cursor-pointer">
+                  <label htmlFor="terms" className="text-sm text-blue-200/80 leading-relaxed cursor-pointer text-right">
                     {t('auth.termsText')}
                   </label>
                 </div>

@@ -1,14 +1,16 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Eye, EyeOff, Mail, Lock, ArrowRight } from 'lucide-react';
+import { Eye, EyeOff, Mail, Lock, Phone, ArrowRight } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 
 const Login = () => {
   const t = useTranslations();
   const [showPassword, setShowPassword] = useState(false);
+  const [loginMethod, setLoginMethod] = useState('email'); // 'email' or 'phone'
   const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
@@ -17,13 +19,32 @@ const Login = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // التحقق من وجود بيانات الدخول
+    if (loginMethod === 'email' && !email) {
+      setMessage('يرجى إدخال البريد الإلكتروني');
+      return;
+    }
+    if (loginMethod === 'phone' && !phone) {
+      setMessage('يرجى إدخال رقم الهاتف');
+      return;
+    }
+    if (!password) {
+      setMessage('يرجى إدخال كلمة المرور');
+      return;
+    }
+
     setLoading(true);
     setMessage('');
     try {
+      const loginData = loginMethod === 'email' 
+        ? { email, password, loginMethod }
+        : { phone, password, loginMethod };
+        
       const res = await fetch('/api/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify(loginData),
       });
       const data = await res.json();
       if (res.ok && data.user) {
@@ -76,59 +97,83 @@ const Login = () => {
               <p className="text-blue-200/80 text-sm">{t('auth.welcomeBack')}</p>
             </div>
 
+            {/* اختيار طريقة الدخول */}
+            <div className="px-8 pb-6">
+              <div className="flex gap-3 p-1 bg-white/5 rounded-2xl border border-white/10">
+                <button 
+                  onClick={() => setLoginMethod('email')} 
+                  className={`flex-1 flex flex-col items-center px-4 py-3 rounded-xl transition-all duration-300 ${
+                    loginMethod === 'email' 
+                      ? 'bg-gradient-to-r from-orange-400 to-pink-500 text-white shadow-lg transform scale-105' 
+                      : 'text-blue-200/80 hover:text-white hover:bg-white/5'
+                  }`}
+                >
+                  <Mail className={`w-5 h-5 mb-1 transition-transform duration-300 ${loginMethod === 'email' ? 'scale-110' : ''}`} />
+                  <span className="text-xs font-semibold">البريد الإلكتروني</span>
+                </button>
+                <button 
+                  onClick={() => setLoginMethod('phone')} 
+                  className={`flex-1 flex flex-col items-center px-4 py-3 rounded-xl transition-all duration-300 ${
+                    loginMethod === 'phone' 
+                      ? 'bg-gradient-to-r from-orange-400 to-pink-500 text-white shadow-lg transform scale-105' 
+                      : 'text-blue-200/80 hover:text-white hover:bg-white/5'
+                  }`}
+                >
+                  <Phone className={`w-5 h-5 mb-1 transition-transform duration-300 ${loginMethod === 'phone' ? 'scale-110' : ''}`} />
+                  <span className="text-xs font-semibold">رقم الهاتف</span>
+                </button>
+              </div>
+            </div>
+
             {/* النموذج */}
             <div className="px-8 pb-8">
               <form onSubmit={handleSubmit} className="space-y-6">
-                {/* حقل البريد الإلكتروني */}
+                {/* حقل البريد الإلكتروني أو رقم الهاتف */}
                 <div className="relative">
-                  <label className={`absolute right-4 transition-all duration-200 pointer-events-none ${
-                    focusedField === 'email' || email 
-                      ? 'top-2 text-xs text-orange-400' 
-                      : 'top-4 text-base text-blue-200/60'
-                  }`}>
-                    {t('auth.email')}
+                  <label className="block text-sm font-medium text-blue-200/80 mb-2 text-right">
+                    {loginMethod === 'email' ? t('auth.email') : 'رقم الهاتف'}
                   </label>
                   <div className="relative">
-                    <Mail className={`absolute left-4 top-4 w-5 h-5 transition-colors duration-200 ${
-                      focusedField === 'email' ? 'text-orange-400' : 'text-blue-200/60'
-                    }`} />
+                    {loginMethod === 'email' ? (
+                      <Mail className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-blue-200/60" />
+                    ) : (
+                      <Phone className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-blue-200/60" />
+                    )}
                     <input
-                      type="email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      onFocus={() => setFocusedField('email')}
+                      type={loginMethod === 'email' ? 'email' : 'tel'}
+                      value={loginMethod === 'email' ? email : phone}
+                      onChange={(e) => loginMethod === 'email' ? setEmail(e.target.value) : setPhone(e.target.value)}
+                      onFocus={() => setFocusedField('loginField')}
                       onBlur={() => setFocusedField('')}
-                      className="w-full pl-12 pr-4 pt-6 pb-3 rounded-xl bg-white/5 border border-white/10 text-white focus:outline-none focus:ring-2 focus:ring-orange-400/50 focus:border-orange-400/50 transition-all duration-200"
+                      className="w-full pl-12 pr-4 py-4 rounded-xl bg-white/5 border border-white/10 text-white focus:outline-none focus:ring-2 focus:ring-orange-400/50 focus:border-orange-400/50 transition-all duration-200 text-right placeholder:text-blue-200/40 placeholder:text-sm"
+                      placeholder={loginMethod === 'email' ? 'example@email.com' : '+966 50 123 4567'}
                       required
+                      dir={loginMethod === 'email' ? 'ltr' : 'ltr'}
                     />
                   </div>
                 </div>
 
                 {/* حقل كلمة المرور */}
                 <div className="relative">
-                  <label className={`absolute right-4 transition-all duration-200 pointer-events-none ${
-                    focusedField === 'password' || password 
-                      ? 'top-2 text-xs text-orange-400' 
-                      : 'top-4 text-base text-blue-200/60'
-                  }`}>
+                  <label className="block text-sm font-medium text-blue-200/80 mb-2 text-right">
                     {t('auth.password')}
-                    </label>
+                  </label>
                   <div className="relative">
-                    <Lock className={`absolute left-12 top-4 w-5 h-5 transition-colors duration-200 ${
-                      focusedField === 'password' ? 'text-orange-400' : 'text-blue-200/60'
-                    }`} />
+                    <Lock className="absolute left-12 top-1/2 transform -translate-y-1/2 w-5 h-5 text-blue-200/60" />
                     <input
                       type={showPassword ? 'text' : 'password'}
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       onFocus={() => setFocusedField('password')}
                       onBlur={() => setFocusedField('')}
-                      className="w-full pl-20 pr-4 pt-6 pb-3 rounded-xl bg-white/5 border border-white/10 text-white focus:outline-none focus:ring-2 focus:ring-orange-400/50 focus:border-orange-400/50 transition-all duration-200"
+                      className="w-full pl-20 pr-4 py-4 rounded-xl bg-white/5 border border-white/10 text-white focus:outline-none focus:ring-2 focus:ring-orange-400/50 focus:border-orange-400/50 transition-all duration-200 text-right placeholder:text-blue-200/40 placeholder:text-sm"
                       required
+                      placeholder="أدخل كلمة المرور"
+                      dir="rtl"
                     />
                     <button
                       type="button"
-                      className="absolute left-4 top-4 text-blue-200/60 hover:text-orange-400 transition-colors duration-200"
+                      className="absolute left-4 top-1/2 transform -translate-y-1/2 text-blue-200/60 hover:text-orange-400 transition-colors duration-200"
                       onClick={() => setShowPassword(!showPassword)}
                     >
                       {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
@@ -137,7 +182,7 @@ const Login = () => {
                 </div>
 
                 {/* رابط نسيان كلمة المرور */}
-                <div className="text-left">
+                <div className="text-right">
                   <a 
                     href="/forgot-password" 
                     className="text-orange-400 hover:text-pink-400 text-sm transition-colors duration-200 hover:underline"

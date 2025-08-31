@@ -13,7 +13,7 @@ datasource db {
 model User {
   id        Int      @id @default(autoincrement())
   name      String
-  email     String   @unique
+  email     String?  @unique
   password  String
   role      String   @default("USER") // USER أو ADMIN
   approved  Boolean  @default(false)
@@ -41,7 +41,7 @@ model User {
   transactionsReceived Transaction[] @relation("Receiver")
   reportsSent Report[] @relation("ReportsAsReporter")
   reportsReceived Report[] @relation("ReportsAsReported")
-  phone      String? // رقم الهاتف
+  phone      String? @unique // رقم الهاتف - يمكن أن يكون optional للبيانات الموجودة
   resetToken String? // رمز إعادة تعيين كلمة المرور
   resetTokenExpiry DateTime? // تاريخ انتهاء صلاحية الرمز
   // Talent profile fields (match DB)

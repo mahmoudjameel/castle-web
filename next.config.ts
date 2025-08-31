@@ -10,6 +10,10 @@ const nextConfig: NextConfig = {
     // Skip TypeScript checking during builds for faster CI/CD
     ignoreBuildErrors: true,
   },
+  // إعدادات المنفذ
+  env: {
+    PORT: '3001',
+  },
   images: {
     domains: [
       "encrypted-tbn0.gstatic.com",
