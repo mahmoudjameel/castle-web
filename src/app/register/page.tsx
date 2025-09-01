@@ -131,10 +131,10 @@ const Register = () => {
                       onChange={(e) => setName(e.target.value)}
                       onFocus={() => setFocusedField('name')}
                       onBlur={() => setFocusedField('')}
-                      className="w-full pl-12 pr-4 py-4 rounded-xl bg-white/5 border border-white/10 text-white focus:outline-none focus:ring-2 focus:ring-orange-400/50 focus:border-orange-400/50 transition-all duration-200 text-right placeholder:text-blue-200/40 placeholder:text-sm"
+                      className="w-full pl-12 pr-4 py-4 rounded-xl bg-white/5 border border-white/10 text-white focus:outline-none focus:ring-2 focus:ring-orange-400/50 focus:border-orange-400/50 transition-all duration-200"
                       required
-                      placeholder="أدخل اسمك الكامل"
                       dir="rtl"
+                      style={{ textAlign: 'right' }}
                     />
                   </div>
                 </div>
@@ -152,10 +152,10 @@ const Register = () => {
                       onChange={(e) => setPhone(e.target.value)}
                       onFocus={() => setFocusedField('phone')}
                       onBlur={() => setFocusedField('')}
-                      className="w-full pl-12 pr-4 py-4 rounded-xl bg-white/5 border border-white/10 text-white focus:outline-none focus:ring-2 focus:ring-orange-400/50 focus:border-orange-400/50 transition-all duration-200 text-right placeholder:text-blue-200/40 placeholder:text-sm"
+                      className="w-full pl-12 pr-4 py-4 rounded-xl bg-white/5 border border-white/10 text-white focus:outline-none focus:ring-2 focus:ring-orange-400/50 focus:border-orange-400/50 transition-all duration-200"
                       required
-                      placeholder="+966 50 123 4567"
                       dir="ltr"
+                      style={{ textAlign: 'left' }}
                     />
                   </div>
                 </div>
@@ -173,9 +173,9 @@ const Register = () => {
                       onChange={(e) => setEmail(e.target.value)}
                       onFocus={() => setFocusedField('email')}
                       onBlur={() => setFocusedField('')}
-                      className="w-full pl-12 pr-4 py-4 rounded-xl bg-white/5 border border-white/10 text-white focus:outline-none focus:ring-2 focus:ring-orange-400/50 focus:border-orange-400/50 transition-all duration-200 text-right placeholder:text-blue-200/40 placeholder:text-sm"
-                      placeholder="example@email.com"
+                      className="w-full pl-12 pr-4 py-4 rounded-xl bg-white/5 border border-white/10 text-white focus:outline-none focus:ring-2 focus:ring-orange-400/50 focus:border-orange-400/50 transition-all duration-200"
                       dir="ltr"
+                      style={{ textAlign: 'left' }}
                     />
                   </div>
                 </div>
@@ -193,10 +193,10 @@ const Register = () => {
                       onChange={(e) => setPassword(e.target.value)}
                       onFocus={() => setFocusedField('password')}
                       onBlur={() => setFocusedField('')}
-                      className="w-full pl-12 pr-4 py-4 rounded-xl bg-white/5 border border-white/10 text-white focus:outline-none focus:ring-2 focus:ring-orange-400/50 focus:border-orange-400/50 transition-all duration-200 text-right placeholder:text-blue-200/40 placeholder:text-sm"
+                      className="w-full pl-12 pr-4 py-4 rounded-xl bg-white/5 border border-white/10 text-white focus:outline-none focus:ring-2 focus:ring-orange-400/50 focus:border-orange-400/50 transition-all duration-200"
                       required
-                      placeholder="أدخل كلمة المرور"
                       dir="rtl"
+                      style={{ textAlign: 'right' }}
                     />
                   </div>
                 </div>

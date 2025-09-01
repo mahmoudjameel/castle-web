@@ -46,28 +46,28 @@ const Login = () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(loginData),
       });
+      
       const data = await res.json();
+      
       if (res.ok && data.user) {
         // حفظ بيانات المستخدم في localStorage
         localStorage.setItem('user', JSON.stringify(data.user));
         
-        // تأخير قصير لضمان حفظ cookies
-        setTimeout(() => {
-          // التوجيه حسب الدور
-          if (data.user.role === 'talent') {
-            router.push('/talent');
-          } else if (data.user.role === 'admin') {
-            router.push('/admin');
-          } else if (data.user.role === 'user') {
-            router.push('/user');
-          } else {
-            router.push('/');
-          }
-        }, 100);
+        // التوجيه حسب الدور
+        if (data.user.role === 'talent') {
+          router.push('/talent');
+        } else if (data.user.role === 'admin') {
+          router.push('/admin');
+        } else if (data.user.role === 'user') {
+          router.push('/user');
+        } else {
+          router.push('/');
+        }
       } else {
         setMessage(data.message || 'بيانات الدخول غير صحيحة.');
       }
     } catch (err) {
+      console.error('Login error:', err);
       setMessage('تعذر الاتصال بالخادم.');
     }
     setLoading(false);
@@ -145,10 +145,10 @@ const Login = () => {
                       onChange={(e) => loginMethod === 'email' ? setEmail(e.target.value) : setPhone(e.target.value)}
                       onFocus={() => setFocusedField('loginField')}
                       onBlur={() => setFocusedField('')}
-                      className="w-full pl-12 pr-4 py-4 rounded-xl bg-white/5 border border-white/10 text-white focus:outline-none focus:ring-2 focus:ring-orange-400/50 focus:border-orange-400/50 transition-all duration-200 text-right placeholder:text-blue-200/40 placeholder:text-sm"
-                      placeholder={loginMethod === 'email' ? 'example@email.com' : '+966 50 123 4567'}
+                      className="w-full pl-12 pr-4 py-4 rounded-xl bg-white/5 border border-white/10 text-white focus:outline-none focus:ring-2 focus:ring-orange-400/50 focus:border-orange-400/50 transition-all duration-200"
                       required
-                      dir={loginMethod === 'email' ? 'ltr' : 'ltr'}
+                      dir="ltr"
+                      style={{ textAlign: 'left' }}
                     />
                   </div>
                 </div>
@@ -166,10 +166,10 @@ const Login = () => {
                       onChange={(e) => setPassword(e.target.value)}
                       onFocus={() => setFocusedField('password')}
                       onBlur={() => setFocusedField('')}
-                      className="w-full pl-20 pr-4 py-4 rounded-xl bg-white/5 border border-white/10 text-white focus:outline-none focus:ring-2 focus:ring-orange-400/50 focus:border-orange-400/50 transition-all duration-200 text-right placeholder:text-blue-200/40 placeholder:text-sm"
+                      className="w-full pl-20 pr-4 py-4 rounded-xl bg-white/5 border border-white/10 text-white focus:outline-none focus:ring-2 focus:ring-orange-400/50 focus:border-orange-400/50 transition-all duration-200"
                       required
-                      placeholder="أدخل كلمة المرور"
                       dir="rtl"
+                      style={{ textAlign: 'right' }}
                     />
                     <button
                       type="button"

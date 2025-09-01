@@ -14,12 +14,13 @@ const nextConfig: NextConfig = {
   env: {
     PORT: '3001',
   },
+  // إعدادات الصور - استخدام remotePatterns بدلاً من domains
   images: {
-    domains: [
-      "encrypted-tbn0.gstatic.com",
-      // أضف دومينات أخرى إذا احتجت
-    ],
     remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'encrypted-tbn0.gstatic.com',
+      },
       {
         protocol: 'https',
         hostname: '**',
@@ -29,6 +30,13 @@ const nextConfig: NextConfig = {
   experimental: {
     optimizePackageImports: ['@mui/material', '@mui/icons-material', 'lucide-react'],
   },
+  // إضافة allowedDevOrigins لحل مشكلة Cross origin request
+  allowedDevOrigins: [
+    'localhost:3001',
+    '127.0.0.1:3001',
+    '10.5.50.197:3001',
+    '10.5.50.197:*',
+  ],
   headers: async () => {
     return [
       {
