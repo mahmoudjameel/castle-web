@@ -12,7 +12,7 @@ const nextConfig: NextConfig = {
   },
   // إعدادات المنفذ
   env: {
-    PORT: '3001',
+    PORT: '3000',
   },
   // إعدادات الصور - استخدام remotePatterns بدلاً من domains
   images: {
@@ -32,46 +32,33 @@ const nextConfig: NextConfig = {
   },
   // إضافة allowedDevOrigins لحل مشكلة Cross origin request
   allowedDevOrigins: [
-    'localhost:3001',
-    '127.0.0.1:3001',
-    '10.5.50.197:3001',
+    'localhost:3000',
+    '127.0.0.1:3000',
+    '10.5.50.197:3000',
     '10.5.50.197:*',
   ],
   headers: async () => {
     return [
       {
-        source: '/sw.js',
+        source: '/(.*)',
         headers: [
           {
             key: 'Cache-Control',
-            value: 'public, max-age=0, must-revalidate',
+            value: 'no-cache, no-store, must-revalidate',
           },
           {
-            key: 'Service-Worker-Allowed',
-            value: '/',
+            key: 'Pragma',
+            value: 'no-cache',
           },
-        ],
-      },
-      {
-        source: '/manifest.json',
-        headers: [
           {
-            key: 'Cache-Control',
-            value: 'public, max-age=0, must-revalidate',
+            key: 'Expires',
+            value: '0',
           },
         ],
       },
     ];
   },
-  // إعدادات PWA
-  async rewrites() {
-    return [
-      {
-        source: '/sw.js',
-        destination: '/sw.js',
-      },
-    ];
-  },
+
 };
 
 export default nextConfig;
