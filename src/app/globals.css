@@ -50,6 +50,12 @@ input:-webkit-autofill:active {
   transition: background-color 5000s ease-in-out 0s;
 }
 
+/* Firefox autofill styles */
+input:-moz-autofill {
+  background-color: transparent !important;
+  color: inherit !important;
+}
+
 @keyframes bounce-custom {
   0%, 100% { 
     transform: translateY(0); 
@@ -148,7 +154,7 @@ input:-webkit-autofill:active {
   animation: videoPulse 2s ease-in-out infinite;
 }
 
-/* Custom Scrollbar */
+/* Custom Scrollbar - Webkit browsers */
 ::-webkit-scrollbar {
   width: 8px;
 }
@@ -166,6 +172,12 @@ input:-webkit-autofill:active {
   background: rgba(59, 130, 246, 0.5);
 }
 
+/* Firefox scrollbar support */
+html {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(59, 130, 246, 0.3) rgba(59, 130, 246, 0.1);
+}
+
 /* Focus Styles */
 *:focus {
   outline: 2px solid rgba(251, 146, 60, 0.5);
@@ -181,6 +193,20 @@ input:-webkit-autofill:active {
 /* Smooth Transitions */
 * {
   transition: all 0.2s ease-in-out;
+}
+
+/* Firefox specific fixes */
+* {
+  -moz-transform: translateZ(0);
+  -webkit-transform: translateZ(0);
+  transform: translateZ(0);
+}
+
+/* Fix for Firefox rendering issues */
+* {
+  -moz-backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
 }
 
 /* Responsive Design */
@@ -215,6 +241,27 @@ input:-webkit-autofill:active {
 @media (prefers-contrast: high) {
   * {
     border-color: currentColor !important;
+  }
+}
+
+/* Firefox gradient fixes */
+.gradient-bg {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: -moz-linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: -webkit-linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+/* Firefox animation fixes */
+@-moz-keyframes fadeInUp {
+  from {
+    opacity: 0;
+    -moz-transform: translateY(30px);
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    -moz-transform: translateY(0);
+    transform: translateY(0);
   }
 }
 

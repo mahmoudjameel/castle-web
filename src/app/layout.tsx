@@ -1,6 +1,7 @@
 'use client';
 
 import './globals.css';
+import './firefox-fixes.css';
 import { NextIntlClientProvider } from 'next-intl';
 import { useEffect } from 'react';
 import ThemeRegistry from '@/components/ThemeRegistry';

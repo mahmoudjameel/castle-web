@@ -27,8 +27,11 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  // إعدادات تجريبية
   experimental: {
     optimizePackageImports: ['@mui/material', '@mui/icons-material', 'lucide-react'],
+    // زيادة حجم الملفات المسموح
+    serverComponentsExternalPackages: ['sharp'],
   },
   // إضافة allowedDevOrigins لحل مشكلة Cross origin request
   allowedDevOrigins: [

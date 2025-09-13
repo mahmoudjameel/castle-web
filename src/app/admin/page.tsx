@@ -45,9 +45,9 @@ const adminSections = [
   },
   { 
     icon: <UserCheck className="w-8 h-8" />, 
-    title: 'إدارة الحسابات', 
-    desc: 'مراجعة وقبول حسابات المواهب والشركات', 
-    link: '/admin/accounts',
+    title: 'إدارة المستخدمين والمواهب', 
+    desc: 'عرض وإدارة جميع المستخدمين مع معلومات صاحب الحاسب', 
+    link: '/admin/users',
     color: 'from-orange-400 to-pink-500'
   },
   { 

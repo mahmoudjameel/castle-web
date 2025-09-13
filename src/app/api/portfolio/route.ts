@@ -3,6 +3,15 @@ import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
+// إعدادات bodyParser لزيادة حجم الملفات المسموح
+export const config = {
+  api: {
+    bodyParser: {
+      sizeLimit: '50mb', // زيادة الحد الأقصى لحجم الملفات إلى 50MB
+    },
+  },
+};
+
 // جلب كل الأعمال لمستخدم معين
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url!);

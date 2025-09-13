@@ -2,6 +2,8 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Trash2, Loader2, Image as ImageIcon, Video as VideoIcon } from "lucide-react";
 import Image from "next/image";
+import { compressFiles, compressFile, getFileSizeMB, isFileSizeAcceptable } from "@/lib/fileCompression";
+import { isSafariOniPhone, supportsMediaRecorder, logBrowserInfo } from "@/lib/safariSupport";
 
 interface PortfolioItem {
   id: number;
@@ -28,6 +30,8 @@ export default function TalentPortfolio() {
   const [files, setFiles] = useState<File[]>([]);
   // اختيار طريقة إدخال الفيديو: رابط أو ملف
   const [videoInputType, setVideoInputType] = useState<'url'|'file'>('url');
+  // مؤشر تقدم الضغط
+  const [compressionProgress, setCompressionProgress] = useState(0);
 
   useEffect(() => {
     // جلب userId من localStorage
@@ -38,6 +42,9 @@ export default function TalentPortfolio() {
         setUserId(u.id);
       }
     } catch {}
+    
+    // فحص دعم Safari وطباعة معلومات المتصفح
+    logBrowserInfo();
   }, []);
 
   useEffect(() => {
@@ -58,84 +65,152 @@ export default function TalentPortfolio() {
     if (type === 'video' && videoInputType === 'file' && !file) return setMessage('يرجى اختيار ملف فيديو');
     setUploading(true);
     setMessage('');
+    
     if (type === 'image') {
-      const uploadedItems: PortfolioItem[] = [];
-      for (const file of files) {
-        const mediaDataBase64 = await new Promise<string | undefined>((resolve) => {
-          const reader = new FileReader();
-          reader.onload = () => resolve((reader.result as string)?.split(',')[1]);
-          reader.onerror = () => resolve(undefined);
-          reader.readAsDataURL(file);
-        });
-        if (!mediaDataBase64) {
-          setMessage('فشل قراءة أحد الملفات.');
+        try {
+          // ضغط الصور قبل الرفع
+          setMessage('جاري ضغط الصور...');
+          setCompressionProgress(0);
+          
+          const compressedFiles = await compressFiles(files);
+          setCompressionProgress(100);
+          
+          // التحقق من نجاح الضغط
+          if (compressedFiles.length === 0) {
+            setMessage('فشل في ضغط الصور، يرجى المحاولة مرة أخرى');
+            setUploading(false);
+            return;
+          }
+        
+        const uploadedItems: PortfolioItem[] = [];
+        for (const file of compressedFiles) {
+          // التحقق من حجم الملف بعد الضغط
+          const fileSizeMB = getFileSizeMB(file);
+          console.log(`حجم الملف بعد الضغط: ${fileSizeMB.toFixed(2)} MB`);
+          
+          // التحقق من أن الملف صالح
+          if (file.size === 0) {
+            setMessage('فشل في ضغط أحد الملفات، يرجى المحاولة مرة أخرى');
+            setUploading(false);
+            return;
+          }
+          
+          const mediaDataBase64 = await new Promise<string | undefined>((resolve) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve((reader.result as string)?.split(',')[1]);
+            reader.onerror = () => resolve(undefined);
+            reader.readAsDataURL(file);
+          });
+          if (!mediaDataBase64) {
+            setMessage('فشل قراءة أحد الملفات.');
+            setUploading(false);
+            return;
+          }
+          const res = await fetch('/api/portfolio', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              userId,
+              type,
+              title,
+              mediaData: mediaDataBase64,
+            }),
+          });
+          if (res.ok) {
+            const newItem = await res.json();
+            uploadedItems.push(newItem);
+          } else {
+            const err = await res.json();
+            setMessage(err.message || 'حدث خطأ أثناء رفع أحد الأعمال.');
+            setUploading(false);
+            return;
+          }
+        }
+        setItems([...uploadedItems, ...items]);
+        setTitle(''); setFiles([]); setFile(null); setMediaUrl('');
+        if (fileInputRef.current) fileInputRef.current.value = '';
+        setMessage('تم رفع جميع الأعمال بنجاح!');
+        setUploading(false);
+        return;
+        } catch (error) {
+          console.error('خطأ في ضغط الصور:', error);
+          setMessage('حدث خطأ في ضغط الصور. يرجى المحاولة مرة أخرى أو رفع الملفات الأصلي');
           setUploading(false);
           return;
         }
-        const res = await fetch('/api/portfolio', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            userId,
-            type,
-            title,
-            mediaData: mediaDataBase64,
-          }),
-        });
-        if (res.ok) {
-          const newItem = await res.json();
-          uploadedItems.push(newItem);
-        } else {
-          const err = await res.json();
-          setMessage(err.message || 'حدث خطأ أثناء رفع أحد الأعمال.');
-          setUploading(false);
-          return;
-        }
-      }
-      setItems([...uploadedItems, ...items]);
-      setTitle(''); setFiles([]); setFile(null); setMediaUrl('');
-      if (fileInputRef.current) fileInputRef.current.value = '';
-      setMessage('تم رفع جميع الأعمال بنجاح!');
-      setUploading(false);
-      return;
     }
     // Handle video upload
     if (type === 'video') {
       // إذا كان الفيديو كملف مرفوع
       if (videoInputType === 'file' && file) {
-        const mediaDataBase64 = await new Promise<string | undefined>((resolve) => {
-          const reader = new FileReader();
-          reader.onload = () => resolve((reader.result as string)?.split(',')[1]);
-          reader.onerror = () => resolve(undefined);
-          reader.readAsDataURL(file);
-        });
-        if (!mediaDataBase64) {
-          setMessage('فشل قراءة ملف الفيديو.');
+        try {
+          // التحقق من دعم MediaRecorder في Safari
+          if (!supportsMediaRecorder()) {
+            console.warn('MediaRecorder غير مدعوم في هذا المتصفح');
+            if (isSafariOniPhone()) {
+              setMessage('Safari على iPhone لا يدعم ضغط الفيديوهات، سيتم رفع الملف الأصلي');
+            } else {
+              setMessage('هذا المتصفح لا يدعم ضغط الفيديوهات، سيتم رفع الملف الأصلي');
+            }
+          }
+          
+          // ضغط الفيديو قبل الرفع
+          setMessage('جاري ضغط الفيديو...');
+          setCompressionProgress(0);
+          
+          const compressedFile = await compressFile(file);
+          setCompressionProgress(100);
+          
+          // التحقق من حجم الملف بعد الضغط
+          const fileSizeMB = getFileSizeMB(compressedFile);
+          console.log(`حجم الفيديو بعد الضغط: ${fileSizeMB.toFixed(2)} MB`);
+          
+          // التحقق من أن الملف صالح
+          if (compressedFile.size === 0) {
+            setMessage('فشل في ضغط الفيديو، يرجى المحاولة مرة أخرى');
+            setUploading(false);
+            return;
+          }
+          
+          const mediaDataBase64 = await new Promise<string | undefined>((resolve) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve((reader.result as string)?.split(',')[1]);
+            reader.onerror = () => resolve(undefined);
+            reader.readAsDataURL(compressedFile);
+          });
+          if (!mediaDataBase64) {
+            setMessage('فشل قراءة ملف الفيديو.');
+            setUploading(false);
+            return;
+          }
+          const res = await fetch('/api/portfolio', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              userId,
+              type,
+              title,
+              mediaData: mediaDataBase64,
+            }),
+          });
+          if (res.ok) {
+            const newItem = await res.json();
+            setItems([newItem, ...items]);
+            setTitle(''); setMediaUrl(''); setFile(null);
+            if (fileInputRef.current) fileInputRef.current.value = '';
+            setMessage('تم رفع العمل بنجاح!');
+          } else {
+            const err = await res.json();
+            setMessage(err.message || 'حدث خطأ أثناء الرفع.');
+          }
+          setUploading(false);
+          return;
+        } catch (error) {
+          console.error('خطأ في ضغط الفيديو:', error);
+          setMessage('حدث خطأ في ضغط الفيديو. يرجى المحاولة مرة أخرى أو رفع الفيديو الأصلي');
           setUploading(false);
           return;
         }
-        const res = await fetch('/api/portfolio', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            userId,
-            type,
-            title,
-            mediaData: mediaDataBase64,
-          }),
-        });
-        if (res.ok) {
-          const newItem = await res.json();
-          setItems([newItem, ...items]);
-          setTitle(''); setMediaUrl(''); setFile(null);
-          if (fileInputRef.current) fileInputRef.current.value = '';
-          setMessage('تم رفع العمل بنجاح!');
-        } else {
-          const err = await res.json();
-          setMessage(err.message || 'حدث خطأ أثناء الرفع.');
-        }
-        setUploading(false);
-        return;
       }
       // إذا كان الفيديو كرابط
       const res = await fetch('/api/portfolio', {
@@ -234,6 +309,23 @@ export default function TalentPortfolio() {
           <button type="submit" disabled={uploading} className="w-full py-3 bg-gradient-to-r from-orange-400 to-pink-500 rounded-lg font-bold text-lg text-white hover:from-orange-500 hover:to-pink-600 transition-all disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2">
             {uploading && <Loader2 className="animate-spin" size={20} />} رفع العمل
           </button>
+          
+          {/* شريط تقدم الضغط */}
+          {uploading && compressionProgress > 0 && compressionProgress < 100 && (
+            <div className="mt-4">
+              <div className="flex justify-between text-sm text-blue-200 mb-2">
+                <span>جاري الضغط...</span>
+                <span>{compressionProgress}%</span>
+              </div>
+              <div className="w-full bg-blue-900/40 rounded-full h-2">
+                <div 
+                  className="bg-gradient-to-r from-orange-400 to-pink-500 h-2 rounded-full transition-all duration-300"
+                  style={{ width: `${compressionProgress}%` }}
+                ></div>
+              </div>
+            </div>
+          )}
+          
           {message && <div className="mt-4 text-center text-orange-300 font-bold">{message}</div>}
         </form>
       </div>
