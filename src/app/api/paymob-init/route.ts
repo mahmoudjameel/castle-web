@@ -18,11 +18,11 @@ export async function POST(req: Request) {
       }, { status: 400 });
     }
 
-    // اختيار إعدادات طريقة الدفع
-    let integrationConfig = PAYMOB_CONFIG.INTEGRATIONS.CARD_PAYMENT;
-    if (paymentMethod === 'APPLE_PAY') {
-      integrationConfig = PAYMOB_CONFIG.INTEGRATIONS.APPLE_PAY;
-    }
+    // اختيار إعدادات طريقة الدفع - استخدام Integration واحد فقط مؤقتاً
+    let integrationConfig = PAYMOB_CONFIG.INTEGRATIONS.CARD_PAYMENT; // Default to card payment
+    
+    // مؤقتاً: استخدام نفس Integration لجميع طرق الدفع حتى يتم حل مشكلة Integration IDs
+    // TODO: إعادة تفعيل Apple Pay عندما يتم التحقق من Integration IDs الصحيحة
 
     if (!PAYMOB_CONFIG.API_KEY) {
       console.error('PAYMOB_API_KEY is missing');

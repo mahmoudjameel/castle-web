@@ -34,6 +34,7 @@ export default function TalentPublicProfile() {
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [showErrorModal, setShowErrorModal] = useState(false);
   const [showValidationModal, setShowValidationModal] = useState(false);
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState('VISA_CARD');
   const [errorMessage, setErrorMessage] = useState('');
   const [reportReason, setReportReason] = useState('');
   const [reportDescription, setReportDescription] = useState('');
@@ -133,6 +134,7 @@ export default function TalentPublicProfile() {
             lastName: talent?.name?.split(' ')[1] || '',
             phone: talent?.phone || ''
           },
+          paymentMethod: selectedPaymentMethod,
           metadata: {
             talentId: talent?.id,
             clientId: user.id,
@@ -794,16 +796,24 @@ export default function TalentPublicProfile() {
       </div>
 
       {/* Order Modal */}
-      <Dialog open={showOrderModal} onClose={()=>setShowOrderModal(false)} PaperProps={{
-        style: {
-          borderRadius: 16,
-          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-          color: '#fff',
-          minWidth: 280,
-          maxWidth: 380,
-          margin: '16px'
-        }
-      }}>
+      <Dialog 
+        open={showOrderModal} 
+        onClose={()=>setShowOrderModal(false)} 
+        PaperProps={{
+          style: {
+            borderRadius: 16,
+            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+            color: '#fff',
+            minWidth: 280,
+            maxWidth: 380,
+            margin: '16px',
+            position: 'fixed',
+            top: '20px',
+            left: '50%',
+            transform: 'translateX(-50%)'
+          }
+        }}
+      >
         <DialogTitle sx={{
           fontWeight: 700, 
           fontSize: { xs: '1.25rem', sm: '1.5rem' }, 
@@ -867,6 +877,40 @@ export default function TalentPublicProfile() {
                 </option>
                 ))}
               </select>
+          </div>
+
+          <div className="mb-4 sm:mb-6">
+            <h3 className="text-base sm:text-lg font-bold mb-3 sm:mb-4 text-white">اختر طريقة الدفع:</h3>
+            <div className="grid grid-cols-2 gap-3">
+              <div 
+                className={`p-3 rounded-lg border-2 cursor-pointer transition-all ${
+                  selectedPaymentMethod === 'VISA_CARD' 
+                    ? 'border-yellow-400 bg-yellow-400/20' 
+                    : 'border-white/30 bg-white/10 hover:bg-white/20'
+                }`}
+                onClick={() => setSelectedPaymentMethod('VISA_CARD')}
+              >
+                <div className="text-center">
+                  <div className="text-2xl mb-2">💳</div>
+                  <div className="text-white font-medium text-sm">بطاقة ائتمانية</div>
+                  <div className="text-yellow-200 text-xs mt-1">Visa, Mastercard, Mada</div>
+                </div>
+              </div>
+              <div 
+                className={`p-3 rounded-lg border-2 cursor-pointer transition-all ${
+                  selectedPaymentMethod === 'APPLE_PAY' 
+                    ? 'border-yellow-400 bg-yellow-400/20' 
+                    : 'border-white/30 bg-white/10 hover:bg-white/20'
+                }`}
+                onClick={() => setSelectedPaymentMethod('APPLE_PAY')}
+              >
+                <div className="text-center">
+                  <div className="text-2xl mb-2">🍎</div>
+                  <div className="text-white font-medium text-sm">Apple Pay</div>
+                  <div className="text-yellow-200 text-xs mt-1">iPhone, iPad</div>
+                </div>
+              </div>
+            </div>
           </div>
 
           <div className="mb-4 sm:mb-6">

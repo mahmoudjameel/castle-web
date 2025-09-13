@@ -6,17 +6,22 @@ export const PAYMOB_CONFIG = {
   SECRET_KEY: process.env.PAYMOB_SECRET_KEY || '',
   PUBLIC_KEY: process.env.PAYMOB_PUBLIC_KEY || '',
 
-  // Integration IDs
+  // Integration IDs - Updated with correct Apple Pay data
   INTEGRATIONS: {
-    APPLE_PAY: {
-      ID: parseInt(process.env.PAYMOB_APPLE_PAY_ID || '13183'),
-      NAME: 'Apple pay payment link',
-      IFRAME_ID: process.env.PAYMOB_APPLE_PAY_IFRAME_ID || '9083'
-    },
     CARD_PAYMENT: {
-      ID: parseInt(process.env.PAYMOB_CARD_PAYMENT_ID || '14214'),
-      NAME: 'MIGS-online Payment link',
+      ID: parseInt(process.env.PAYMOB_CARD_PAYMENT_ID || '14252'), // MIGS-online website
+      NAME: 'MIGS-online website',
       IFRAME_ID: process.env.PAYMOB_CARD_PAYMENT_IFRAME_ID || '9589'
+    },
+    APPLE_PAY: {
+      ID: parseInt(process.env.PAYMOB_APPLE_PAY_ID || '14250'), // MIGS-online (APPLE PAY) website
+      NAME: 'MIGS-online (APPLE PAY) website',
+      IFRAME_ID: process.env.PAYMOB_APPLE_PAY_IFRAME_ID || '14250'
+    },
+    APPLE_PAY_LINK: {
+      ID: parseInt(process.env.PAYMOB_APPLE_PAY_LINK_ID || '14251'), // MIGS-online (APPLE PAY) PL
+      NAME: 'MIGS-online (APPLE PAY) PL',
+      IFRAME_ID: process.env.PAYMOB_APPLE_PAY_LINK_IFRAME_ID || '14251'
     }
   },
 
@@ -51,11 +56,11 @@ export async function POST(req: Request) {
       }, { status: 400 });
     }
 
-    // اختيار إعدادات طريقة الدفع
-    let integrationConfig = PAYMOB_CONFIG.INTEGRATIONS.CARD_PAYMENT;
-    if (paymentMethod === 'APPLE_PAY') {
-      integrationConfig = PAYMOB_CONFIG.INTEGRATIONS.APPLE_PAY;
-    }
+    // اختيار إعدادات طريقة الدفع - استخدام Integration واحد فقط مؤقتاً
+    let integrationConfig = PAYMOB_CONFIG.INTEGRATIONS.CARD_PAYMENT; // Default to card payment
+    
+    // مؤقتاً: استخدام نفس Integration لجميع طرق الدفع حتى يتم حل مشكلة Integration IDs
+    // TODO: إعادة تفعيل Apple Pay عندما يتم التحقق من Integration IDs الصحيحة
 
     if (!PAYMOB_CONFIG.API_KEY) {
       console.error('PAYMOB_API_KEY is missing');
