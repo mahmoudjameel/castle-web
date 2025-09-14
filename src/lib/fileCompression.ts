@@ -67,6 +67,8 @@ export async function compressVideo(file: File, maxSizeMB: number = 10): Promise
     video.setAttribute('playsinline', 'true');
     video.setAttribute('webkit-playsinline', 'true');
     video.muted = true; // مهم لـ Safari
+    video.crossOrigin = 'anonymous'; // مهم لملفات MOV
+    video.preload = 'metadata';
 
     video.onloadedmetadata = () => {
       // حساب الأبعاد الجديدة
@@ -81,10 +83,15 @@ export async function compressVideo(file: File, maxSizeMB: number = 10): Promise
       canvas.width = videoWidth;
       canvas.height = videoHeight;
 
-      // تشغيل الفيديو
+      // تشغيل الفيديو مع معالجة خاصة لـ Safari
       video.play().catch(err => {
         console.error('خطأ في تشغيل الفيديو:', err);
-        reject(new Error('فشل في تشغيل الفيديو'));
+        // محاولة تشغيل الفيديو مرة أخرى مع إعدادات مختلفة
+        video.muted = true;
+        video.play().catch(secondErr => {
+          console.error('فشل في تشغيل الفيديو مرة أخرى:', secondErr);
+          reject(new Error('فشل في تشغيل الفيديو'));
+        });
       });
     };
 
@@ -160,12 +167,19 @@ export async function compressVideo(file: File, maxSizeMB: number = 10): Promise
 // دالة مساعدة لضغط الملفات حسب النوع - محسنة لـ Safari
 export async function compressFile(file: File): Promise<File> {
   const fileType = file.type;
+  const fileName = file.name.toLowerCase();
   
   // التحقق من نوع الملف
   if (fileType.startsWith('image/')) {
     // ضغط الصور
     return await compressImage(file);
-  } else if (fileType.startsWith('video/')) {
+  } else if (fileType.startsWith('video/') || 
+             fileName.endsWith('.mov') || 
+             fileName.endsWith('.avi') || 
+             fileName.endsWith('.mkv') || 
+             fileName.endsWith('.webm') || 
+             fileName.endsWith('.3gp') || 
+             fileName.endsWith('.m4v')) {
     // التحقق من دعم MediaRecorder في Safari
     if (!window.MediaRecorder) {
       console.warn('MediaRecorder غير مدعوم في هذا المتصفح، سيتم إرجاع الملف الأصلي');

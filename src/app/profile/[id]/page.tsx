@@ -905,7 +905,13 @@ export default function TalentPublicProfile() {
                 onClick={() => setSelectedPaymentMethod('APPLE_PAY')}
               >
                 <div className="text-center">
-                  <div className="text-2xl mb-2">🍎</div>
+                  <div className="mb-2 flex items-center justify-center">
+                    <img 
+                      src="https://www.logo.wine/a/logo/Apple_Pay/Apple_Pay-Logo.wine.svg" 
+                      alt="Apple Pay" 
+                      className="h-8 w-auto"
+                    />
+                  </div>
                   <div className="text-white font-medium text-sm">Apple Pay</div>
                   <div className="text-yellow-200 text-xs mt-1">iPhone, iPad</div>
                 </div>

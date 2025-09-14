@@ -293,10 +293,10 @@ export default function TalentPortfolio() {
                 </>
               ) : (
                 <>
-                  <label className="block mb-2 text-blue-100">اختر ملف فيديو (MP4)</label>
+                  <label className="block mb-2 text-blue-100">اختر ملف فيديو (جميع الصيغ مدعومة)</label>
                   <input
                     type="file"
-                    accept="video/mp4"
+                    accept="video/*,.mov,.avi,.mkv,.webm,.3gp,.m4v"
                     ref={fileInputRef}
                     onChange={e => setFile((e.target.files && e.target.files[0]) || null)}
                     className="w-full text-blue-100"
