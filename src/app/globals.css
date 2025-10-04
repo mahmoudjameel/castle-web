@@ -190,23 +190,51 @@ html {
   color: white;
 }
 
-/* Smooth Transitions */
+/* Optimized Transitions */
 * {
-  transition: all 0.2s ease-in-out;
+  transition: opacity 0.1s ease-out, transform 0.1s ease-out;
 }
 
-/* Firefox specific fixes */
+/* Disable transitions for reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+    animation: none !important;
+  }
+}
+
+/* Browser compatibility fixes */
 * {
   -moz-transform: translateZ(0);
   -webkit-transform: translateZ(0);
   transform: translateZ(0);
-}
-
-/* Fix for Firefox rendering issues */
-* {
   -moz-backface-visibility: hidden;
   -webkit-backface-visibility: hidden;
   backface-visibility: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Optimize gradients for better performance */
+.gradient-optimized {
+  background: linear-gradient(135deg, #1e3a8a 0%, #3730a3 50%, #581c87 100%);
+  background-attachment: fixed;
+}
+
+/* Reduce backdrop blur usage */
+.backdrop-light {
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+/* Optimize animations */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.2s ease-out;
 }
 
 /* Responsive Design */

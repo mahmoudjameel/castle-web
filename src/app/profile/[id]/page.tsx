@@ -614,32 +614,40 @@ export default function TalentPublicProfile() {
                     </div>
                     <span>السمات الشخصية</span>
                   </h2>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                     {talent.eyeColor && (
-                      <div className="flex items-center gap-2 bg-white/5 rounded-xl px-3 py-2 border border-white/10">
-                        <span className="w-3 h-3 rounded-full bg-blue-300 inline-block"></span>
-                        <span className="text-blue-200 font-semibold">لون العين:</span>
-                        <span className="text-white">{talent.eyeColor}</span>
+                      <div className="bg-white/5 rounded-xl p-4 border border-white/10 min-h-[80px] flex flex-col justify-center">
+                        <div className="flex items-center gap-2 mb-2">
+                          <span className="w-3 h-3 rounded-full bg-blue-300 inline-block"></span>
+                          <span className="text-blue-200 font-semibold text-sm">لون العين</span>
+                        </div>
+                        <span className="text-white font-medium">{talent.eyeColor}</span>
                       </div>
                     )}
                     {talent.hairColor && (
-                      <div className="flex items-center gap-2 bg-white/5 rounded-xl px-3 py-2 border border-white/10">
-                        <span className="w-3 h-3 rounded-full bg-red-300 inline-block"></span>
-                        <span className="text-red-200 font-semibold">لون الشعر:</span>
-                        <span className="text-white">{talent.hairColor}</span>
+                      <div className="bg-white/5 rounded-xl p-4 border border-white/10 min-h-[80px] flex flex-col justify-center">
+                        <div className="flex items-center gap-2 mb-2">
+                          <span className="w-3 h-3 rounded-full bg-red-300 inline-block"></span>
+                          <span className="text-red-200 font-semibold text-sm">لون الشعر</span>
+                        </div>
+                        <span className="text-white font-medium">{talent.hairColor}</span>
                       </div>
                     )}
                     {talent.skinColor && (
-                      <div className="flex items-center gap-2 bg-white/5 rounded-xl px-3 py-2 border border-white/10">
-                        <span className="w-3 h-3 rounded-full bg-orange-300 inline-block"></span>
-                        <span className="text-orange-200 font-semibold">لون البشرة:</span>
-                        <span className="text-white">{talent.skinColor}</span>
+                      <div className="bg-white/5 rounded-xl p-4 border border-white/10 min-h-[80px] flex flex-col justify-center">
+                        <div className="flex items-center gap-2 mb-2">
+                          <span className="w-3 h-3 rounded-full bg-orange-300 inline-block"></span>
+                          <span className="text-orange-200 font-semibold text-sm">لون البشرة</span>
+                        </div>
+                        <span className="text-white font-medium">{talent.skinColor}</span>
                       </div>
                     )}
                     {talent.hairStyle && (
-                      <div className="flex items-start gap-2 bg-white/5 rounded-xl px-3 py-2 border border-white/10">
-                        <span className="w-3 h-3 rounded-full bg-pink-300 inline-block"></span>
-                        <span className="text-pink-200 font-semibold">تسريحة الشعر:</span>
+                      <div className="bg-white/5 rounded-xl p-4 border border-white/10 min-h-[80px] flex flex-col justify-center">
+                        <div className="flex items-center gap-2 mb-2">
+                          <span className="w-3 h-3 rounded-full bg-pink-300 inline-block"></span>
+                          <span className="text-pink-200 font-semibold text-sm">تسريحة الشعر</span>
+                        </div>
                         {(() => {
                           let list: string[] = [];
                           try {
@@ -654,7 +662,7 @@ export default function TalentPublicProfile() {
                             }
                           } catch {}
                           return (
-                            <div className="flex flex-wrap gap-1.5">
+                            <div className="flex flex-wrap gap-1">
                               {list.map((v, i) => (
                                 <span key={i} className="px-2 py-1 text-xs rounded-full bg-white/10 border border-white/20 text-white">{v}</span>
                               ))}
@@ -664,9 +672,11 @@ export default function TalentPublicProfile() {
                       </div>
                     )}
                     {talent.language && (
-                      <div className="flex items-start gap-2 bg-white/5 rounded-xl px-3 py-2 border border-white/10">
-                        <span className="w-3 h-3 rounded-full bg-purple-300 inline-block"></span>
-                        <span className="text-purple-200 font-semibold">اللغة:</span>
+                      <div className="bg-white/5 rounded-xl p-4 border border-white/10 min-h-[80px] flex flex-col justify-center">
+                        <div className="flex items-center gap-2 mb-2">
+                          <span className="w-3 h-3 rounded-full bg-purple-300 inline-block"></span>
+                          <span className="text-purple-200 font-semibold text-sm">اللغة</span>
+                        </div>
                         {(() => {
                           let list: string[] = [];
                           try {
@@ -681,7 +691,7 @@ export default function TalentPublicProfile() {
                             }
                           } catch {}
                           return (
-                            <div className="flex flex-wrap gap-1.5">
+                            <div className="flex flex-wrap gap-1">
                               {list.map((v, i) => (
                                 <span key={i} className="px-2 py-1 text-xs rounded-full bg-white/10 border border-white/20 text-white">{v}</span>
                               ))}
@@ -691,9 +701,11 @@ export default function TalentPublicProfile() {
                       </div>
                     )}
                     {talent.accent && (
-                      <div className="flex items-start gap-2 bg-white/5 rounded-xl px-3 py-2 border border-white/10">
-                        <span className="w-3 h-3 rounded-full bg-cyan-300 inline-block"></span>
-                        <span className="text-cyan-200 font-semibold">اللهجة:</span>
+                      <div className="bg-white/5 rounded-xl p-4 border border-white/10 min-h-[80px] flex flex-col justify-center">
+                        <div className="flex items-center gap-2 mb-2">
+                          <span className="w-3 h-3 rounded-full bg-cyan-300 inline-block"></span>
+                          <span className="text-cyan-200 font-semibold text-sm">اللهجة</span>
+                        </div>
                         {(() => {
                           let list: string[] = [];
                           try {
@@ -708,7 +720,7 @@ export default function TalentPublicProfile() {
                             }
                           } catch {}
                           return (
-                            <div className="flex flex-wrap gap-1.5">
+                            <div className="flex flex-wrap gap-1">
                               {list.map((v, i) => (
                                 <span key={i} className="px-2 py-1 text-xs rounded-full bg-white/10 border border-white/20 text-white">{v}</span>
                               ))}

@@ -180,14 +180,14 @@ export default function AdminDashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-blue-900 to-purple-900">
+    <div className="min-h-screen gradient-optimized">
 
       <div className="relative py-16 px-4">
         <div className="max-w-6xl mx-auto">
           {/* العنوان الرئيسي */}
           <div className="text-center mb-12">
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-orange-400 to-pink-500 rounded-xl mb-4 transform rotate-12 shadow-lg">
-              <Settings className="w-8 h-8 text-white transform -rotate-12" />
+            <div className="inline-flex items-center justify-center w-16 h-16 bg-orange-500 rounded-xl mb-4 shadow-lg">
+              <Settings className="w-8 h-8 text-white" />
             </div>
             <h1 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-orange-400 via-pink-400 to-blue-400 bg-clip-text text-transparent">
               لوحة تحكم الإدارة
@@ -196,7 +196,7 @@ export default function AdminDashboard() {
           </div>
 
           {/* قسم الترحيب والصورة الشخصية */}
-          <div className="bg-white/10 rounded-2xl border border-white/20 p-6 mb-8 shadow-lg">
+          <div className="bg-white/10 rounded-2xl border border-white/20 p-6 mb-8 shadow-lg backdrop-light">
             <div className="flex flex-col sm:flex-row items-center justify-between gap-6">
               <div className="flex items-center gap-6">
                 <div className="relative">
@@ -226,7 +226,7 @@ export default function AdminDashboard() {
               <div className="flex gap-3">
                 <button
                   onClick={() => window.location.href = '/'}
-                  className="flex items-center gap-2 px-4 py-3 bg-gradient-to-r from-blue-400 to-purple-500 rounded-xl text-white font-semibold hover:from-blue-500 hover:to-purple-600 transition-all duration-150 shadow-lg"
+                  className="flex items-center gap-2 px-4 py-3 bg-blue-500 rounded-xl text-white font-semibold hover:bg-blue-600 transition-colors shadow-lg"
                 >
                   <Home className="w-4 h-4" />
                   <span className="hidden sm:inline">الرئيسية</span>
@@ -236,7 +236,7 @@ export default function AdminDashboard() {
                     localStorage.removeItem('user');
                     window.location.href = '/login';
                   }}
-                  className="flex items-center gap-2 px-4 py-3 bg-gradient-to-r from-pink-400 to-red-500 rounded-xl text-white font-semibold hover:from-pink-500 hover:to-red-600 transition-all duration-150 shadow-lg"
+                  className="flex items-center gap-2 px-4 py-3 bg-red-500 rounded-xl text-white font-semibold hover:bg-red-600 transition-colors shadow-lg"
                 >
                   <LogOut className="w-4 h-4" />
                   <span className="hidden sm:inline">خروج</span>
@@ -265,11 +265,11 @@ export default function AdminDashboard() {
             ) : (
               // عرض الإحصائيات الحقيقية
               stats.map((stat, i) => (
-                <div key={i} className="bg-white/5 rounded-xl border border-white/10 p-5 text-center group hover:bg-white/10 transition-all duration-150 shadow-lg">
-                  <div className={`w-12 h-12 bg-gradient-to-r ${stat.color} rounded-xl flex items-center justify-center mx-auto mb-4 group-hover:scale-105 transition-transform duration-150`}>
+                <div key={i} className="bg-white/5 rounded-xl border border-white/10 p-5 text-center group hover:bg-white/10 transition-colors shadow-lg">
+                  <div className={`w-12 h-12 bg-orange-500 rounded-xl flex items-center justify-center mx-auto mb-4`}>
                     {stat.icon}
                   </div>
-                  <div className="text-3xl font-bold text-white mb-2 group-hover:text-orange-400 transition-colors duration-150">
+                  <div className="text-3xl font-bold text-white mb-2 group-hover:text-orange-400 transition-colors">
                     {statsData[stat.key] || 0}
                   </div>
                   <div className="text-blue-200/80 text-sm font-medium">{stat.label}</div>
@@ -333,7 +333,7 @@ export default function AdminDashboard() {
                 </div>
               ) : (
                 conversations.slice(0, 4).map((conversation) => (
-                  <div key={conversation.conversationId} className="bg-white/5 rounded-xl border border-white/10 p-4 hover:bg-white/10 transition-all duration-150">
+                  <div key={conversation.conversationId} className="bg-white/5 rounded-xl border border-white/10 p-4 hover:bg-white/10 transition-colors">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-4">
                         <div className="w-12 h-12 bg-gradient-to-r from-blue-400 to-purple-500 rounded-full flex items-center justify-center">
@@ -355,10 +355,10 @@ export default function AdminDashboard() {
                         </div>
                       </div>
                       <div className="flex gap-2">
-                        <Link href="/admin/conversations" className="px-4 py-2 bg-gradient-to-r from-blue-400 to-purple-500 text-white rounded-lg hover:from-blue-500 hover:to-purple-600 transition-all duration-150 text-sm font-medium">
+                        <Link href="/admin/conversations" className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-sm font-medium">
                           عرض المحادثة
                         </Link>
-                        <Link href="/admin/conversations" className="px-4 py-2 bg-white/10 border border-white/20 text-white rounded-lg hover:bg-white/20 transition-all duration-150 text-sm font-medium">
+                        <Link href="/admin/conversations" className="px-4 py-2 bg-white/10 border border-white/20 text-white rounded-lg hover:bg-white/20 transition-colors text-sm font-medium">
                           الرد
                         </Link>
                       </div>
@@ -369,7 +369,7 @@ export default function AdminDashboard() {
 
               {/* زر عرض جميع المحادثات */}
               <div className="text-center pt-4">
-                <Link href="/admin/conversations" className="px-6 py-3 bg-gradient-to-r from-blue-400 to-purple-500 text-white rounded-xl hover:from-blue-500 hover:to-purple-600 transition-all duration-150 font-medium shadow-lg inline-block">
+                <Link href="/admin/conversations" className="px-6 py-3 bg-blue-500 text-white rounded-xl hover:bg-blue-600 transition-colors font-medium shadow-lg inline-block">
                   عرض جميع المحادثات
                 </Link>
               </div>

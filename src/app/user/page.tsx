@@ -164,14 +164,14 @@ export default function UserDashboardHome() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-blue-900 to-purple-900">
+    <div className="min-h-screen gradient-optimized">
 
       <div className="relative py-16 px-4">
         <div className="max-w-6xl mx-auto">
           {/* العنوان الرئيسي */}
           <div className="text-center mb-12">
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-orange-400 to-pink-500 rounded-xl mb-4 transform rotate-12 shadow-lg">
-              <Settings className="w-8 h-8 text-white transform -rotate-12" />
+            <div className="inline-flex items-center justify-center w-16 h-16 bg-orange-500 rounded-xl mb-4 shadow-lg">
+              <Settings className="w-8 h-8 text-white" />
             </div>
             <h1 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-orange-400 via-pink-400 to-blue-400 bg-clip-text text-transparent">
               لوحة تحكم المستخدم
@@ -210,14 +210,14 @@ export default function UserDashboardHome() {
               <div className="flex gap-3">
                 <button
                   onClick={() => window.location.href = '/'}
-                  className="flex items-center gap-2 px-4 py-3 bg-gradient-to-r from-blue-400 to-purple-500 rounded-xl text-white font-semibold hover:from-blue-500 hover:to-purple-600 transition-all duration-300 shadow-lg hover:shadow-xl"
+                  className="flex items-center gap-2 px-4 py-3 bg-blue-500 rounded-xl text-white font-semibold hover:bg-blue-600 transition-colors shadow-lg"
                 >
                   <Home className="w-4 h-4" />
                   <span className="hidden sm:inline">الرئيسية</span>
                 </button>
                 <button
                   onClick={handleLogout}
-                  className="flex items-center gap-2 px-4 py-3 bg-gradient-to-r from-pink-400 to-red-500 rounded-xl text-white font-semibold hover:from-pink-500 hover:to-red-600 transition-all duration-300 shadow-lg hover:shadow-xl"
+                  className="flex items-center gap-2 px-4 py-3 bg-red-500 rounded-xl text-white font-semibold hover:bg-red-600 transition-colors shadow-lg"
                 >
                   <LogOut className="w-4 h-4" />
                   <span className="hidden sm:inline">خروج</span>
@@ -246,11 +246,11 @@ export default function UserDashboardHome() {
             ) : (
               // عرض الإحصائيات الحقيقية
               stats.map((stat, i) => (
-                <div key={i} className="bg-white/5 rounded-xl border border-white/10 p-5 text-center group hover:bg-white/10 transition-all duration-300 shadow-lg hover:shadow-xl">
-                  <div className={`w-12 h-12 bg-gradient-to-r ${stat.color} rounded-xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300 relative`}>
+                <div key={i} className="bg-white/5 rounded-xl border border-white/10 p-5 text-center group hover:bg-white/10 transition-colors shadow-lg">
+                  <div className="w-12 h-12 bg-orange-500 rounded-xl flex items-center justify-center mx-auto mb-4 relative">
                     {stat.icon}
                     {stat.key === 'newNotifications' && notificationsCount > 0 && (
-                      <div className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center animate-pulse">
+                      <div className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center">
                         {notificationsCount > 99 ? '99+' : notificationsCount}
                       </div>
                     )}

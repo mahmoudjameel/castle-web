@@ -2,8 +2,8 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Trash2, Loader2, Image as ImageIcon, Video as VideoIcon } from "lucide-react";
 import Image from "next/image";
-import { compressFiles, compressFile, getFileSizeMB, isFileSizeAcceptable } from "@/lib/fileCompression";
-import { isSafariOniPhone, supportsMediaRecorder, logBrowserInfo } from "@/lib/safariSupport";
+import { compressFiles, getFileSizeMB, isFileSizeAcceptable } from "@/lib/fileCompression";
+import { logBrowserInfo } from "@/lib/safariSupport";
 
 interface PortfolioItem {
   id: number;
@@ -30,7 +30,7 @@ export default function TalentPortfolio() {
   const [files, setFiles] = useState<File[]>([]);
   // اختيار طريقة إدخال الفيديو: رابط أو ملف
   const [videoInputType, setVideoInputType] = useState<'url'|'file'>('url');
-  // مؤشر تقدم الضغط
+  // مؤشر تقدم الضغط (للصور فقط)
   const [compressionProgress, setCompressionProgress] = useState(0);
 
   useEffect(() => {
@@ -144,30 +144,23 @@ export default function TalentPortfolio() {
       // إذا كان الفيديو كملف مرفوع
       if (videoInputType === 'file' && file) {
         try {
-          // التحقق من دعم MediaRecorder في Safari
-          if (!supportsMediaRecorder()) {
-            console.warn('MediaRecorder غير مدعوم في هذا المتصفح');
-            if (isSafariOniPhone()) {
-              setMessage('Safari على iPhone لا يدعم ضغط الفيديوهات، سيتم رفع الملف الأصلي');
-            } else {
-              setMessage('هذا المتصفح لا يدعم ضغط الفيديوهات، سيتم رفع الملف الأصلي');
-            }
-          }
+          // رفع الفيديو الأصلي بدون ضغط
+          setMessage('جاري رفع الفيديو...');
           
-          // ضغط الفيديو قبل الرفع
-          setMessage('جاري ضغط الفيديو...');
-          setCompressionProgress(0);
-          
-          const compressedFile = await compressFile(file);
-          setCompressionProgress(100);
-          
-          // التحقق من حجم الملف بعد الضغط
-          const fileSizeMB = getFileSizeMB(compressedFile);
-          console.log(`حجم الفيديو بعد الضغط: ${fileSizeMB.toFixed(2)} MB`);
+          // التحقق من حجم الملف
+          const fileSizeMB = getFileSizeMB(file);
+          console.log(`حجم الفيديو: ${fileSizeMB.toFixed(2)} MB`);
           
           // التحقق من أن الملف صالح
-          if (compressedFile.size === 0) {
-            setMessage('فشل في ضغط الفيديو، يرجى المحاولة مرة أخرى');
+          if (file.size === 0) {
+            setMessage('الملف فارغ، يرجى اختيار ملف صالح');
+            setUploading(false);
+            return;
+          }
+          
+          // التحقق من حجم الملف (حد أقصى 50MB)
+          if (fileSizeMB > 50) {
+            setMessage('حجم الفيديو كبير جداً. الحد الأقصى المسموح هو 50MB');
             setUploading(false);
             return;
           }
@@ -176,7 +169,7 @@ export default function TalentPortfolio() {
             const reader = new FileReader();
             reader.onload = () => resolve((reader.result as string)?.split(',')[1]);
             reader.onerror = () => resolve(undefined);
-            reader.readAsDataURL(compressedFile);
+            reader.readAsDataURL(file);
           });
           if (!mediaDataBase64) {
             setMessage('فشل قراءة ملف الفيديو.');
@@ -206,8 +199,8 @@ export default function TalentPortfolio() {
           setUploading(false);
           return;
         } catch (error) {
-          console.error('خطأ في ضغط الفيديو:', error);
-          setMessage('حدث خطأ في ضغط الفيديو. يرجى المحاولة مرة أخرى أو رفع الفيديو الأصلي');
+          console.error('خطأ في رفع الفيديو:', error);
+          setMessage('حدث خطأ في رفع الفيديو. يرجى المحاولة مرة أخرى');
           setUploading(false);
           return;
         }
@@ -293,7 +286,7 @@ export default function TalentPortfolio() {
                 </>
               ) : (
                 <>
-                  <label className="block mb-2 text-blue-100">اختر ملف فيديو (جميع الصيغ مدعومة)</label>
+                  <label className="block mb-2 text-blue-100">اختر ملف فيديو (جميع الصيغ مدعومة - حتى 50MB)</label>
                   <input
                     type="file"
                     accept="video/*,.mov,.avi,.mkv,.webm,.3gp,.m4v"
@@ -301,6 +294,11 @@ export default function TalentPortfolio() {
                     onChange={e => setFile((e.target.files && e.target.files[0]) || null)}
                     className="w-full text-blue-100"
                   />
+                  {file && (
+                    <div className="mt-2 text-sm text-blue-200">
+                      الملف المختار: {file.name} ({getFileSizeMB(file).toFixed(2)} MB)
+                    </div>
+                  )}
                 </>
               )}
             </div>
@@ -310,11 +308,11 @@ export default function TalentPortfolio() {
             {uploading && <Loader2 className="animate-spin" size={20} />} رفع العمل
           </button>
           
-          {/* شريط تقدم الضغط */}
-          {uploading && compressionProgress > 0 && compressionProgress < 100 && (
+          {/* شريط تقدم الضغط (للصور فقط) */}
+          {uploading && type === 'image' && compressionProgress > 0 && compressionProgress < 100 && (
             <div className="mt-4">
               <div className="flex justify-between text-sm text-blue-200 mb-2">
-                <span>جاري الضغط...</span>
+                <span>جاري ضغط الصور...</span>
                 <span>{compressionProgress}%</span>
               </div>
               <div className="w-full bg-blue-900/40 rounded-full h-2">

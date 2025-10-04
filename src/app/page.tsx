@@ -209,9 +209,9 @@ const CastingPlatform = () => {
   const heroSlide = defaultHeroSlides[0];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-950 via-blue-950 to-purple-950 text-white">
+    <div className="min-h-screen gradient-optimized text-white">
       {/* Navigation */}
-      <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-150 ${
+      <nav className={`fixed top-0 left-0 right-0 z-50 transition-colors ${
         scrolled 
           ? 'bg-indigo-950/95 border-b border-blue-400/20 shadow-lg' 
           : 'bg-transparent'
@@ -220,7 +220,7 @@ const CastingPlatform = () => {
           <div className="flex items-center justify-between h-20">
             {/* Logo */}
             <div className="flex items-center space-x-4 group">
-              <div className="w-16 h-16 relative transition-transform duration-150 group-hover:scale-105">
+              <div className="w-16 h-16 relative">
                 <Image src="/logo.png" alt="شعار طوق" fill className="object-contain" />
               </div>
               <div className="hidden sm:block">
@@ -236,40 +236,40 @@ const CastingPlatform = () => {
             {/* Desktop Navigation */}
             <div className="hidden lg:flex items-center gap-8">
               <a href="#home" className="relative py-2 px-1 group">
-                <span className="relative z-10 transition-colors duration-150 group-hover:text-orange-400">
+                <span className="relative z-10 transition-colors group-hover:text-orange-400">
                   {t('navigation.home')}
                 </span>
-                <div className="absolute bottom-0 left-0 w-0 h-0.5 bg-gradient-to-r from-orange-400 to-pink-500 transition-all duration-150 group-hover:w-full"></div>
+                <div className="absolute bottom-0 left-0 w-0 h-0.5 bg-orange-500 transition-all group-hover:w-full"></div>
               </a>
               <a href="#categories" className="relative py-2 px-1 group">
-                <span className="relative z-10 transition-colors duration-150 group-hover:text-orange-400">
+                <span className="relative z-10 transition-colors group-hover:text-orange-400">
                   {t('navigation.categories')}
                 </span>
-                <div className="absolute bottom-0 left-0 w-0 h-0.5 bg-gradient-to-r from-orange-400 to-pink-500 transition-all duration-150 group-hover:w-full"></div>
+                <div className="absolute bottom-0 left-0 w-0 h-0.5 bg-orange-500 transition-all group-hover:w-full"></div>
               </a>
               <a href="/talents" className="relative py-2 px-1 group">
-                <span className="relative z-10 transition-colors duration-150 group-hover:text-orange-400">
+                <span className="relative z-10 transition-colors group-hover:text-orange-400">
                   {t('navigation.talents')}
                 </span>
-                <div className="absolute bottom-0 left-0 w-0 h-0.5 bg-gradient-to-r from-orange-400 to-pink-500 transition-all duration-150 group-hover:w-full"></div>
+                <div className="absolute bottom-0 left-0 w-0 h-0.5 bg-orange-500 transition-all group-hover:w-full"></div>
               </a>
               <a href="#services" className="relative py-2 px-1 group">
-                <span className="relative z-10 transition-colors duration-150 group-hover:text-orange-400">
+                <span className="relative z-10 transition-colors group-hover:text-orange-400">
                   {t('navigation.services')}
                 </span>
-                <div className="absolute bottom-0 left-0 w-0 h-0.5 bg-gradient-to-r from-orange-400 to-pink-500 transition-all duration-150 group-hover:w-full"></div>
+                <div className="absolute bottom-0 left-0 w-0 h-0.5 bg-orange-500 transition-all group-hover:w-full"></div>
               </a>
               <a href="#about" className="relative py-2 px-1 group">
-                <span className="relative z-10 transition-colors duration-150 group-hover:text-orange-400">
+                <span className="relative z-10 transition-colors group-hover:text-orange-400">
                   {t('navigation.about')}
                 </span>
-                <div className="absolute bottom-0 left-0 w-0 h-0.5 bg-gradient-to-r from-orange-400 to-pink-500 transition-all duration-150 group-hover:w-full"></div>
+                <div className="absolute bottom-0 left-0 w-0 h-0.5 bg-orange-500 transition-all group-hover:w-full"></div>
               </a>
               <a href="#contact" className="relative py-2 px-1 group">
-                <span className="relative z-10 transition-colors duration-150 group-hover:text-orange-400">
+                <span className="relative z-10 transition-colors group-hover:text-orange-400">
                   {t('navigation.contact')}
                 </span>
-                <div className="absolute bottom-0 left-0 w-0 h-0.5 bg-gradient-to-r from-orange-400 to-pink-500 transition-all duration-150 group-hover:w-full"></div>
+                <div className="absolute bottom-0 left-0 w-0 h-0.5 bg-orange-500 transition-all group-hover:w-full"></div>
               </a>
             </div>
 
@@ -277,15 +277,15 @@ const CastingPlatform = () => {
             <div className="hidden md:flex items-center space-x-4">
               {!isMounted ? null : !user ? (
                 <>
-                  <a href="/login" className="px-6 py-2.5 bg-blue-600/20 hover:bg-blue-600/40 rounded-full transition-all duration-150 border border-blue-400/30 hover:border-blue-400/60">
+                  <a href="/login" className="px-6 py-2.5 bg-blue-600/20 hover:bg-blue-600/40 rounded-full transition-colors border border-blue-400/30 hover:border-blue-400/60">
                     {t('navigation.login')}
                   </a>
-                  <a href="/register" className="px-6 py-2.5 bg-gradient-to-r from-orange-400 to-pink-500 text-white rounded-full hover:from-orange-500 hover:to-pink-600 transition-all duration-150 shadow-lg">
+                  <a href="/register" className="px-6 py-2.5 bg-orange-500 text-white rounded-full hover:bg-orange-600 transition-colors shadow-lg">
                     {t('navigation.joinNow')}
                   </a>
                   <button 
                     onClick={toggleLang} 
-                    className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-blue-900/30 border border-blue-400/20 hover:bg-orange-400/20 hover:border-orange-400/40 transition-all duration-150 backdrop-blur-sm"
+                    className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-blue-900/30 border border-blue-400/20 hover:bg-orange-400/20 hover:border-orange-400/40 transition-colors backdrop-light"
                   >
                     <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <circle cx="12" cy="12" r="10"/>
@@ -325,32 +325,32 @@ const CastingPlatform = () => {
                       else if (user?.role === 'user') router.push('/user/notifications');
                       else router.push('/user/notifications');
                     }}
-                    className="relative p-3.5 rounded-xl bg-gradient-to-br from-blue-900/40 to-purple-900/40 border border-blue-400/30 hover:from-orange-500/30 hover:to-pink-500/30 hover:border-orange-400/50 transition-all duration-300 backdrop-blur-sm group shadow-lg hover:shadow-xl hover:scale-105"
+                    className="relative p-3.5 rounded-xl bg-blue-900/40 border border-blue-400/30 hover:bg-orange-500/30 hover:border-orange-400/50 transition-colors backdrop-light group shadow-lg"
                     title="الإشعارات"
                   >
                     {/* أيقونة الإشعارات الجديدة */}
-                    <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="text-white group-hover:text-orange-300 transition-all duration-300">
+                    <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="text-white group-hover:text-orange-300 transition-colors">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
                     </svg>
                     
                     {/* عداد الإشعارات المحسن */}
                     {notificationsCount > 0 && (
-                      <div className="absolute -top-3 -right-3 bg-gradient-to-r from-red-500 to-pink-500 text-white text-xs font-bold rounded-full w-7 h-7 flex items-center justify-center animate-bounce shadow-lg border-2 border-white/20">
+                      <div className="absolute -top-3 -right-3 bg-red-500 text-white text-xs font-bold rounded-full w-7 h-7 flex items-center justify-center shadow-lg border-2 border-white/20">
                         {notificationsCount > 99 ? '99+' : notificationsCount}
                       </div>
                     )}
                     
                     {/* تأثير التوهج */}
-                    <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-blue-400/20 to-purple-400/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 blur-xl"></div>
+                    <div className="absolute inset-0 rounded-xl bg-blue-400/20 opacity-0 group-hover:opacity-100 transition-opacity"></div>
                   </button>
                   
                   {/* أيقونة تغيير اللغة المحسنة */}
                   <button 
                     onClick={toggleLang} 
-                    className="flex items-center gap-3 px-5 py-3 rounded-xl bg-gradient-to-br from-blue-900/40 to-indigo-900/40 border border-blue-400/30 hover:from-orange-500/30 hover:to-pink-500/30 hover:border-orange-400/50 transition-all duration-300 backdrop-blur-sm group shadow-lg hover:shadow-xl hover:scale-105"
+                    className="flex items-center gap-3 px-5 py-3 rounded-xl bg-blue-900/40 border border-blue-400/30 hover:bg-orange-500/30 hover:border-orange-400/50 transition-colors backdrop-light group shadow-lg"
                   >
                     {/* أيقونة الكرة الأرضية الجديدة */}
-                    <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="text-white group-hover:text-orange-300 transition-all duration-300">
+                    <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="text-white group-hover:text-orange-300 transition-colors">
                       <circle cx="12" cy="12" r="10" strokeWidth="2"/>
                       <path d="M2 12h20" strokeWidth="2"/>
                       <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" strokeWidth="2"/>
@@ -366,9 +366,9 @@ const CastingPlatform = () => {
                             <path d="M17.5 7.5c0-.276-.224-.5-.5-.5h-7a.5.5 0 0 0 0 1h7c.276 0 .5-.224.5-.5Zm-2.5 2.5c0-.276-.224-.5-.5-.5h-2a.5.5 0 0 0 0 1h2c.276 0 .5-.224.5-.5Z" fill="#fff"/>
                             <circle cx="6" cy="8" r="1.2" fill="#fff"/>
                           </svg>
-                          <div className="absolute inset-0 rounded bg-gradient-to-br from-green-400/20 to-green-600/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                          <div className="absolute inset-0 rounded bg-green-400/20 opacity-0 group-hover:opacity-100 transition-opacity"></div>
                         </div>
-                        <span className="hidden sm:inline font-semibold text-white group-hover:text-orange-300 transition-colors duration-300">العربية</span>
+                        <span className="hidden sm:inline font-semibold text-white group-hover:text-orange-300 transition-colors">العربية</span>
                       </span>
                     ) : (
                       <span className="flex items-center gap-2">
@@ -380,14 +380,14 @@ const CastingPlatform = () => {
                             <rect x="8" width="1.33" height="16" fill="#fff"/>
                             <rect x="14.67" width="1.33" height="16" fill="#fff"/>
                           </svg>
-                          <div className="absolute inset-0 rounded bg-gradient-to-br from-blue-400/20 to-blue-600/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                          <div className="absolute inset-0 rounded bg-blue-400/20 opacity-0 group-hover:opacity-100 transition-opacity"></div>
                         </div>
-                        <span className="hidden sm:inline font-semibold text-white group-hover:text-orange-300 transition-colors duration-300">English</span>
+                        <span className="hidden sm:inline font-semibold text-white group-hover:text-orange-300 transition-colors">English</span>
                       </span>
                     )}
                     
                     {/* تأثير التوهج */}
-                    <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-blue-400/20 to-indigo-400/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 blur-xl"></div>
+                    <div className="absolute inset-0 rounded-xl bg-blue-400/20 opacity-0 group-hover:opacity-100 transition-opacity"></div>
                   </button>
                   <button onClick={handleAvatarClick} className="ml-2 focus:outline-none group">
                     {user.profileImageData ? (
@@ -460,7 +460,7 @@ const CastingPlatform = () => {
 
             {/* Mobile Menu Button */}
             <button 
-              className="md:hidden p-2 rounded-lg bg-blue-900/30 border border-blue-400/20 transition-all duration-150 hover:bg-blue-800/40"
+              className="md:hidden p-2 rounded-lg bg-blue-900/30 border border-blue-400/20 transition-colors hover:bg-blue-800/40"
               onClick={() => setIsMenuOpen(!isMenuOpen)}
             >
               {isMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
@@ -473,27 +473,27 @@ const CastingPlatform = () => {
       {isMenuOpen && (
         <>
           {/* Overlay خلفية داكنة تغطي الشاشة */}
-          <div className="fixed inset-0 z-30 bg-[#0f172a]/90 backdrop-blur-sm md:hidden" onClick={() => setIsMenuOpen(false)} />
+          <div className="fixed inset-0 z-30 bg-[#0f172a]/90 md:hidden" onClick={() => setIsMenuOpen(false)} />
           {/* القائمة نفسها */}
           <div className="md:hidden fixed top-20 left-0 right-0 z-40 bg-indigo-950/98 border-b border-blue-400/20 shadow-lg">
             <div className="container mx-auto px-4 py-6">
               <div className="flex flex-col space-y-4">
-                <Link href="/#home" className="py-3 px-4 rounded-xl hover:bg-gradient-to-r hover:from-orange-400/20 hover:to-pink-500/20 transition-all duration-150 text-center font-medium">
+                <Link href="/#home" className="py-3 px-4 rounded-xl hover:bg-orange-400/20 transition-colors text-center font-medium">
                   {t('navigation.home')}
                 </Link>
-                <Link href="/#categories" className="py-3 px-4 rounded-xl hover:bg-gradient-to-r hover:from-orange-400/20 hover:to-pink-500/20 transition-all duration-150 text-center font-medium">
+                <Link href="/#categories" className="py-3 px-4 rounded-xl hover:bg-orange-400/20 transition-colors text-center font-medium">
                   {t('navigation.categories')}
                 </Link>
-                <Link href="/talents" className="py-3 px-4 rounded-xl hover:bg-gradient-to-r hover:from-orange-400/20 hover:to-pink-500/20 transition-all duration-150 text-center font-medium">
+                <Link href="/talents" className="py-3 px-4 rounded-xl hover:bg-orange-400/20 transition-colors text-center font-medium">
                   {t('navigation.talents')}
                 </Link>
-                <Link href="/#services" className="py-3 px-4 rounded-xl hover:bg-gradient-to-r hover:from-orange-400/20 hover:to-pink-500/20 transition-all duration-150 text-center font-medium">
+                <Link href="/#services" className="py-3 px-4 rounded-xl hover:bg-orange-400/20 transition-colors text-center font-medium">
                   {t('navigation.services')}
                 </Link>
-                <Link href="/#about" className="py-3 px-4 rounded-xl hover:bg-gradient-to-r hover:from-orange-400/20 hover:to-pink-500/20 transition-all duration-150 text-center font-medium">
+                <Link href="/#about" className="py-3 px-4 rounded-xl hover:bg-orange-400/20 transition-colors text-center font-medium">
                   {t('navigation.about')}
                 </Link>
-                <Link href="/#contact" className="py-3 px-4 rounded-xl hover:bg-gradient-to-r hover:from-orange-400/20 hover:to-pink-500/20 transition-all duration-150 text-center font-medium">
+                <Link href="/#contact" className="py-3 px-4 rounded-xl hover:bg-orange-400/20 transition-colors text-center font-medium">
                   {t('navigation.contact')}
                 </Link>
                 {/* عناصر خاصة بالمستخدم المسجل فقط */}
@@ -501,7 +501,7 @@ const CastingPlatform = () => {
                   <div className="flex flex-col space-y-3 pt-4 border-t border-blue-400/20">
                     {/* أيقونة الإشعارات للموبايل المحسنة */}
                     <button
-                      className="relative py-4 bg-gradient-to-r from-green-600/40 to-emerald-600/40 rounded-2xl border border-green-400/40 text-center font-medium hover:from-green-500/60 hover:to-emerald-500/60 hover:border-green-300/60 transition-all duration-300 text-white shadow-lg hover:shadow-xl group"
+                      className="relative py-4 bg-green-600/40 rounded-2xl border border-green-400/40 text-center font-medium hover:bg-green-500/60 hover:border-green-300/60 transition-colors text-white shadow-lg group"
                       onClick={() => { 
                         setIsMenuOpen(false); 
                         if (user?.role === 'admin') router.push('/admin');
@@ -512,30 +512,30 @@ const CastingPlatform = () => {
                     >
                       <span className="flex items-center justify-center gap-3">
                         {/* أيقونة الإشعارات الجديدة */}
-                        <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="text-white group-hover:text-green-200 transition-colors duration-300">
+                        <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="text-white group-hover:text-green-200 transition-colors">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
                         </svg>
                         <span className="font-semibold">الإشعارات</span>
                         
                         {/* عداد الإشعارات المحسن */}
                         {notificationsCount > 0 && (
-                          <span className="bg-gradient-to-r from-red-500 to-pink-500 text-white text-xs font-bold rounded-full px-3 py-1.5 shadow-lg border-2 border-white/20 animate-pulse">
+                          <span className="bg-red-500 text-white text-xs font-bold rounded-full px-3 py-1.5 shadow-lg border-2 border-white/20">
                             {notificationsCount > 99 ? '99+' : notificationsCount}
                           </span>
                         )}
                       </span>
                       
                       {/* تأثير التوهج */}
-                      <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-green-400/20 to-emerald-400/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 blur-xl"></div>
+                      <div className="absolute inset-0 rounded-2xl bg-green-400/20 opacity-0 group-hover:opacity-100 transition-opacity"></div>
                     </button>
                     <button
-                      className="py-3 bg-blue-600/30 rounded-xl border border-blue-400/30 text-center font-medium hover:bg-blue-600/50 transition-all duration-150 text-white"
+                      className="py-3 bg-blue-600/30 rounded-xl border border-blue-400/30 text-center font-medium hover:bg-blue-600/50 transition-colors text-white"
                       onClick={() => { setIsMenuOpen(false); router.push(dashboardLink); }}
                     >
                       لوحة التحكم
                     </button>
                     <button
-                      className="py-3 bg-gradient-to-r from-red-500 to-orange-400 text-white rounded-xl text-center font-medium hover:from-red-600 hover:to-orange-500 transition-all duration-150"
+                      className="py-3 bg-red-500 text-white rounded-xl text-center font-medium hover:bg-red-600 transition-colors"
                       onClick={() => { setIsMenuOpen(false); handleLogout(); }}
                     >
                       تسجيل خروج
@@ -543,10 +543,10 @@ const CastingPlatform = () => {
                   </div>
                 ) : (
                   <div className="flex flex-col space-y-3 pt-4 border-t border-blue-400/20">
-                    <Link href="/login" className="py-3 bg-blue-600/30 rounded-xl border border-blue-400/30 text-center font-medium hover:bg-blue-600/50 transition-all duration-150">
+                    <Link href="/login" className="py-3 bg-blue-600/30 rounded-xl border border-blue-400/30 text-center font-medium hover:bg-blue-600/50 transition-colors">
                       {t('navigation.login')}
                     </Link>
-                    <Link href="/register" className="py-3 bg-gradient-to-r from-orange-400 to-pink-500 text-white rounded-xl text-center font-medium hover:from-orange-500 hover:to-pink-600 transition-all duration-150">
+                    <Link href="/register" className="py-3 bg-orange-500 text-white rounded-xl text-center font-medium hover:bg-orange-600 transition-colors">
                       {t('navigation.joinNow')}
                     </Link>
                   </div>
@@ -570,11 +570,11 @@ const CastingPlatform = () => {
             <div className="space-y-4">
               <button 
                 onClick={() => selectLanguage('ar')}
-                className={`w-full flex items-center gap-4 p-5 rounded-xl border-2 transition-all duration-150 ${
-                  lang === 'ar' 
-                    ? 'border-orange-400 bg-gradient-to-r from-orange-400/20 to-pink-500/20 text-white shadow-lg' 
-                    : 'border-blue-400/30 bg-blue-900/30 text-blue-100 hover:border-orange-400/50 hover:bg-blue-800/40'
-                }`}
+              className={`w-full flex items-center gap-4 p-5 rounded-xl border-2 transition-colors ${
+                lang === 'ar' 
+                  ? 'border-orange-400 bg-orange-400/20 text-white shadow-lg' 
+                  : 'border-blue-400/30 bg-blue-900/30 text-blue-100 hover:border-orange-400/50 hover:bg-blue-800/40'
+              }`}
               >
                 <svg width="32" height="22" viewBox="0 0 24 16" fill="none" xmlns="http://www.w3.org/2000/svg">
                   <rect width="24" height="16" rx="3" fill="#1A9F29"/>
@@ -586,11 +586,11 @@ const CastingPlatform = () => {
               </button>
               <button 
                 onClick={() => selectLanguage('en')}
-                className={`w-full flex items-center gap-4 p-5 rounded-xl border-2 transition-all duration-150 ${
-                  lang === 'en' 
-                    ? 'border-orange-400 bg-gradient-to-r from-orange-400/20 to-pink-500/20 text-white shadow-lg' 
-                    : 'border-blue-400/30 bg-blue-900/30 text-blue-100 hover:border-orange-400/50 hover:bg-blue-800/40'
-                }`}
+              className={`w-full flex items-center gap-4 p-5 rounded-xl border-2 transition-colors ${
+                lang === 'en' 
+                  ? 'border-orange-400 bg-orange-400/20 text-white shadow-lg' 
+                  : 'border-blue-400/30 bg-blue-900/30 text-blue-100 hover:border-orange-400/50 hover:bg-blue-800/40'
+              }`}
               >
                 <svg width="32" height="22" viewBox="0 0 24 16" fill="none" xmlns="http://www.w3.org/2000/svg">
                   <rect width="24" height="16" rx="3" fill="#00247D"/>
@@ -605,7 +605,7 @@ const CastingPlatform = () => {
             </div>
             <button 
               onClick={() => setShowLangModal(false)}
-              className="w-full mt-8 py-4 bg-blue-900/40 border border-blue-400/20 text-blue-200 rounded-xl hover:bg-blue-800/60 transition-all duration-150 font-medium"
+              className="w-full mt-8 py-4 bg-blue-900/40 border border-blue-400/20 text-blue-200 rounded-xl hover:bg-blue-800/60 transition-colors font-medium"
             >
               {t('language.cancel')}
             </button>
@@ -697,12 +697,12 @@ const CastingPlatform = () => {
       </section>
 
       {/* Stats Section */}
-      <section className="py-20 bg-gradient-to-r from-indigo-950/80 to-purple-950/80 backdrop-blur-sm">
+      <section className="py-20 bg-indigo-950/80 backdrop-light">
         <div className="container mx-auto px-6 sm:px-8 lg:px-12">
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
             {stats.map((stat, index) => (
               <div key={index} className="text-center group">
-                <div className="bg-white/5 rounded-xl p-6 border border-white/10 hover:bg-white/10 transition-all duration-150 group-hover:scale-105">
+                <div className="bg-white/5 rounded-xl p-6 border border-white/10 hover:bg-white/10 transition-colors">
                   <div className="text-4xl lg:text-5xl font-bold bg-gradient-to-r from-orange-400 via-pink-400 to-blue-400 bg-clip-text text-transparent mb-4">
                     {stat.number}
                   </div>
@@ -733,16 +733,16 @@ const CastingPlatform = () => {
                   href={`/categories/${cat.id}?name=${encodeURIComponent(cat.name)}`} 
                   className="group"
                 >
-                  <div className="bg-white/5 rounded-xl p-6 border border-white/10 hover:bg-white/10 transition-all duration-150 group-hover:scale-105">
+                  <div className="bg-white/5 rounded-xl p-6 border border-white/10 hover:bg-white/10 transition-colors">
                     <div className="flex flex-col items-center text-center">
-                                              <div className="w-20 h-20 mb-4 rounded-xl overflow-hidden border border-white/20 group-hover:border-orange-400/50 transition-colors duration-150">
+                                              <div className="w-20 h-20 mb-4 rounded-xl overflow-hidden border border-white/20 group-hover:border-orange-400/50 transition-colors">
                           {cat.imageData ? (
                             <Image 
                               src={`data:image/png;base64,${cat.imageData}`} 
                               alt={cat.name} 
                               width={80} 
                               height={80} 
-                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-150" 
+                              className="w-full h-full object-cover" 
                             />
                           ) : cat.imageUrl ? (
                             <Image 
@@ -750,15 +750,15 @@ const CastingPlatform = () => {
                               alt={cat.name} 
                               width={80} 
                               height={80} 
-                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-150" 
+                              className="w-full h-full object-cover" 
                             />
                           ) : (
-                          <div className="w-full h-full bg-gradient-to-br from-blue-500/20 to-purple-500/20 flex items-center justify-center text-blue-200">
+                          <div className="w-full h-full bg-blue-500/20 flex items-center justify-center text-blue-200">
                             <span className="text-xs">{t('categories.noImage')}</span>
                           </div>
                         )}
                       </div>
-                      <h3 className="font-bold text-lg group-hover:text-orange-400 transition-colors duration-150">
+                      <h3 className="font-bold text-lg group-hover:text-orange-400 transition-colors">
                         {cat.name}
                       </h3>
                     </div>
@@ -771,7 +771,7 @@ const CastingPlatform = () => {
       )}
 
       {/* Features Section */}
-      <section className="py-24 bg-gradient-to-br from-indigo-950/60 to-purple-950/60">
+      <section className="py-24 bg-indigo-950/60">
         <div className="container mx-auto px-6 sm:px-8 lg:px-12">
           <div className="text-center mb-20">
             <h2 className="text-4xl lg:text-5xl font-bold mb-6">
@@ -785,11 +785,11 @@ const CastingPlatform = () => {
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
             {features.map((feature, index) => (
               <div key={index} className="group">
-                <div className="bg-white/5 rounded-xl p-6 border border-white/10 hover:bg-white/10 transition-all duration-150 group-hover:scale-105 h-full">
-                  <div className="text-orange-400 mb-6 group-hover:scale-105 transition-transform duration-150">
+                <div className="bg-white/5 rounded-xl p-6 border border-white/10 hover:bg-white/10 transition-colors h-full">
+                  <div className="text-orange-400 mb-6">
                     {feature.icon}
                   </div>
-                  <h3 className="text-xl font-bold mb-4 group-hover:text-orange-400 transition-colors duration-150">
+                  <h3 className="text-xl font-bold mb-4 group-hover:text-orange-400 transition-colors">
                     {feature.title}
                   </h3>
                   <p className="text-blue-100/80 leading-relaxed">
@@ -817,11 +817,11 @@ const CastingPlatform = () => {
           <div className="grid lg:grid-cols-3 gap-12">
             <div className="group text-center">
               <div className="relative mb-8">
-                <div className="w-24 h-24 bg-gradient-to-r from-orange-400 to-pink-500 rounded-xl flex items-center justify-center text-white font-bold text-3xl mx-auto shadow-lg group-hover:scale-105 transition-all duration-150">
+                <div className="w-24 h-24 bg-orange-500 rounded-xl flex items-center justify-center text-white font-bold text-3xl mx-auto shadow-lg">
                   1
                 </div>
               </div>
-              <h3 className="text-2xl font-bold mb-6 group-hover:text-orange-400 transition-colors duration-150">
+              <h3 className="text-2xl font-bold mb-6 group-hover:text-orange-400 transition-colors">
                 {t('howItWorks.step1.title')}
               </h3>
               <p className="text-blue-100/80 text-lg leading-relaxed">
@@ -831,11 +831,11 @@ const CastingPlatform = () => {
 
             <div className="group text-center">
               <div className="relative mb-8">
-                <div className="w-24 h-24 bg-gradient-to-r from-pink-400 to-blue-400 rounded-xl flex items-center justify-center text-white font-bold text-3xl mx-auto shadow-lg group-hover:scale-105 transition-all duration-150">
+                <div className="w-24 h-24 bg-pink-500 rounded-xl flex items-center justify-center text-white font-bold text-3xl mx-auto shadow-lg">
                   2
                 </div>
               </div>
-              <h3 className="text-2xl font-bold mb-6 group-hover:text-pink-400 transition-colors duration-150">
+              <h3 className="text-2xl font-bold mb-6 group-hover:text-pink-400 transition-colors">
                 {t('howItWorks.step2.title')}
               </h3>
               <p className="text-blue-100/80 text-lg leading-relaxed">
@@ -845,11 +845,11 @@ const CastingPlatform = () => {
 
             <div className="group text-center">
               <div className="relative mb-8">
-                <div className="w-24 h-24 bg-gradient-to-r from-blue-400 to-purple-400 rounded-xl flex items-center justify-center text-white font-bold text-3xl mx-auto shadow-lg group-hover:scale-105 transition-all duration-150">
+                <div className="w-24 h-24 bg-blue-500 rounded-xl flex items-center justify-center text-white font-bold text-3xl mx-auto shadow-lg">
                   3
                 </div>
               </div>
-              <h3 className="text-2xl font-bold mb-6 group-hover:text-blue-400 transition-colors duration-150">
+              <h3 className="text-2xl font-bold mb-6 group-hover:text-blue-400 transition-colors">
                 {t('howItWorks.step3.title')}
               </h3>
               <p className="text-blue-100/80 text-lg leading-relaxed">
@@ -861,7 +861,7 @@ const CastingPlatform = () => {
       </section>
 
       {/* Testimonials Section */}
-      <section className="py-24 bg-gradient-to-br from-indigo-950/60 to-purple-950/60">
+      <section className="py-24 bg-indigo-950/60">
         <div className="container mx-auto px-6 sm:px-8 lg:px-12">
           <div className="text-center mb-20">
             <h2 className="text-4xl lg:text-5xl font-bold mb-6 bg-gradient-to-r from-orange-400 via-pink-400 to-blue-400 bg-clip-text text-transparent">
@@ -875,7 +875,7 @@ const CastingPlatform = () => {
           <div className="grid lg:grid-cols-3 gap-8">
             {testimonials.map((testimonial, index) => (
               <div key={index} className="group">
-                <div className="bg-white/5 rounded-xl p-6 border border-white/10 hover:bg-white/10 transition-all duration-150 group-hover:scale-105 h-full">
+                <div className="bg-white/5 rounded-xl p-6 border border-white/10 hover:bg-white/10 transition-colors h-full">
                   <div className="flex items-center mb-6">
                     {[...Array(testimonial.rating)].map((_, i) => (
                       <Star key={i} className="w-5 h-5 text-orange-400 fill-current" />
@@ -885,11 +885,11 @@ const CastingPlatform = () => {
                     "{testimonial.text}"
                   </blockquote>
                   <div className="flex items-center">
-                    <div className="w-16 h-16 bg-gradient-to-r from-orange-400 to-pink-500 rounded-xl flex items-center justify-center text-white font-bold text-xl ml-4 shadow-lg">
+                    <div className="w-16 h-16 bg-orange-500 rounded-xl flex items-center justify-center text-white font-bold text-xl ml-4 shadow-lg">
                       {testimonial.name.charAt(0)}
                     </div>
                     <div>
-                      <div className="font-bold text-lg group-hover:text-orange-400 transition-colors duration-150">
+                      <div className="font-bold text-lg group-hover:text-orange-400 transition-colors">
                         {testimonial.name}
                       </div>
                       <div className="text-blue-200/80">
@@ -905,7 +905,7 @@ const CastingPlatform = () => {
       </section>
 
       {/* CTA Section */}
-      <section className="py-24 bg-gradient-to-r from-orange-400 via-pink-500 to-purple-600 text-white relative overflow-hidden">
+      <section className="py-24 bg-orange-500 text-white relative overflow-hidden">
         <div className="absolute inset-0 bg-black/20"></div>
         <div className="container mx-auto px-6 sm:px-8 lg:px-12 text-center relative z-10">
           <div className="max-w-4xl mx-auto">
@@ -916,13 +916,13 @@ const CastingPlatform = () => {
               {t('cta.ready.description')}
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
-              <Link href="/register" className="group px-10 py-5 bg-white text-orange-500 font-bold rounded-xl hover:bg-gray-100 transition-all duration-150 shadow-lg text-lg inline-block">
+              <Link href="/register" className="group px-10 py-5 bg-white text-orange-500 font-bold rounded-xl hover:bg-gray-100 transition-colors shadow-lg text-lg inline-block">
                 <span className="flex items-center gap-2">
                   {t('cta.startAsTalent')}
-                  <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform duration-150" />
+                  <ArrowRight className="w-5 h-5" />
                 </span>
               </Link>
-              <button className="px-10 py-5 bg-white/10 border-2 border-white/30 rounded-xl hover:bg-white/20 transition-all duration-150 font-bold text-lg">
+              <button className="px-10 py-5 bg-white/10 border-2 border-white/30 rounded-xl hover:bg-white/20 transition-colors font-bold text-lg">
                 تعرف على المزيد
               </button>
             </div>
@@ -947,12 +947,12 @@ const CastingPlatform = () => {
           
           <div className="grid lg:grid-cols-2 gap-8 max-w-6xl mx-auto">
             <div className="group">
-              <div className="flex items-start gap-6 bg-white/5 rounded-xl p-6 border border-white/10 hover:bg-white/10 transition-all duration-150 group-hover:scale-105">
-                <div className="text-orange-400 group-hover:scale-105 transition-transform duration-150">
+              <div className="flex items-start gap-6 bg-white/5 rounded-xl p-6 border border-white/10 hover:bg-white/10 transition-colors">
+                <div className="text-orange-400">
                   <Search size={48} />
                 </div>
                 <div>
-                  <h3 className="text-2xl font-bold mb-4 group-hover:text-orange-400 transition-colors duration-150">
+                  <h3 className="text-2xl font-bold mb-4 group-hover:text-orange-400 transition-colors">
                     {t('services.smartSearch.title')}
                   </h3>
                   <p className="text-blue-100/80 text-lg leading-relaxed">
@@ -963,12 +963,12 @@ const CastingPlatform = () => {
             </div>
 
             <div className="group">
-              <div className="flex items-start gap-6 bg-white/5 rounded-xl p-6 border border-white/10 hover:bg-white/10 transition-all duration-150 group-hover:scale-105">
-                <div className="text-pink-400 group-hover:scale-105 transition-transform duration-150">
+              <div className="flex items-start gap-6 bg-white/5 rounded-xl p-6 border border-white/10 hover:bg-white/10 transition-colors">
+                <div className="text-pink-400">
                   <Users size={48} />
                 </div>
                 <div>
-                  <h3 className="text-2xl font-bold mb-4 group-hover:text-pink-400 transition-colors duration-150">
+                  <h3 className="text-2xl font-bold mb-4 group-hover:text-pink-400 transition-colors">
                     {t('services.manageTalents.title')}
                   </h3>
                   <p className="text-blue-100/80 text-lg leading-relaxed">
@@ -979,12 +979,12 @@ const CastingPlatform = () => {
             </div>
 
             <div className="group">
-              <div className="flex items-start gap-6 bg-white/5 rounded-xl p-6 border border-white/10 hover:bg-white/10 transition-all duration-150 group-hover:scale-105">
-                <div className="text-blue-400 group-hover:scale-105 transition-transform duration-150">
+              <div className="flex items-start gap-6 bg-white/5 rounded-xl p-6 border border-white/10 hover:bg-white/10 transition-colors">
+                <div className="text-blue-400">
                   <Calendar size={48} />
                 </div>
                 <div>
-                  <h3 className="text-2xl font-bold mb-4 group-hover:text-blue-400 transition-colors duration-150">
+                  <h3 className="text-2xl font-bold mb-4 group-hover:text-blue-400 transition-colors">
                     {t('services.scheduleInterviews.title')}
                   </h3>
                   <p className="text-blue-100/80 text-lg leading-relaxed">
@@ -995,12 +995,12 @@ const CastingPlatform = () => {
             </div>
 
             <div className="group">
-              <div className="flex items-start gap-6 bg-white/5 rounded-xl p-6 border border-white/10 hover:bg-white/10 transition-all duration-150 group-hover:scale-105">
-                <div className="text-green-400 group-hover:scale-105 transition-transform duration-150">
+              <div className="flex items-start gap-6 bg-white/5 rounded-xl p-6 border border-white/10 hover:bg-white/10 transition-colors">
+                <div className="text-green-400">
                   <Shield size={48} />
                 </div>
                 <div>
-                  <h3 className="text-2xl font-bold mb-4 group-hover:text-green-400 transition-colors duration-150">
+                  <h3 className="text-2xl font-bold mb-4 group-hover:text-green-400 transition-colors">
                     {t('services.electronicPayment.title')}
                   </h3>
                   <p className="text-blue-100/80 text-lg leading-relaxed">
@@ -1011,12 +1011,12 @@ const CastingPlatform = () => {
             </div>
 
             <div className="group">
-              <div className="flex items-start gap-6 bg-white/5 rounded-xl p-6 border border-white/10 hover:bg-white/10 transition-all duration-150 group-hover:scale-105">
-                <div className="text-purple-400 group-hover:scale-105 transition-transform duration-150">
+              <div className="flex items-start gap-6 bg-white/5 rounded-xl p-6 border border-white/10 hover:bg-white/10 transition-colors">
+                <div className="text-purple-400">
                   <Play size={48} />
                 </div>
                 <div>
-                  <h3 className="text-2xl font-bold mb-4 group-hover:text-purple-400 transition-colors duration-150">
+                  <h3 className="text-2xl font-bold mb-4 group-hover:text-purple-400 transition-colors">
                     {t('services.reportingTracking.title')}
                   </h3>
                   <p className="text-blue-100/80 text-lg leading-relaxed">
@@ -1027,12 +1027,12 @@ const CastingPlatform = () => {
             </div>
 
             <div className="group">
-              <div className="flex items-start gap-6 bg-white/5 rounded-xl p-6 border border-white/10 hover:bg-white/10 transition-all duration-150 group-hover:scale-105">
-                <div className="text-indigo-400 group-hover:scale-105 transition-transform duration-150">
+              <div className="flex items-start gap-6 bg-white/5 rounded-xl p-6 border border-white/10 hover:bg-white/10 transition-colors">
+                <div className="text-indigo-400">
                   <ChevronRight size={48} />
                 </div>
                 <div>
-                  <h3 className="text-2xl font-bold mb-4 group-hover:text-indigo-400 transition-colors duration-150">
+                  <h3 className="text-2xl font-bold mb-4 group-hover:text-indigo-400 transition-colors">
                     {t('services.invitationsCommunication.title')}
                   </h3>
                   <p className="text-blue-100/80 text-lg leading-relaxed">
@@ -1046,7 +1046,7 @@ const CastingPlatform = () => {
       </section>
 
       {/* About Section */}
-      <section id="about" className="py-24 bg-gradient-to-br from-indigo-950/60 to-purple-950/60">
+      <section id="about" className="py-24 bg-indigo-950/60">
         <div className="container mx-auto px-6 sm:px-8 lg:px-12">
           <div className="max-w-4xl mx-auto text-center mb-16">
             <h2 className="text-4xl lg:text-5xl font-bold mb-6 bg-gradient-to-r from-orange-400 via-pink-400 to-blue-400 bg-clip-text text-transparent">
@@ -1059,8 +1059,8 @@ const CastingPlatform = () => {
           
           <div className="grid lg:grid-cols-3 gap-8 mb-16">
             <div className="group">
-                              <div className="bg-white/5 rounded-xl p-6 border border-white/10 hover:bg-white/10 transition-all duration-150 group-hover:scale-105 h-full text-center">
-                  <div className="w-16 h-16 bg-gradient-to-r from-orange-400 to-pink-500 rounded-xl flex items-center justify-center mx-auto mb-6 group-hover:scale-105 transition-transform duration-150">
+                              <div className="bg-white/5 rounded-xl p-6 border border-white/10 hover:bg-white/10 transition-colors h-full text-center">
+                  <div className="w-16 h-16 bg-orange-500 rounded-xl flex items-center justify-center mx-auto mb-6">
                     <span className="text-2xl">🎯</span>
                   </div>
                   <h3 className="text-2xl font-bold mb-4 text-orange-400">
@@ -1073,8 +1073,8 @@ const CastingPlatform = () => {
             </div>
 
             <div className="group">
-              <div className="bg-white/5 rounded-xl p-6 border border-white/10 hover:bg-white/10 transition-all duration-150 group-hover:scale-105 h-full text-center">
-                <div className="w-16 h-16 bg-gradient-to-r from-pink-400 to-purple-500 rounded-xl flex items-center justify-center mx-auto mb-6 group-hover:scale-105 transition-transform duration-150">
+              <div className="bg-white/5 rounded-xl p-6 border border-white/10 hover:bg-white/10 transition-colors h-full text-center">
+                <div className="w-16 h-16 bg-pink-500 rounded-xl flex items-center justify-center mx-auto mb-6">
                   <span className="text-2xl">🚀</span>
                 </div>
                 <h3 className="text-2xl font-bold mb-4 text-pink-400">
@@ -1087,8 +1087,8 @@ const CastingPlatform = () => {
             </div>
 
             <div className="group">
-              <div className="bg-white/5 rounded-xl p-6 border border-white/10 hover:bg-white/10 transition-all duration-150 group-hover:scale-105 h-full text-center">
-                <div className="w-16 h-16 bg-gradient-to-r from-blue-400 to-indigo-500 rounded-xl flex items-center justify-center mx-auto mb-6 group-hover:scale-105 transition-transform duration-150">
+              <div className="bg-white/5 rounded-xl p-6 border border-white/10 hover:bg-white/10 transition-colors h-full text-center">
+                <div className="w-16 h-16 bg-blue-500 rounded-xl flex items-center justify-center mx-auto mb-6">
                   <span className="text-2xl">💎</span>
                 </div>
                 <h3 className="text-2xl font-bold mb-4 text-blue-400">
@@ -1115,7 +1115,7 @@ const CastingPlatform = () => {
       </section>
 
       {/* Contact Section */}
-      <section id="contact" className="py-20 bg-gradient-to-br from-indigo-900 via-blue-900 to-purple-900 text-white">
+      <section id="contact" className="py-20 gradient-optimized text-white">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="max-w-2xl mx-auto text-center mb-12">
             <h2 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-orange-400 via-pink-400 to-blue-400 bg-clip-text text-transparent">{t('contact.title')}</h2>
@@ -1152,7 +1152,7 @@ const CastingPlatform = () => {
                 <label className="block mb-2 text-blue-100">{t('contact.form.message')}</label>
                 <textarea name="message" className="w-full px-4 py-3 rounded-lg bg-blue-900/40 border border-blue-400/20 text-white focus:outline-none focus:ring-2 focus:ring-orange-400 placeholder:text-blue-200" rows={4} placeholder={t('contact.form.messagePlaceholder')} required />
               </div>
-              <button type="submit" disabled={contactStatus==='loading'} className="w-full py-3 bg-gradient-to-r from-orange-400 to-pink-500 rounded-lg font-bold text-lg text-white hover:from-orange-500 hover:to-pink-600 transition-all disabled:opacity-60">{contactStatus==='loading' ? 'جارٍ الإرسال...' : t('contact.form.submit')}</button>
+              <button type="submit" disabled={contactStatus==='loading'} className="w-full py-3 bg-orange-500 rounded-lg font-bold text-lg text-white hover:bg-orange-600 transition-colors disabled:opacity-60">{contactStatus==='loading' ? 'جارٍ الإرسال...' : t('contact.form.submit')}</button>
               {contactStatus==='success' && (
                 <div className="mt-3 p-3 rounded-lg bg-green-500/15 border border-green-400/30 text-green-200">
                   تم إرسال استفسارك بنجاح، سنعود إليك قريباً. شكراً لتواصلك معنا.
