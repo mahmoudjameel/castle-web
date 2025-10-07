@@ -2,8 +2,17 @@
 import React, { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
+import { Suspense } from "react";
 
 export default function UserChats() {
+  return (
+    <Suspense fallback={<div className="text-blue-100 text-center">جاري التحميل...</div>}>
+      <UserChatsContent />
+    </Suspense>
+  );
+}
+
+function UserChatsContent() {
   const [user, setUser] = useState<Record<string, unknown> | null>(null);
   const [conversations, setConversations] = useState<Record<string, unknown>[]>([]);
   const [loading, setLoading] = useState(true);

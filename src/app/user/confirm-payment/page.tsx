@@ -1,8 +1,17 @@
 "use client";
 import React, { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
+import { Suspense } from "react";
 
 export default function ConfirmPayment() {
+  return (
+    <Suspense fallback={<div className="text-blue-100 text-center">جاري التحميل...</div>}>
+      <ConfirmPaymentContent />
+    </Suspense>
+  );
+}
+
+function ConfirmPaymentContent() {
   const sp = useSearchParams();
   const baseAmount = Number(sp.get('amount') || '0');
   const [service, setService] = useState(sp.get('service') || '');
