@@ -1,16 +1,28 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Mail, ArrowLeft, ArrowRight, CheckCircle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 
 const ForgotPassword = () => {
+  const t = useTranslations();
+  const [lang, setLang] = useState<'ar' | 'en'>('ar');
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
   const [messageType, setMessageType] = useState<'success' | 'error'>('error');
   const [focusedField, setFocusedField] = useState('');
   const router = useRouter();
+
+  useEffect(() => {
+    try {
+      const storedLang = typeof window !== 'undefined' ? localStorage.getItem('lang') : null;
+      setLang((storedLang === 'en' || storedLang === 'ar') ? storedLang : 'ar');
+    } catch {
+      setLang('ar');
+    }
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -28,14 +40,14 @@ const ForgotPassword = () => {
       
       if (res.ok) {
         setMessageType('success');
-        setMessage(data.message);
+        setMessage(data.message || (lang === 'ar' ? 'تم إرسال رابط إعادة التعيين إلى بريدك الإلكتروني.' : 'Password reset link sent to your email.'));
       } else {
         setMessageType('error');
-        setMessage(data.message || 'حدث خطأ أثناء إرسال الطلب.');
+        setMessage(data.message || (lang === 'ar' ? 'حدث خطأ أثناء إرسال الطلب.' : 'An error occurred while sending the request.'));
       }
     } catch (err) {
       setMessageType('error');
-      setMessage('تعذر الاتصال بالخادم.');
+      setMessage(lang === 'ar' ? 'تعذر الاتصال بالخادم.' : 'Unable to reach the server.');
     }
     
     setLoading(false);
@@ -60,9 +72,9 @@ const ForgotPassword = () => {
                 <Mail className="w-8 h-8 text-white transform -rotate-12" />
               </div>
               <h2 className="text-3xl font-bold mb-2 bg-gradient-to-r from-orange-400 via-pink-400 to-blue-400 bg-clip-text text-transparent">
-                نسيان كلمة المرور
+                {lang === 'ar' ? 'نسيان كلمة المرور' : 'Forgot Password'}
               </h2>
-              <p className="text-blue-200/80 text-sm">أدخل بريدك الإلكتروني لإعادة تعيين كلمة المرور</p>
+              <p className="text-blue-200/80 text-sm">{lang === 'ar' ? 'أدخل بريدك الإلكتروني لإعادة تعيين كلمة المرور' : 'Enter your email to reset your password'}</p>
             </div>
 
             {/* النموذج */}
@@ -75,7 +87,7 @@ const ForgotPassword = () => {
                       ? 'top-2 text-xs text-orange-400' 
                       : 'top-4 text-base text-blue-200/60'
                   }`}>
-                    البريد الإلكتروني
+                    {lang === 'ar' ? 'البريد الإلكتروني' : 'Email'}
                   </label>
                   <div className="relative">
                     <Mail className={`absolute left-4 top-4 w-5 h-5 transition-colors duration-200 ${
@@ -89,6 +101,8 @@ const ForgotPassword = () => {
                       onBlur={() => setFocusedField('')}
                       className="w-full pl-12 pr-4 pt-6 pb-3 rounded-xl bg-white/5 border border-white/10 text-white focus:outline-none focus:ring-2 focus:ring-orange-400/50 focus:border-orange-400/50 transition-all duration-200"
                       required
+                      dir="ltr"
+                      style={{ textAlign: 'left' }}
                     />
                   </div>
                 </div>
@@ -103,7 +117,7 @@ const ForgotPassword = () => {
                     <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
                   ) : (
                     <>
-                      <span>إرسال رابط إعادة التعيين</span>
+                      <span>{lang === 'ar' ? 'إرسال رابط إعادة التعيين' : 'Send reset link'}</span>
                       <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform duration-200" />
                     </>
                   )}
@@ -129,7 +143,7 @@ const ForgotPassword = () => {
                   className="flex items-center justify-center gap-2 text-blue-200/80 hover:text-orange-400 transition-colors duration-200"
                 >
                   <ArrowLeft className="w-4 h-4" />
-                  العودة لتسجيل الدخول
+                  {lang === 'ar' ? 'العودة لتسجيل الدخول' : 'Back to Login'}
                 </button>
               </div>
             </div>

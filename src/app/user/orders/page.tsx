@@ -133,6 +133,7 @@ export default function UserOrdersPage() {
                   <span className="text-blue-200">الحالة:</span>
                   <span className="font-bold text-orange-400">{
                     (() => {
+                      if (order.status === 'pending') return 'معلق';
                       if (order.status === 'new') return 'جديد';
                       if (order.status === 'in_progress') return 'قيد التنفيذ';
                       if (order.status === 'completed') return 'مكتمل';

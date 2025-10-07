@@ -1,12 +1,13 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Eye, EyeOff, Mail, Lock, Phone, ArrowRight } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 
 const Login = () => {
   const t = useTranslations();
+  const [lang, setLang] = useState<'ar' | 'en'>('ar');
   const [showPassword, setShowPassword] = useState(false);
   const [loginMethod, setLoginMethod] = useState('email'); // 'email' or 'phone'
   const [email, setEmail] = useState('');
@@ -17,20 +18,29 @@ const Login = () => {
   const router = useRouter();
   const [focusedField, setFocusedField] = useState('');
 
+  useEffect(() => {
+    try {
+      const storedLang = typeof window !== 'undefined' ? localStorage.getItem('lang') : null;
+      setLang((storedLang === 'en' || storedLang === 'ar') ? storedLang : 'ar');
+    } catch {
+      setLang('ar');
+    }
+  }, []);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     // التحقق من وجود بيانات الدخول
     if (loginMethod === 'email' && !email) {
-      setMessage('يرجى إدخال البريد الإلكتروني');
+      setMessage(lang === 'ar' ? 'يرجى إدخال البريد الإلكتروني' : 'Please enter your email');
       return;
     }
     if (loginMethod === 'phone' && !phone) {
-      setMessage('يرجى إدخال رقم الهاتف');
+      setMessage(lang === 'ar' ? 'يرجى إدخال رقم الهاتف' : 'Please enter your phone number');
       return;
     }
     if (!password) {
-      setMessage('يرجى إدخال كلمة المرور');
+      setMessage(lang === 'ar' ? 'يرجى إدخال كلمة المرور' : 'Please enter your password');
       return;
     }
 
@@ -64,11 +74,11 @@ const Login = () => {
           router.push('/');
         }
       } else {
-        setMessage(data.message || 'بيانات الدخول غير صحيحة.');
+        setMessage(data.message || (lang === 'ar' ? 'بيانات الدخول غير صحيحة.' : 'Invalid login credentials.'));
       }
     } catch (err) {
       console.error('Login error:', err);
-      setMessage('تعذر الاتصال بالخادم.');
+      setMessage(lang === 'ar' ? 'تعذر الاتصال بالخادم.' : 'Unable to reach the server.');
     }
     setLoading(false);
   };
@@ -109,7 +119,7 @@ const Login = () => {
                   }`}
                 >
                   <Mail className={`w-5 h-5 mb-1 transition-transform duration-300 ${loginMethod === 'email' ? 'scale-110' : ''}`} />
-                  <span className="text-xs font-semibold">البريد الإلكتروني</span>
+                  <span className="text-xs font-semibold">{lang === 'ar' ? 'البريد الإلكتروني' : 'Email'}</span>
                 </button>
                 <button 
                   onClick={() => setLoginMethod('phone')} 
@@ -120,7 +130,7 @@ const Login = () => {
                   }`}
                 >
                   <Phone className={`w-5 h-5 mb-1 transition-transform duration-300 ${loginMethod === 'phone' ? 'scale-110' : ''}`} />
-                  <span className="text-xs font-semibold">رقم الهاتف</span>
+                  <span className="text-xs font-semibold">{lang === 'ar' ? 'رقم الهاتف' : 'Phone'}</span>
                 </button>
               </div>
             </div>
@@ -131,7 +141,7 @@ const Login = () => {
                 {/* حقل البريد الإلكتروني أو رقم الهاتف */}
                 <div className="relative">
                   <label className="block text-sm font-medium text-blue-200/80 mb-2 text-right">
-                    {loginMethod === 'email' ? t('auth.email') : 'رقم الهاتف'}
+                    {loginMethod === 'email' ? t('auth.email') : (lang === 'ar' ? 'رقم الهاتف' : 'Phone number')}
                   </label>
                   <div className="relative">
                     {loginMethod === 'email' ? (
@@ -147,8 +157,8 @@ const Login = () => {
                       onBlur={() => setFocusedField('')}
                       className="w-full pl-12 pr-4 py-4 rounded-xl bg-white/5 border border-white/10 text-white focus:outline-none focus:ring-2 focus:ring-orange-400/50 focus:border-orange-400/50 transition-all duration-200"
                       required
-                      dir="ltr"
-                      style={{ textAlign: 'left' }}
+                      dir={lang === 'ar' ? (loginMethod === 'email' ? 'ltr' : 'rtl') : (loginMethod === 'email' ? 'ltr' : 'ltr')}
+                      style={{ textAlign: lang === 'ar' ? (loginMethod === 'email' ? 'left' : 'right') : 'left' }}
                     />
                   </div>
                 </div>
@@ -168,8 +178,8 @@ const Login = () => {
                       onBlur={() => setFocusedField('')}
                       className="w-full pl-20 pr-4 py-4 rounded-xl bg-white/5 border border-white/10 text-white focus:outline-none focus:ring-2 focus:ring-orange-400/50 focus:border-orange-400/50 transition-all duration-200"
                       required
-                      dir="rtl"
-                      style={{ textAlign: 'right' }}
+                      dir={lang === 'ar' ? 'rtl' : 'ltr'}
+                      style={{ textAlign: lang === 'ar' ? 'right' : 'left' }}
                     />
                     <button
                       type="button"

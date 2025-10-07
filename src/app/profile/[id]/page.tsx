@@ -1,6 +1,6 @@
 "use client";
 import React, { useEffect, useMemo, useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { Star, MapPin, Globe, Calendar, Clock, MessageCircle, Camera, Video, Award, Users, Settings, AlertTriangle, CheckCircle } from "lucide-react";
 import Dialog from '@mui/material/Dialog';
 import DialogTitle from '@mui/material/DialogTitle';
@@ -14,6 +14,7 @@ import Image from 'next/image';
 
 export default function TalentPublicProfile() {
   const { id } = useParams();
+  const router = useRouter();
   const [talent, setTalent] = useState<Record<string, any> | null>(null);
   const [portfolio, setPortfolio] = useState<Array<Record<string, any>>>([]);
   const [loading, setLoading] = useState(true);
@@ -106,64 +107,37 @@ export default function TalentPublicProfile() {
   };
 
   const handleConfirmAndPay = async () => {
+    // تغير السلوك: إرسال طلب بدون دفع ثم فتح المحادثة
     setShowConfirmModal(false);
     try {
       const userStr = typeof window !== 'undefined' ? localStorage.getItem("user") : null;
       if (!userStr) { setShowLoginMsg(true); return; }
       const user = JSON.parse(userStr);
-      const selectedServices = selectedServicesSummary;
-      const address = user.address || "";
-      
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('pendingOrder_talentId', talent?.id?.toString() || '');
-        localStorage.setItem('pendingOrder_clientId', user.id?.toString() || '');
-        localStorage.setItem('pendingOrder_date', orderDate || new Date().toISOString());
-        localStorage.setItem('pendingOrder_message', orderMessage || 'طلب جديد');
-        localStorage.setItem('pendingOrder_services', JSON.stringify(selectedServices));
-        localStorage.setItem('pendingOrder_address', address);
-      }
-      
-      const res = await fetch('/api/paymob-init', {
+      const servicesToSend = selectedServicesSummary.map(s => ({ name: s.name, price: s.price }));
+
+      const res = await fetch('/api/orders', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          amount: totalWithTax,
-          user: {
-            email: talent?.email,
-            firstName: talent?.name?.split(' ')[0] || '',
-            lastName: talent?.name?.split(' ')[1] || '',
-            phone: talent?.phone || ''
-          },
-          paymentMethod: selectedPaymentMethod,
-          metadata: {
-            talentId: talent?.id,
-            clientId: user.id,
-            services: JSON.stringify(selectedServices),
-            message: orderMessage || 'طلب جديد',
-            date: orderDate || new Date().toISOString(),
-            address: user.address || ''
-          }
+          talentId: talent?.id,
+          clientId: user.id,
+          services: servicesToSend,
+          message: orderMessage || 'طلب جديد',
+          date: orderDate || new Date().toISOString(),
+          address: user.address || ''
         })
       });
-      const data = await res.json();
       if (!res.ok) {
-        clearPendingOrderData();
-        
-        if (data.error && data.details && data.details.includes('Too many attempts')) {
-          setErrorMessage('تم حظر الاتصال مؤقتًا من Paymob. يرجى المحاولة بعد 30 دقيقة أو استخدام شبكة مختلفة.');
-          setShowErrorModal(true);
-          return;
-        }
-        setErrorMessage(`خطأ في بوابة الدفع: ${data.error || 'خطأ غير معروف'}\n\nالتفاصيل: ${data.details || 'لا توجد تفاصيل'}`);
+        const data = await res.json().catch(() => ({}));
+        setErrorMessage(data.error || 'تعذر إرسال الطلب. يرجى المحاولة لاحقاً.');
         setShowErrorModal(true);
         return;
       }
-      setIframeUrl(data.iframe);
-      setShowPaymentModal(true);
+      // توجه إلى محادثات المستخدم وافتح محادثة مع صاحب الموهبة
+      router.push(`/user/chats?openWith=${talent?.id}`);
     } catch (error) {
-      clearPendingOrderData();
-      console.error('Payment error:', error);
-      setErrorMessage('خطأ في الاتصال مع بوابة الدفع. يرجى المحاولة مرة أخرى.');
+      console.error('Order request error:', error);
+      setErrorMessage('حدث خطأ أثناء إرسال الطلب.');
       setShowErrorModal(true);
     }
   };
@@ -395,7 +369,7 @@ export default function TalentPublicProfile() {
                   }}
                   className="bg-gradient-to-r from-orange-400 to-pink-500 hover:from-orange-500 hover:to-pink-600 text-white px-6 py-3 rounded-xl font-bold text-base shadow-lg hover:shadow-xl transition-all duration-200"
                 >
-                  احجز الآن
+                  أرسل طلب
                 </button>
                 <a
                   href={`/chat/${talent?.id}`}
@@ -760,9 +734,11 @@ export default function TalentPublicProfile() {
                       <div key={idx} className="bg-white/5 rounded-xl p-3 border border-white/10 hover:bg-white/10 transition-all duration-200">
                         <div className="flex justify-between items-center">
                           <h3 className="font-semibold text-white">{srv.name}</h3>
-                          <span className="bg-gradient-to-r from-orange-400 to-pink-500 text-white px-3 py-1 rounded-full font-bold text-sm">
-                            {srv.price} ر.س
-                          </span>
+                          {srv.hidePrice ? null : (
+                            <span className="bg-gradient-to-r from-orange-400 to-pink-500 text-white px-3 py-1 rounded-full font-bold text-sm">
+                              {srv.price} ر.س
+                            </span>
+                          )}
                         </div>
                       </div>
                     ));
@@ -816,28 +792,37 @@ export default function TalentPublicProfile() {
             borderRadius: 16,
             background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
             color: '#fff',
-            minWidth: 280,
-            maxWidth: 380,
+            width: 'min(980px, 94vw)',
             margin: '16px',
-            position: 'fixed',
-            top: '20px',
-            left: '50%',
-            transform: 'translateX(-50%)'
+            marginTop: 24
           }
         }}
+        sx={{ '& .MuiDialog-container': { alignItems: 'flex-start' } }}
+        fullWidth
       >
         <DialogTitle sx={{
-          fontWeight: 700, 
+          fontWeight: 800, 
           fontSize: { xs: '1.25rem', sm: '1.5rem' }, 
           color: '#fff', 
-          textAlign: 'center',
-          background: 'linear-gradient(45deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05))',
-          borderBottom: '1px solid rgba(255,255,255,0.1)',
-          padding: { xs: '16px', sm: '24px' }
+          textAlign: 'right',
+          background: 'linear-gradient(45deg, rgba(255,255,255,0.12), rgba(255,255,255,0.06))',
+          borderBottom: '1px solid rgba(255,255,255,0.12)',
+          padding: { xs: '14px 16px', sm: '20px 24px' },
+          position: 'relative'
         }}>
-          طلب خدمة من {talent?.name}
+          <span>طلب خدمة من {talent?.name}</span>
+          <button
+            onClick={()=>setShowOrderModal(false)}
+            style={{ position:'absolute', left: 16, top: '50%', transform: 'translateY(-50%)' }}
+            className="w-8 h-8 sm:w-9 sm:h-9 bg-white/15 hover:bg-white/25 rounded-full text-white flex items-center justify-center transition-colors"
+            aria-label="إغلاق"
+          >
+            ×
+          </button>
         </DialogTitle>
-        <DialogContent sx={{ padding: { xs: '16px', sm: '24px' } }}>
+        <DialogContent sx={{ padding: { xs: '14px', sm: '20px' } }}>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
+            <div className="lg:col-span-2">
           <div className="mb-4 sm:mb-6">
             <h3 className="text-base sm:text-lg font-bold mb-3 sm:mb-4 text-white">اختر الخدمات المطلوبة:</h3>
             <div className="space-y-2 sm:space-y-3 max-h-60 overflow-y-auto">
@@ -861,12 +846,7 @@ export default function TalentPublicProfile() {
                           }} 
                         />
                       }
-                      label={
-                        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center w-full gap-1 sm:gap-0">
-                          <span className="text-white font-medium text-sm sm:text-base">{srv.name}</span>
-                          <span className="text-yellow-300 font-bold text-xs sm:text-sm">({srv.price} ر.س)</span>
-                        </div>
-                      }
+                      label={<span className="text-white font-medium text-sm sm:text-base">{srv.name}</span>}
                       sx={{ margin: 0, width: '100%' }}
                     />
                   </div>
@@ -875,7 +855,7 @@ export default function TalentPublicProfile() {
             </div>
           </div>
 
-          <div className="mb-4 sm:mb-6">
+            <div className="mb-4 sm:mb-6">
             <h3 className="text-base sm:text-lg font-bold mb-3 sm:mb-4 text-white">اختر الموعد المتاح:</h3>
             <select 
               value={orderDate} 
@@ -889,141 +869,63 @@ export default function TalentPublicProfile() {
                 </option>
                 ))}
               </select>
-          </div>
-
-          <div className="mb-4 sm:mb-6">
-            <h3 className="text-base sm:text-lg font-bold mb-3 sm:mb-4 text-white">اختر طريقة الدفع:</h3>
-            <div className="grid grid-cols-2 gap-3">
-              <div 
-                className={`p-3 rounded-lg border-2 cursor-pointer transition-all ${
-                  selectedPaymentMethod === 'VISA_CARD' 
-                    ? 'border-yellow-400 bg-yellow-400/20' 
-                    : 'border-white/30 bg-white/10 hover:bg-white/20'
-                }`}
-                onClick={() => setSelectedPaymentMethod('VISA_CARD')}
-              >
-                <div className="text-center">
-                  <div className="text-2xl mb-2">💳</div>
-                  <div className="text-white font-medium text-sm">بطاقة ائتمانية</div>
-                  <div className="text-yellow-200 text-xs mt-1">Visa, Mastercard, Mada</div>
-                </div>
-              </div>
-              <div 
-                className={`p-3 rounded-lg border-2 cursor-pointer transition-all ${
-                  selectedPaymentMethod === 'APPLE_PAY' 
-                    ? 'border-yellow-400 bg-yellow-400/20' 
-                    : 'border-white/30 bg-white/10 hover:bg-white/20'
-                }`}
-                onClick={() => setSelectedPaymentMethod('APPLE_PAY')}
-              >
-                <div className="text-center">
-                  <div className="mb-2 flex items-center justify-center">
-                    <img 
-                      src="https://www.logo.wine/a/logo/Apple_Pay/Apple_Pay-Logo.wine.svg" 
-                      alt="Apple Pay" 
-                      className="h-8 w-auto"
-                    />
-                  </div>
-                  <div className="text-white font-medium text-sm">Apple Pay</div>
-                  <div className="text-yellow-200 text-xs mt-1">iPhone, iPad</div>
-                </div>
-              </div>
             </div>
-          </div>
 
-          <div className="mb-4 sm:mb-6">
-              <TextField
-                label="رسالتك (اختياري)"
-                multiline
-              minRows={3}
-                fullWidth
-                value={orderMessage}
-                onChange={e => setOrderMessage(e.target.value)}
-              InputProps={{
-                style: { 
-                  color: '#fff',
-                  background: 'rgba(255,255,255,0.1)',
-                  borderRadius: '12px',
-                  fontSize: window.innerWidth < 640 ? '14px' : '16px'
-                }
-              }}
-              InputLabelProps={{ 
-                style: { 
-                  color: '#fbbf24',
-                  fontSize: window.innerWidth < 640 ? '14px' : '16px'
-                } 
-              }}
-              sx={{
-                '& .MuiOutlinedInput-root': { 
-                  '& fieldset': { borderColor: 'rgba(255,255,255,0.3)' },
-                  '&:hover fieldset': { borderColor: '#fbbf24' },
-                  '&.Mui-focused fieldset': { borderColor: '#fbbf24' }
-                }
-              }}
-            />
-          </div>
+            {/* طرق الدفع مخفية - سيتم تحديدها لاحقاً من المستخدم */}
 
-          <div className="text-center">
-                <a
-                  href={`/chat/${talent?.id}`}
-              className="inline-flex items-center gap-2 sm:gap-3 px-4 sm:px-6 py-2 sm:py-3 bg-white/20 border border-white/30 rounded-lg text-white font-bold hover:bg-white/30 transition-all duration-200 text-sm sm:text-base"
-                  style={{textDecoration:'none'}}
-                >
-              <MessageCircle className="w-4 h-4 sm:w-5 sm:h-5" />
-                  محادثة صاحب الموهبة
-                </a>
-              </div>
+            {/* رسالة حرة مخفية */}
+            {/* إزالة زر المحادثة من هنا */}
+            </div>
+            {/* إزالة لوحة الملخص */}
+          </div>
             </DialogContent>
-        <DialogActions sx={{justifyContent:'center', padding: { xs: '0 16px 16px', sm: '0 24px 24px' }}}>
+        <DialogActions sx={{justifyContent:'center', gap: 2, padding: { xs: '0 16px 16px', sm: '0 24px 24px' }}}>
           <Button 
             onClick={()=>setShowOrderModal(false)} 
             sx={{ 
               color: '#fff', 
               fontWeight: 700,
-              background: 'rgba(255,255,255,0.1)',
+              background: 'rgba(255,255,255,0.12)',
               borderRadius: '12px',
-              padding: { xs: '8px 16px', sm: '12px 24px' },
-              fontSize: { xs: '14px', sm: '16px' },
+              padding: { xs: '8px 16px', sm: '10px 20px' },
+              fontSize: { xs: '14px', sm: '15px' },
               '&:hover': { background: 'rgba(255,255,255,0.2)' }
             }}
           >
             إلغاء
           </Button>
           <Button 
-            onClick={handleOrderRequest} 
+            onClick={handleOrderRequest}
             disabled={selectedServices.length === 0 || !orderDate}
             sx={{ 
-                              background: 'linear-gradient(45deg, #fbbf24, #f59e0b)',
-                color: '#fff',
-                fontWeight: 700,
-                borderRadius: '12px',
-                padding: { xs: '8px 16px', sm: '12px 24px' },
-                fontSize: { xs: '14px', sm: '16px' },
-                '&:hover': { 
-                  background: 'linear-gradient(45deg, #f59e0b, #d97706)'
-                },
-              '&:disabled': { 
-                background: 'rgba(255,255,255,0.1)',
-                color: 'rgba(255,255,255,0.5)'
-              }
+              background: 'linear-gradient(45deg, #22c55e, #16a34a)',
+              color: '#fff',
+              fontWeight: 700,
+              borderRadius: '12px',
+              padding: { xs: '8px 16px', sm: '10px 20px' },
+              fontSize: { xs: '14px', sm: '15px' },
+              '&:hover': { background: 'linear-gradient(45deg, #16a34a, #15803d)' }
             }}
           >
-                                  احجز الآن
-              </Button>
-            </DialogActions>
+            إرسال الطلب
+          </Button>
+        </DialogActions>
           </Dialog>
 
       {/* Payment Modal */}
           {showPaymentModal && iframeUrl && (
-        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-2 sm:p-4">
-          <div className="bg-white rounded-xl shadow-lg w-full max-w-2xl max-h-[95vh] sm:max-h-[90vh] overflow-hidden">
+        <div className="fixed inset-0 bg-black/80 flex items-start justify-center z-50 p-2 sm:p-4 pt-6 sm:pt-10">
+          <div className="bg-white rounded-xl shadow-lg w-full max-w-3xl md:max-w-4xl max-h-[95vh] sm:max-h-[90vh] overflow-hidden">
             <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-4 sm:p-6 text-white relative">
                 <button
+                  type="button"
+                  onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); clearPendingOrderData(); setShowPaymentModal(false); }}
                   onClick={() => {
                     clearPendingOrderData();
                     setShowPaymentModal(false);
                   }}
-                className="absolute top-2 sm:top-4 left-2 sm:left-4 w-8 h-8 sm:w-10 sm:h-10 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center text-white font-bold text-lg sm:text-xl transition-all"
+                className="absolute top-2 sm:top-4 left-2 sm:left-4 w-9 h-9 sm:w-10 sm:h-10 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center text-white font-bold text-lg sm:text-xl transition-all z-10"
+                aria-label="إغلاق"
               >
                 ×
               </button>
@@ -1035,7 +937,7 @@ export default function TalentPublicProfile() {
             <div className="p-3 sm:p-6">
                 <iframe
                   src={iframeUrl}
-                className="w-full h-[400px] sm:h-[500px] rounded-xl sm:rounded-2xl border-0"
+                className="w-full h-[440px] sm:h-[520px] md:h-[600px] rounded-xl sm:rounded-2xl border-0"
                   allowFullScreen
                   onLoad={(e) => {
                   try {
@@ -1057,47 +959,38 @@ export default function TalentPublicProfile() {
 
       {/* Confirmation Modal */}
       {showConfirmModal && (
-        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-2 sm:p-4">
-          <div className="bg-white rounded-xl shadow-lg w-full max-w-md overflow-hidden">
+        <div className="fixed inset-0 bg-black/80 flex items-start justify-center z-50 p-2 sm:p-4 pt-6 sm:pt-10">
+          <div className="bg-white rounded-xl shadow-lg w-full max-w-lg md:max-w-xl overflow-hidden">
             <div className="bg-gradient-to-r from-green-500 to-blue-500 p-4 sm:p-6 text-white relative">
               <button
                 onClick={() => setShowConfirmModal(false)}
-                className="absolute top-2 sm:top-4 left-2 sm:left-4 w-6 h-6 sm:w-8 sm:h-8 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center text-white font-bold text-sm sm:text-lg transition-all"
+                className="absolute top-2 sm:top-4 left-2 sm:left-4 w-8 h-8 sm:w-9 sm:h-9 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center text-white font-bold text-base sm:text-lg transition-all"
               >
                 ×
               </button>
               <div className="text-center">
-                <h2 className="text-lg sm:text-xl font-bold mb-1 sm:mb-2">تأكيد تفاصيل الطلب</h2>
-                <p className="text-green-100 text-sm sm:text-base">مراجعة الخدمات والمبلغ</p>
+                <h2 className="text-lg sm:text-2xl font-bold mb-1 sm:mb-2">تأكيد تفاصيل الطلب</h2>
+                <p className="text-green-100 text-sm sm:text-base">تأكيد الخدمة والموعد قبل إرسال الطلب</p>
               </div>
             </div>
             <div className="p-4 sm:p-6">
-              <div className="space-y-3 sm:space-y-4 mb-4 sm:mb-6 max-h-60 overflow-y-auto">
-                {selectedServicesSummary.map((srv, idx) => (
-                  <div key={idx} className="flex justify-between items-center py-2 sm:py-3 border-b border-gray-100 last:border-b-0">
-                    <div className="flex items-center gap-2 sm:gap-3">
-                      <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                      <span className="font-medium text-gray-800 text-sm sm:text-base">{srv.name}</span>
-                    </div>
-                    <span className="font-bold text-green-600 text-sm sm:text-base">{srv.price} ر.س</span>
-                  </div>
-                ))}
-                <div className="bg-gray-50 rounded-xl sm:rounded-2xl p-3 sm:p-4 mt-3 sm:mt-4">
-                  <div className="flex justify-between items-center text-base sm:text-lg">
-                    <span className="font-bold text-gray-800">المجموع قبل الضريبة:</span>
-                    <span className="font-bold text-gray-800">{subtotal} ر.س</span>
-                  </div>
-                  <div className="flex justify-between items-center text-xs sm:text-sm text-gray-600 mt-1">
-                    <span>الضريبة (15%):</span>
-                    <span>{tax} ر.س</span>
-                  </div>
-                  <div className="flex justify-between items-center text-xs sm:text-sm text-gray-600 mt-1">
-                    <span>رسوم الخدمة (20%):</span>
-                    <span>{serviceFee} ر.س</span>
-                  </div>
-                  <div className="flex justify-between items-center text-lg sm:text-xl font-bold text-green-600 mt-2 sm:mt-3 pt-2 sm:pt-3 border-t border-gray-200">
-                    <span>الإجمالي:</span>
-                    <span>{totalWithTax} ر.س</span>
+              <div className="space-y-4 sm:space-y-5 mb-4 sm:mb-6 max-h-72 overflow-y-auto">
+                <div>
+                  <h3 className="font-bold text-gray-800 mb-2">الخدمات المختارة</h3>
+                  {selectedServicesSummary.length === 0 ? (
+                    <div className="text-gray-600 text-sm">لا توجد خدمات محددة.</div>
+                  ) : (
+                    <ul className="flex flex-wrap gap-2">
+                      {selectedServicesSummary.map((srv, idx) => (
+                        <li key={idx} className="px-3 py-1 rounded-full bg-gray-100 text-gray-800 text-sm border border-gray-200">{srv.name}</li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+                <div>
+                  <h3 className="font-bold text-gray-800 mb-2">الموعد</h3>
+                  <div className="px-3 py-2 rounded-lg bg-gray-100 text-gray-800 border border-gray-200 text-sm">
+                    {orderDate || '—'}
                   </div>
                 </div>
               </div>
@@ -1105,7 +998,7 @@ export default function TalentPublicProfile() {
                 onClick={handleConfirmAndPay}
                 className="w-full bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 text-white py-3 sm:py-4 rounded-xl sm:rounded-2xl font-bold text-base sm:text-lg shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300"
               >
-                  تأكيد والدفع
+                  إرسال الطلب
               </button>
             </div>
           </div>

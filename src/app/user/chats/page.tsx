@@ -1,6 +1,6 @@
 "use client";
 import React, { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 
 export default function UserChats() {
@@ -8,6 +8,7 @@ export default function UserChats() {
   const [conversations, setConversations] = useState<Record<string, unknown>[]>([]);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   useEffect(() => {
     // جلب بيانات المستخدم من localStorage
@@ -27,6 +28,13 @@ export default function UserChats() {
       setLoading(false);
     }
   }, []);
+
+  // فتح محادثة تلقائياً إذا وصل openWith
+  useEffect(() => {
+    const openWith = searchParams?.get('openWith');
+    if (!openWith || !user) return;
+    router.push(`/chat/${openWith}?userId=${(user as any).id}`);
+  }, [searchParams, user]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-blue-900 to-purple-900 text-white py-12 px-4">

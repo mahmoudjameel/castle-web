@@ -94,6 +94,7 @@ export async function POST(req: NextRequest) {
         message: message || '',
         date: date || null,
         address: address || null,
+        status: 'pending'
       },
       include: {
         talent: {

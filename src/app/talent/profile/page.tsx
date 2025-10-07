@@ -29,7 +29,7 @@ export default function TalentProfile() {
     profileImage: undefined as File | undefined,
     profileImageData: undefined as string | undefined,
     jobTitle: "",
-    services: [] as { name: string; price: string }[],
+    services: [] as { name: string; price: string; hidePrice?: boolean }[],
     workArea: "",
     canTravelAbroad: false,
     eyeColor: "",
@@ -42,7 +42,7 @@ export default function TalentProfile() {
     features: "",
     hairColor: "",
   });
-  const [newService, setNewService] = useState({ name: "", price: "" });
+  const [newService, setNewService] = useState({ name: "", price: "", hidePrice: false });
   const [message, setMessage] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -540,7 +540,18 @@ export default function TalentProfile() {
                       <span className="text-white font-semibold">{srv.name}</span>
                     </div>
                     <div className="flex items-center gap-3">
-                      <span className="text-orange-400 font-bold text-lg">{srv.price} ر.س</span>
+                      <span className="text-orange-400 font-bold text-lg">{srv.hidePrice ? '—' : `${srv.price} ر.س`}</span>
+                      <label className="flex items-center gap-1 text-xs text-white">
+                        <input
+                          type="checkbox"
+                          checked={!!srv.hidePrice}
+                          onChange={e => setForm(f => ({
+                            ...f,
+                            services: f.services.map((s, i) => i === idx ? { ...s, hidePrice: e.target.checked } : s)
+                          }))}
+                        />
+                        إخفاء السعر
+                      </label>
                       <button
                         type="button"
                         onClick={() => setForm(f => ({ ...f, services: f.services.filter((_, i) => i !== idx) }))}
@@ -570,12 +581,20 @@ export default function TalentProfile() {
                     placeholder="السعر"
                     className="w-full sm:w-32 px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white focus:outline-none focus:ring-2 focus:ring-orange-400/50 placeholder:text-blue-200/60"
                   />
+                  <label className="flex items-center gap-1 text-xs text-white">
+                    <input
+                      type="checkbox"
+                      checked={!!newService.hidePrice}
+                      onChange={e => setNewService(s => ({ ...s, hidePrice: e.target.checked }))}
+                    />
+                    إخفاء السعر
+                  </label>
                   <button
                     type="button"
                     onClick={() => {
                       if (!newService.name || !newService.price) return;
                       setForm(f => ({ ...f, services: [...f.services, { ...newService }] }));
-                      setNewService({ name: "", price: "" });
+                      setNewService({ name: "", price: "", hidePrice: false });
                     }}
                     className="px-6 py-3 bg-gradient-to-r from-orange-400 to-pink-500 rounded-xl text-white font-semibold hover:from-orange-500 hover:to-pink-600 transition-all duration-300 flex items-center gap-2"
                   >

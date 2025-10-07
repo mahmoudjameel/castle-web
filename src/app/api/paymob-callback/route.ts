@@ -47,6 +47,7 @@ async function createOrderFromPayment(data: any) {
         message,
         date,
         address,
+        status: 'new',
       }
     });
     console.log('Order created successfully from payment callback:', newOrder);

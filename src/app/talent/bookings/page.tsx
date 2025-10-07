@@ -120,6 +120,7 @@ export default function TalentBookings() {
                           onChange={e=>handleStatusChange(order.id, e.target.value)}
                           className="rounded-lg px-2 py-1 bg-blue-900/40 border border-blue-400/20 text-white"
                         >
+                          <option value="pending">معلق</option>
                           <option value="new">جديد</option>
                           <option value="in_progress">قيد التنفيذ</option>
                           <option value="completed">مكتمل</option>

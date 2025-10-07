@@ -559,7 +559,7 @@ const CastingPlatform = () => {
 
       {/* Language Selection Modal */}
       {showLangModal && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black/60 flex items-start justify-center z-[60] pt-24">
           <div className="bg-indigo-950/95 rounded-2xl p-8 border border-blue-400/20 shadow-lg max-w-md w-full mx-4">
             <div className="text-center mb-8">
               <h3 className="text-2xl font-bold text-white mb-3 bg-gradient-to-r from-orange-400 via-pink-400 to-blue-400 bg-clip-text text-transparent">
@@ -923,7 +923,7 @@ const CastingPlatform = () => {
                 </span>
               </Link>
               <button className="px-10 py-5 bg-white/10 border-2 border-white/30 rounded-xl hover:bg-white/20 transition-colors font-bold text-lg">
-                تعرف على المزيد
+                {lang === 'ar' ? 'تعرف على المزيد' : 'Learn more'}
               </button>
             </div>
           </div>
@@ -1155,12 +1155,12 @@ const CastingPlatform = () => {
               <button type="submit" disabled={contactStatus==='loading'} className="w-full py-3 bg-orange-500 rounded-lg font-bold text-lg text-white hover:bg-orange-600 transition-colors disabled:opacity-60">{contactStatus==='loading' ? 'جارٍ الإرسال...' : t('contact.form.submit')}</button>
               {contactStatus==='success' && (
                 <div className="mt-3 p-3 rounded-lg bg-green-500/15 border border-green-400/30 text-green-200">
-                  تم إرسال استفسارك بنجاح، سنعود إليك قريباً. شكراً لتواصلك معنا.
+                  {lang === 'ar' ? 'تم إرسال استفسارك بنجاح، سنعود إليك قريباً. شكراً لتواصلك معنا.' : 'Your inquiry has been sent successfully. We will get back to you soon. Thank you for contacting us.'}
                 </div>
               )}
               {contactStatus==='error' && (
                 <div className="mt-3 p-3 rounded-lg bg-red-500/15 border border-red-400/30 text-red-200">
-                  حدث خطأ أثناء الإرسال. الرجاء المحاولة مرة أخرى.
+                  {lang === 'ar' ? 'حدث خطأ أثناء الإرسال. الرجاء المحاولة مرة أخرى.' : 'An error occurred while sending. Please try again.'}
                 </div>
               )}
             </form>
@@ -1260,7 +1260,7 @@ const CastingPlatform = () => {
                   <div className="w-8 h-8 bg-gradient-to-r from-orange-400 to-pink-500 rounded-lg flex items-center justify-center">
                     <Play className="w-4 h-4 text-white" />
                   </div>
-                  تعرف على منصة طوق
+                  {lang === 'ar' ? 'تعرف على منصة طوق' : 'Discover Toq Platform'}
                 </h3>
                 <button 
                   onClick={() => setShowVideoModal(false)}
@@ -1285,7 +1285,9 @@ const CastingPlatform = () => {
               {/* Footer */}
               <div className="p-6 bg-gradient-to-r from-orange-400/10 to-pink-500/10">
                 <p className="text-blue-200 text-center text-lg">
-                  اكتشف كيف يمكن لمنصة طوق أن تساعدك في تطوير موهبتك أو العثور على المواهب المناسبة
+                  {lang === 'ar' 
+                    ? 'اكتشف كيف يمكن لمنصة طوق أن تساعدك في تطوير موهبتك أو العثور على المواهب المناسبة' 
+                    : 'Discover how Toq can help you grow your talent or find the right talents.'}
                 </p>
               </div>
             </div>
@@ -1299,7 +1301,7 @@ const CastingPlatform = () => {
         target="_blank"
         rel="noopener noreferrer"
         className="fixed z-50 bottom-6 right-6 bg-green-500 hover:bg-green-600 text-white rounded-full shadow-lg flex items-center justify-center w-14 h-14 text-3xl transition-all"
-        title="تواصل عبر واتساب"
+        title={lang === 'ar' ? 'تواصل عبر واتساب' : 'Contact via WhatsApp'}
         style={{ boxShadow: '0 4px 24px 0 rgba(37, 211, 102, 0.3)' }}
       >
         <FaWhatsapp />
