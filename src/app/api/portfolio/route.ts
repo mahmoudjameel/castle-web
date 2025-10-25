@@ -3,14 +3,8 @@ import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
-// إعدادات bodyParser لزيادة حجم الملفات المسموح
-export const config = {
-  api: {
-    bodyParser: {
-      sizeLimit: '50mb', // زيادة الحد الأقصى لحجم الملفات إلى 50MB
-    },
-  },
-};
+// ملاحظة: في Next.js 15 App Router، يتم التحكم في حجم الـ body من next.config.ts
+// تم تعيين bodySizeLimit: '50mb' في experimental.serverActions
 
 // جلب كل الأعمال لمستخدم معين
 export async function GET(req: Request) {
@@ -36,20 +30,79 @@ export async function GET(req: Request) {
 // إضافة عمل جديد (صورة أو فيديو)
 export async function POST(req: Request) {
   try {
-    const { userId, type, title, mediaData, mediaUrl } = await req.json();
-    if (!userId || !type || (!mediaData && !mediaUrl)) {
-      return NextResponse.json({ message: 'userId, type, mediaData أو mediaUrl مطلوبة.' }, { status: 400 });
+    console.log('📥 استلام طلب رفع عمل جديد');
+    
+    // قراءة البيانات مع معالجة الأخطاء
+    let body;
+    try {
+      body = await req.json();
+    } catch (parseError) {
+      console.error('❌ خطأ في قراءة البيانات:', parseError);
+      return NextResponse.json({ 
+        message: 'خطأ في قراءة البيانات. الملف قد يكون كبيراً جداً.' 
+      }, { status: 413 });
     }
+    
+    const { userId, type, title, mediaData, mediaUrl } = body;
+    
+    // التحقق من البيانات المطلوبة
+    if (!userId || !type || (!mediaData && !mediaUrl)) {
+      console.error('❌ بيانات ناقصة:', { userId: !!userId, type, hasMediaData: !!mediaData, hasMediaUrl: !!mediaUrl });
+      return NextResponse.json({ 
+        message: 'userId, type, mediaData أو mediaUrl مطلوبة.' 
+      }, { status: 400 });
+    }
+    
+    console.log(`📊 نوع العمل: ${type}, حجم البيانات: ${mediaData ? (mediaData.length / 1024 / 1024).toFixed(2) + ' MB' : 'N/A'}`);
+    
     let mediaDataBuffer: Buffer | undefined = undefined;
     if (mediaData) {
-      mediaDataBuffer = Buffer.from(mediaData, 'base64');
+      try {
+        // التحقق من حجم البيانات قبل التحويل
+        const estimatedSizeMB = (mediaData.length * 0.75) / (1024 * 1024); // base64 حجم تقريبي
+        console.log(`📦 حجم البيانات المقدر: ${estimatedSizeMB.toFixed(2)} MB`);
+        
+        if (estimatedSizeMB > 45) {
+          console.error('❌ الملف كبير جداً:', estimatedSizeMB.toFixed(2), 'MB');
+          return NextResponse.json({ 
+            message: `حجم الملف كبير جداً (${estimatedSizeMB.toFixed(2)} MB). الحد الأقصى المسموح هو 45MB.` 
+          }, { status: 413 });
+        }
+        
+        mediaDataBuffer = Buffer.from(mediaData, 'base64');
+        console.log('✅ تم تحويل البيانات إلى Buffer بنجاح');
+      } catch (bufferError) {
+        console.error('❌ خطأ في تحويل base64 إلى Buffer:', bufferError);
+        return NextResponse.json({ 
+          message: 'خطأ في معالجة بيانات الملف.' 
+        }, { status: 500 });
+      }
     }
-    const item = await prisma.portfolioItem.create({
-      data: { userId: Number(userId), type, title, mediaData: mediaDataBuffer, mediaUrl },
-    });
-    return NextResponse.json({ ...item, mediaData }, { status: 201 });
+    
+    // حفظ في قاعدة البيانات
+    try {
+      const item = await prisma.portfolioItem.create({
+        data: { 
+          userId: Number(userId), 
+          type, 
+          title: title || null, 
+          mediaData: mediaDataBuffer, 
+          mediaUrl: mediaUrl || null 
+        },
+      });
+      console.log('✅ تم حفظ العمل بنجاح:', item.id);
+      return NextResponse.json({ ...item, mediaData }, { status: 201 });
+    } catch (dbError) {
+      console.error('❌ خطأ في حفظ البيانات:', dbError);
+      return NextResponse.json({ 
+        message: 'خطأ في حفظ العمل في قاعدة البيانات.' 
+      }, { status: 500 });
+    }
   } catch (err) {
-    return NextResponse.json({ message: 'خطأ في إضافة العمل.' }, { status: 500 });
+    console.error('❌ خطأ عام في رفع العمل:', err);
+    return NextResponse.json({ 
+      message: 'حدث خطأ غير متوقع أثناء رفع العمل.' 
+    }, { status: 500 });
   }
 }
 

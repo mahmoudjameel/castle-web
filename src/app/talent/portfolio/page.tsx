@@ -32,6 +32,7 @@ export default function TalentPortfolio() {
   const [videoInputType, setVideoInputType] = useState<'url'|'file'>('url');
   // مؤشر تقدم الضغط (للصور فقط)
   const [compressionProgress, setCompressionProgress] = useState(0);
+  const [uploadProgress, setUploadProgress] = useState(0);
 
   useEffect(() => {
     // جلب userId من localStorage
@@ -145,37 +146,91 @@ export default function TalentPortfolio() {
       if (videoInputType === 'file' && file) {
         try {
           // رفع الفيديو الأصلي بدون ضغط
-          setMessage('جاري رفع الفيديو...');
+          setMessage('جاري تجهيز الفيديو...');
+          setUploadProgress(10);
           
           // التحقق من حجم الملف
           const fileSizeMB = getFileSizeMB(file);
-          console.log(`حجم الفيديو: ${fileSizeMB.toFixed(2)} MB`);
+          console.log(`🎥 حجم الفيديو: ${fileSizeMB.toFixed(2)} MB`);
+          console.log(`📱 نوع الجهاز: ${navigator.userAgent}`);
           
           // التحقق من أن الملف صالح
           if (file.size === 0) {
             setMessage('الملف فارغ، يرجى اختيار ملف صالح');
             setUploading(false);
+            setUploadProgress(0);
             return;
           }
           
-          // التحقق من حجم الملف (حد أقصى 50MB)
-          if (fileSizeMB > 50) {
-            setMessage('حجم الفيديو كبير جداً. الحد الأقصى المسموح هو 50MB');
+          // التحقق من حجم الملف (حد أقصى 40MB للموبايل)
+          const maxSize = /iPhone|iPad|Android/i.test(navigator.userAgent) ? 40 : 45;
+          if (fileSizeMB > maxSize) {
+            setMessage(`حجم الفيديو كبير جداً. الحد الأقصى المسموح هو ${maxSize}MB`);
             setUploading(false);
+            setUploadProgress(0);
             return;
           }
           
-          const mediaDataBase64 = await new Promise<string | undefined>((resolve) => {
+          setMessage('جاري قراءة الفيديو...');
+          setUploadProgress(30);
+          
+          // قراءة الملف مع معالجة خاصة للموبايل
+          const mediaDataBase64 = await new Promise<string | undefined>((resolve, reject) => {
             const reader = new FileReader();
-            reader.onload = () => resolve((reader.result as string)?.split(',')[1]);
-            reader.onerror = () => resolve(undefined);
-            reader.readAsDataURL(file);
+            
+            // معالجة التقدم
+            reader.onprogress = (event) => {
+              if (event.lengthComputable) {
+                const progress = 30 + Math.round((event.loaded / event.total) * 40);
+                setUploadProgress(progress);
+                console.log(`📊 تقدم القراءة: ${progress}%`);
+              }
+            };
+            
+            reader.onload = () => {
+              const result = reader.result as string;
+              if (!result) {
+                reject(new Error('فشل في قراءة الملف'));
+                return;
+              }
+              const base64 = result.split(',')[1];
+              if (!base64) {
+                reject(new Error('فشل في تحويل الملف إلى base64'));
+                return;
+              }
+              console.log(`✅ تم قراءة الملف بنجاح، حجم base64: ${(base64.length / 1024 / 1024).toFixed(2)} MB`);
+              resolve(base64);
+            };
+            
+            reader.onerror = (error) => {
+              console.error('❌ خطأ في FileReader:', error);
+              reject(new Error('فشل في قراءة الملف'));
+            };
+            
+            reader.onabort = () => {
+              reject(new Error('تم إلغاء قراءة الملف'));
+            };
+            
+            // بدء القراءة
+            try {
+              reader.readAsDataURL(file);
+            } catch (err) {
+              console.error('❌ خطأ في بدء قراءة الملف:', err);
+              reject(err);
+            }
           });
+          
           if (!mediaDataBase64) {
-            setMessage('فشل قراءة ملف الفيديو.');
+            setMessage('فشل قراءة ملف الفيديو. حاول تقليل حجم الفيديو.');
             setUploading(false);
+            setUploadProgress(0);
             return;
           }
+          
+          setMessage('جاري رفع الفيديو...');
+          setUploadProgress(70);
+          console.log('📤 بدء رفع الفيديو إلى الخادم...');
+          
           const res = await fetch('/api/portfolio', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -186,22 +241,36 @@ export default function TalentPortfolio() {
               mediaData: mediaDataBase64,
             }),
           });
+          
+          setUploadProgress(90);
+          
           if (res.ok) {
             const newItem = await res.json();
             setItems([newItem, ...items]);
             setTitle(''); setMediaUrl(''); setFile(null);
             if (fileInputRef.current) fileInputRef.current.value = '';
-            setMessage('تم رفع العمل بنجاح!');
+            setUploadProgress(100);
+            setMessage('تم رفع العمل بنجاح! ✅');
+            console.log('✅ تم رفع الفيديو بنجاح');
+            
+            // مسح الرسالة بعد 3 ثوانٍ
+            setTimeout(() => {
+              setMessage('');
+              setUploadProgress(0);
+            }, 3000);
           } else {
             const err = await res.json();
+            console.error('❌ خطأ من الخادم:', err);
             setMessage(err.message || 'حدث خطأ أثناء الرفع.');
+            setUploadProgress(0);
           }
           setUploading(false);
           return;
         } catch (error) {
-          console.error('خطأ في رفع الفيديو:', error);
-          setMessage('حدث خطأ في رفع الفيديو. يرجى المحاولة مرة أخرى');
+          console.error('❌ خطأ في رفع الفيديو:', error);
+          setMessage(`حدث خطأ في رفع الفيديو: ${error instanceof Error ? error.message : 'خطأ غير معروف'}`);
           setUploading(false);
+          setUploadProgress(0);
           return;
         }
       }
@@ -286,7 +355,7 @@ export default function TalentPortfolio() {
                 </>
               ) : (
                 <>
-                  <label className="block mb-2 text-blue-100">اختر ملف فيديو (جميع الصيغ مدعومة - حتى 50MB)</label>
+                  <label className="block mb-2 text-blue-100">اختر ملف فيديو (جميع الصيغ مدعومة - حتى 40MB للموبايل)</label>
                   <input
                     type="file"
                     accept="video/*,.mov,.avi,.mkv,.webm,.3gp,.m4v"
@@ -319,6 +388,22 @@ export default function TalentPortfolio() {
                 <div 
                   className="bg-gradient-to-r from-orange-400 to-pink-500 h-2 rounded-full transition-all duration-300"
                   style={{ width: `${compressionProgress}%` }}
+                ></div>
+              </div>
+            </div>
+          )}
+          
+          {/* شريط تقدم رفع الفيديو */}
+          {uploading && type === 'video' && uploadProgress > 0 && (
+            <div className="mt-4">
+              <div className="flex justify-between text-sm text-blue-200 mb-2">
+                <span>{message}</span>
+                <span>{uploadProgress}%</span>
+              </div>
+              <div className="w-full bg-blue-900/40 rounded-full h-2">
+                <div 
+                  className="bg-gradient-to-r from-orange-400 to-pink-500 h-2 rounded-full transition-all duration-300"
+                  style={{ width: `${uploadProgress}%` }}
                 ></div>
               </div>
             </div>

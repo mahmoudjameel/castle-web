@@ -30,6 +30,9 @@ const nextConfig: NextConfig = {
   // إعدادات تجريبية
   experimental: {
     optimizePackageImports: ['@mui/material', '@mui/icons-material', 'lucide-react'],
+    serverActions: {
+      bodySizeLimit: '50mb',
+    },
   },
   // إعدادات خارجية للخادم
   serverExternalPackages: ['sharp'],
