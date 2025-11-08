@@ -30,15 +30,15 @@ const nextConfig: NextConfig = {
   // إعدادات تجريبية
   experimental: {
     optimizePackageImports: ['@mui/material', '@mui/icons-material', 'lucide-react'],
-    // إزالة bodySizeLimit لإزالة القيود تماماً
+    serverActions: {
+      bodySizeLimit: '1000mb' // زيادة الحد الأقصى لـ 1000MB
+    },
     serverComponentsExternalPackages: [],
   },
   // إعدادات API routes بدون قيود
   api: {
-    bodyParser: {
-      sizeLimit: '1000gb', // حد كبير جداً لإزالة القيود الفعلية
-    },
-    responseLimit: false,
+    bodyParser: false, // تعطيل التحليل التلقائي للسماح بحجم غير محدود
+    responseLimit: false, // تعطيل حدود الاستجابة
   },
   // إعدادات خارجية للخادم
   serverExternalPackages: ['sharp'],
@@ -70,7 +70,6 @@ const nextConfig: NextConfig = {
       },
     ];
   },
-
 };
 
 export default nextConfig;

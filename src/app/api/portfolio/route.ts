@@ -3,9 +3,12 @@ import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
-// ملاحظة: في Next.js 15 App Router، يتم التحكم في حجم الـ body من next.config.ts
-// تم تعيين bodySizeLimit: '50mb' في experimental.serverActions
-// و api.bodyParser.sizeLimit: '50mb' للAPI routes
+export const config = {
+  api: {
+    bodyParser: false, // تعطيل bodyParser للسماح بحجم غير محدود
+    sizeLimit: '1000mb' // زيادة الحد الأقصى إلى 1000MB
+  }
+};
 
 // جلب كل الأعمال لمستخدم معين
 export async function GET(req: Request) {
@@ -32,90 +35,37 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
   try {
     console.log('📥 استلام طلب رفع عمل جديد');
-
-    // التحقق من نوع المحتوى
-    const contentType = req.headers.get('content-type');
-    if (!contentType || !contentType.includes('application/json')) {
-      console.error('❌ نوع المحتوى غير صحيح:', contentType);
-      return NextResponse.json({
-        message: 'نوع المحتوى يجب أن يكون application/json'
-      }, { status: 400 });
-    }
-
-    // قراءة البيانات مع معالجة الأخطاء المحسنة
-    let body;
-    try {
-      // محاولة قراءة البيانات مع timeout أطول (لا توجد قيود على الحجم)
-      const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('Request timeout')), 600000); // 10 minutes
-      });
-
-      const readPromise = req.json();
-      body = await Promise.race([readPromise, timeoutPromise]);
-    } catch (parseError: any) {
-      console.error('❌ خطأ في قراءة البيانات:', parseError);
-
-      // تحسين رسائل الخطأ
-      if (parseError.message?.includes('timeout') || parseError.message?.includes('Request timeout')) {
-        return NextResponse.json({
-          message: 'انتهت مهلة الطلب. حاول تقليل حجم الملف أو قسم الملفات.'
-        }, { status: 408 });
-      }
-
-      return NextResponse.json({
-        message: 'خطأ في قراءة البيانات. الملف قد يكون كبيراً جداً أو تالفاً.'
-      }, { status: 413 });
-    }
     
-    const { userId, type, title, mediaData, mediaUrl } = body;
-    
-    // التحقق من البيانات المطلوبة
-    if (!userId || !type || (!mediaData && !mediaUrl)) {
-      console.error('❌ بيانات ناقصة:', { userId: !!userId, type, hasMediaData: !!mediaData, hasMediaUrl: !!mediaUrl });
+    // استقبال البيانات كـ FormData بدلاً من JSON
+    const formData = await req.formData();
+    const file = formData.get('video') as File;
+    const userId = formData.get('userId') as string;
+    const type = formData.get('type') as string;
+    const title = formData.get('title') as string;
+
+    if (!userId || !type || !file) {
       return NextResponse.json({ 
-        message: 'userId, type, mediaData أو mediaUrl مطلوبة.' 
+        message: 'المعلومات المطلوبة ناقصة' 
       }, { status: 400 });
     }
-    
-    console.log(`📊 نوع العمل: ${type}, حجم البيانات: ${mediaData ? (mediaData.length / 1024 / 1024).toFixed(2) + ' MB' : 'N/A'}`);
-    
-    let mediaDataBuffer: Buffer | undefined = undefined;
-    if (mediaData) {
-      try {
-        // التحقق من حجم البيانات قبل التحويل
-        const estimatedSizeMB = (mediaData.length * 0.75) / (1024 * 1024); // base64 حجم تقريبي
-        console.log(`📦 حجم البيانات المقدر: ${estimatedSizeMB.toFixed(2)} MB`);
-        
-        if (estimatedSizeMB > 45) {
-          console.error('❌ الملف كبير جداً:', estimatedSizeMB.toFixed(2), 'MB');
-          return NextResponse.json({ 
-            message: `حجم الملف كبير جداً (${estimatedSizeMB.toFixed(2)} MB). الحد الأقصى المسموح هو 45MB.` 
-          }, { status: 413 });
-        }
-        
-        mediaDataBuffer = Buffer.from(mediaData, 'base64');
-        console.log('✅ تم تحويل البيانات إلى Buffer بنجاح');
-      } catch (bufferError) {
-        console.error('❌ خطأ في تحويل base64 إلى Buffer:', bufferError);
-        return NextResponse.json({ 
-          message: 'خطأ في معالجة بيانات الملف.' 
-        }, { status: 500 });
-      }
-    }
-    
-    // حفظ في قاعدة البيانات
+
+    // قراءة الملف مباشرة بدون قيود حجم
+    const buffer = await file.arrayBuffer();
+    const fileSizeMB = file.size / (1024 * 1024);
+    console.log(`📊 حجم الملف: ${fileSizeMB.toFixed(2)} MB`);
+
     try {
       const item = await prisma.portfolioItem.create({
         data: { 
           userId: Number(userId), 
-          type, 
-          title: title || null, 
-          mediaData: mediaDataBuffer, 
-          mediaUrl: mediaUrl || null 
+          type,
+          title: title || null,
+          mediaData: Buffer.from(buffer),
+          mediaUrl: null
         },
       });
       console.log('✅ تم حفظ العمل بنجاح:', item.id);
-      return NextResponse.json({ ...item, mediaData }, { status: 201 });
+      return NextResponse.json(item, { status: 201 });
     } catch (dbError) {
       console.error('❌ خطأ في حفظ البيانات:', dbError);
       return NextResponse.json({ 
@@ -140,4 +90,4 @@ export async function DELETE(req: Request) {
   } catch (err) {
     return NextResponse.json({ message: 'خطأ في الحذف.' }, { status: 500 });
   }
-} 
+}

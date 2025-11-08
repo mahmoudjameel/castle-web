@@ -1,7 +1,9 @@
 {
   "functions": {
     "src/app/api/portfolio/route.ts": {
-      "maxDuration": 900
+      "maxDuration": 900,
+      "memory": 3008
+
     }
   },
   "headers": [
