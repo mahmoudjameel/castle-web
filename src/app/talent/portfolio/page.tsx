@@ -146,7 +146,7 @@ export default function TalentPortfolio() {
       if (videoInputType === 'file' && file) {
         try {
           // رفع الفيديو الأصلي بدون ضغط
-          setMessage('جاري تجهيز الفيديو...');
+          setMessage('جاري تجهيز الفيديو... قد يستغرق بعض الوقت على الأجهزة المحمولة');
           setUploadProgress(10);
           
           // التحقق من حجم الملف
@@ -162,8 +162,8 @@ export default function TalentPortfolio() {
             return;
           }
           
-          // التحقق من حجم الملف (حد أقصى 40MB للموبايل)
-          const maxSize = /iPhone|iPad|Android/i.test(navigator.userAgent) ? 40 : 45;
+          // التحقق من حجم الملف (حد أقصى 50MB لجميع الأجهزة)
+          const maxSize = 50;
           if (fileSizeMB > maxSize) {
             setMessage(`حجم الفيديو كبير جداً. الحد الأقصى المسموح هو ${maxSize}MB`);
             setUploading(false);
@@ -171,52 +171,53 @@ export default function TalentPortfolio() {
             return;
           }
           
+          // إضافة تحقق من متصفح Safari
+          const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+          if (isSafari) {
+            console.log('ℹ️ تم الكشف عن متصفح Safari - تطبيق معالجة خاصة');
+          }
+          
           setMessage('جاري قراءة الفيديو...');
           setUploadProgress(30);
           
-          // قراءة الملف مع معالجة خاصة للموبايل
+          // قراءة الملف مع دعم محسن للموبايل
           const mediaDataBase64 = await new Promise<string | undefined>((resolve, reject) => {
             const reader = new FileReader();
             
-            // معالجة التقدم
-            reader.onprogress = (event) => {
-              if (event.lengthComputable) {
-                const progress = 30 + Math.round((event.loaded / event.total) * 40);
-                setUploadProgress(progress);
-                console.log(`📊 تقدم القراءة: ${progress}%`);
-              }
-            };
-            
             reader.onload = () => {
-              const result = reader.result as string;
-              if (!result) {
-                reject(new Error('فشل في قراءة الملف'));
-                return;
+              try {
+                const result = reader.result;
+                let base64;
+                
+                if (typeof result === 'string') {
+                  // معالجة DataURL
+                  base64 = result.split(',')[1];
+                } else if (result instanceof ArrayBuffer) {
+                  // معالجة ArrayBuffer للملفات الكبيرة
+                  const bytes = new Uint8Array(result);
+                  let binary = '';
+                  bytes.forEach(b => binary += String.fromCharCode(b));
+                  base64 = btoa(binary);
+                }
+                
+                if (!base64) {
+                  reject(new Error('فشل في تحويل الملف'));
+                  return;
+                }
+                
+                resolve(base64);
+              } catch (error) {
+                reject(error);
               }
-              const base64 = result.split(',')[1];
-              if (!base64) {
-                reject(new Error('فشل في تحويل الملف إلى base64'));
-                return;
-              }
-              console.log(`✅ تم قراءة الملف بنجاح، حجم base64: ${(base64.length / 1024 / 1024).toFixed(2)} MB`);
-              resolve(base64);
             };
             
-            reader.onerror = (error) => {
-              console.error('❌ خطأ في FileReader:', error);
-              reject(new Error('فشل في قراءة الملف'));
-            };
+            reader.onerror = () => reject(new Error('فشل في قراءة الملف'));
             
-            reader.onabort = () => {
-              reject(new Error('تم إلغاء قراءة الملف'));
-            };
-            
-            // بدء القراءة
-            try {
+            // استخدام ArrayBuffer للملفات الكبيرة أو متصفح Safari
+            if (file.size > 10 * 1024 * 1024 || isSafari) {
+              reader.readAsArrayBuffer(file);
+            } else {
               reader.readAsDataURL(file);
-            } catch (err) {
-              console.error('❌ خطأ في بدء قراءة الملف:', err);
-              reject(err);
             }
           });
           
@@ -355,7 +356,7 @@ export default function TalentPortfolio() {
                 </>
               ) : (
                 <>
-                  <label className="block mb-2 text-blue-100">اختر ملف فيديو (جميع الصيغ مدعومة - حتى 40MB للموبايل)</label>
+                  <label className="block mb-2 text-blue-100">اختر ملف فيديو (جميع الصيغ مدعومة - حتى 50MB)</label>
                   <input
                     type="file"
                     accept="video/*,.mov,.avi,.mkv,.webm,.3gp,.m4v"
