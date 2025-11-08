@@ -1,0 +1,28 @@
+# Apache .htaccess لدعم رفع الملفات الكبيرة بدون قيود
+# هذا الملف مطلوب إذا كان الخادم يستخدم Apache كـ reverse proxy
+
+<IfModule mod_php.c>
+  # إزالة قيود حجم رفع الملفات
+  php_value upload_max_filesize 0  # لا توجد قيود
+  php_value post_max_size 0        # لا توجد قيود
+
+  # زيادة وقت التنفيذ للملفات الكبيرة
+  php_value max_execution_time 0   # لا توجد قيود زمنية
+  php_value max_input_time 0       # لا توجد قيود زمنية
+</IfModule>
+
+# إزالة حد أقصى لحجم الطلب - لا توجد قيود
+# LimitRequestBody 0
+
+# إعدادات أمان إضافية
+<FilesMatch "\.(php|js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$">
+  <IfModule mod_headers.c>
+    Header set Cache-Control "max-age=31536000, public"
+  </IfModule>
+</FilesMatch>
+
+# منع الوصول المباشر للملفات الحساسة
+<FilesMatch "\.(env|config|log|sql|backup)$">
+  Order deny,allow
+  Deny from all
+</FilesMatch>

@@ -149,27 +149,10 @@ export default function TalentPortfolio() {
           setMessage('جاري تجهيز الفيديو... قد يستغرق بعض الوقت على الأجهزة المحمولة');
           setUploadProgress(10);
           
-          // التحقق من حجم الملف
+          // التحقق من حجم الملف (لا توجد قيود على الحجم)
           const fileSizeMB = getFileSizeMB(file);
           console.log(`🎥 حجم الفيديو: ${fileSizeMB.toFixed(2)} MB`);
-          console.log(`📱 نوع الجهاز: ${navigator.userAgent}`);
-          
-          // التحقق من أن الملف صالح
-          if (file.size === 0) {
-            setMessage('الملف فارغ، يرجى اختيار ملف صالح');
-            setUploading(false);
-            setUploadProgress(0);
-            return;
-          }
-          
-          // التحقق من حجم الملف (حد أقصى 50MB لجميع الأجهزة)
-          const maxSize = 50;
-          if (fileSizeMB > maxSize) {
-            setMessage(`حجم الفيديو كبير جداً. الحد الأقصى المسموح هو ${maxSize}MB`);
-            setUploading(false);
-            setUploadProgress(0);
-            return;
-          }
+          console.log(`✅ تم قبول الفيديو بحجم ${fileSizeMB.toFixed(2)} MB`);
           
           // إضافة تحقق من متصفح Safari
           const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
@@ -356,7 +339,7 @@ export default function TalentPortfolio() {
                 </>
               ) : (
                 <>
-                  <label className="block mb-2 text-blue-100">اختر ملف فيديو (جميع الصيغ مدعومة - حتى 50MB)</label>
+                  <label className="block mb-2 text-blue-100">اختر ملف فيديو (لا توجد قيود على الحجم)</label>
                   <input
                     type="file"
                     accept="video/*,.mov,.avi,.mkv,.webm,.3gp,.m4v"

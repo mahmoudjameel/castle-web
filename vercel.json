@@ -1,0 +1,21 @@
+{
+  "functions": {
+    "src/app/api/portfolio/route.ts": {
+      "maxDuration": 900
+    }
+  },
+  "headers": [
+    {
+      "source": "/api/portfolio",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-cache"
+        }
+      ]
+    }
+  ],
+  "regions": ["fra1"],
+  "buildCommand": "npm run build",
+  "installCommand": "npm install"
+}

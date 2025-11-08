@@ -5,6 +5,7 @@ const prisma = new PrismaClient();
 
 // ملاحظة: في Next.js 15 App Router، يتم التحكم في حجم الـ body من next.config.ts
 // تم تعيين bodySizeLimit: '50mb' في experimental.serverActions
+// و api.bodyParser.sizeLimit: '50mb' للAPI routes
 
 // جلب كل الأعمال لمستخدم معين
 export async function GET(req: Request) {
@@ -31,15 +32,38 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
   try {
     console.log('📥 استلام طلب رفع عمل جديد');
-    
-    // قراءة البيانات مع معالجة الأخطاء
+
+    // التحقق من نوع المحتوى
+    const contentType = req.headers.get('content-type');
+    if (!contentType || !contentType.includes('application/json')) {
+      console.error('❌ نوع المحتوى غير صحيح:', contentType);
+      return NextResponse.json({
+        message: 'نوع المحتوى يجب أن يكون application/json'
+      }, { status: 400 });
+    }
+
+    // قراءة البيانات مع معالجة الأخطاء المحسنة
     let body;
     try {
-      body = await req.json();
-    } catch (parseError) {
+      // محاولة قراءة البيانات مع timeout أطول (لا توجد قيود على الحجم)
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Request timeout')), 600000); // 10 minutes
+      });
+
+      const readPromise = req.json();
+      body = await Promise.race([readPromise, timeoutPromise]);
+    } catch (parseError: any) {
       console.error('❌ خطأ في قراءة البيانات:', parseError);
-      return NextResponse.json({ 
-        message: 'خطأ في قراءة البيانات. الملف قد يكون كبيراً جداً.' 
+
+      // تحسين رسائل الخطأ
+      if (parseError.message?.includes('timeout') || parseError.message?.includes('Request timeout')) {
+        return NextResponse.json({
+          message: 'انتهت مهلة الطلب. حاول تقليل حجم الملف أو قسم الملفات.'
+        }, { status: 408 });
+      }
+
+      return NextResponse.json({
+        message: 'خطأ في قراءة البيانات. الملف قد يكون كبيراً جداً أو تالفاً.'
       }, { status: 413 });
     }
     
