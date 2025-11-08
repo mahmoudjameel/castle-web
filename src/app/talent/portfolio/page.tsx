@@ -145,8 +145,8 @@ export default function TalentPortfolio() {
       // إذا كان الفيديو كملف مرفوع
       if (videoInputType === 'file' && file) {
         try {
-          // رفع الفيديو الأصلي بدون ضغط
-          setMessage('جاري تجهيز الفيديو... قد يستغرق بعض الوقت على الأجهزة المحمولة');
+          // رفع الفيديو باستخدام FormData (أفضل للملفات الكبيرة)
+          setMessage('جاري تجهيز الفيديو للرفع...');
           setUploadProgress(10);
           
           // التحقق من حجم الملف (لا توجد قيود على الحجم)
@@ -154,76 +154,23 @@ export default function TalentPortfolio() {
           console.log(`🎥 حجم الفيديو: ${fileSizeMB.toFixed(2)} MB`);
           console.log(`✅ تم قبول الفيديو بحجم ${fileSizeMB.toFixed(2)} MB`);
           
-          // إضافة تحقق من متصفح Safari
-          const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
-          if (isSafari) {
-            console.log('ℹ️ تم الكشف عن متصفح Safari - تطبيق معالجة خاصة');
-          }
-          
-          setMessage('جاري قراءة الفيديو...');
+          setMessage('جاري رفع الفيديو...');
           setUploadProgress(30);
           
-          // قراءة الملف مع دعم محسن للموبايل
-          const mediaDataBase64 = await new Promise<string | undefined>((resolve, reject) => {
-            const reader = new FileReader();
-            
-            reader.onload = () => {
-              try {
-                const result = reader.result;
-                let base64;
-                
-                if (typeof result === 'string') {
-                  // معالجة DataURL
-                  base64 = result.split(',')[1];
-                } else if (result instanceof ArrayBuffer) {
-                  // معالجة ArrayBuffer للملفات الكبيرة
-                  const bytes = new Uint8Array(result);
-                  let binary = '';
-                  bytes.forEach(b => binary += String.fromCharCode(b));
-                  base64 = btoa(binary);
-                }
-                
-                if (!base64) {
-                  reject(new Error('فشل في تحويل الملف'));
-                  return;
-                }
-                
-                resolve(base64);
-              } catch (error) {
-                reject(error);
-              }
-            };
-            
-            reader.onerror = () => reject(new Error('فشل في قراءة الملف'));
-            
-            // استخدام ArrayBuffer للملفات الكبيرة أو متصفح Safari
-            if (file.size > 10 * 1024 * 1024 || isSafari) {
-              reader.readAsArrayBuffer(file);
-            } else {
-              reader.readAsDataURL(file);
-            }
-          });
+          // استخدام FormData لإرسال الملف مباشرة (بدون base64)
+          const formData = new FormData();
+          formData.append('file', file);
+          formData.append('userId', userId.toString());
+          formData.append('type', type);
+          if (title) formData.append('title', title);
           
-          if (!mediaDataBase64) {
-            setMessage('فشل قراءة ملف الفيديو. حاول تقليل حجم الفيديو.');
-            setUploading(false);
-            setUploadProgress(0);
-            return;
-          }
-          
-          setMessage('جاري رفع الفيديو...');
-          setUploadProgress(70);
-          console.log('📤 بدء رفع الفيديو إلى الخادم...');
+          console.log('📤 بدء رفع الفيديو إلى الخادم باستخدام FormData...');
+          setUploadProgress(50);
           
           const res = await fetch('/api/portfolio', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              userId,
-              type,
-              title,
-              mediaData: mediaDataBase64,
-            }),
+            body: formData,
+            // لا تضيف Content-Type header - المتصفح سيضيفه تلقائياً مع boundary
           });
           
           setUploadProgress(90);

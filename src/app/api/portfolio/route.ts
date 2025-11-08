@@ -36,23 +36,56 @@ export async function POST(req: Request) {
   try {
     console.log('📥 استلام طلب رفع عمل جديد');
     
-    // استقبال البيانات كـ FormData بدلاً من JSON
-    const formData = await req.formData();
-    const file = formData.get('video') as File;
-    const userId = formData.get('userId') as string;
-    const type = formData.get('type') as string;
-    const title = formData.get('title') as string;
+    const contentType = req.headers.get('content-type') || '';
+    
+    // معالجة FormData (للفيديوهات والصور المرفوعة كملفات)
+    if (contentType.includes('multipart/form-data')) {
+      const formData = await req.formData();
+      const file = formData.get('file') as File;
+      const userId = formData.get('userId') as string;
+      const type = formData.get('type') as string;
+      const title = formData.get('title') as string;
 
-    if (!userId || !type || !file) {
+      if (!userId || !type || !file) {
+        return NextResponse.json({ 
+          message: 'المعلومات المطلوبة ناقصة' 
+        }, { status: 400 });
+      }
+
+      // قراءة الملف مباشرة بدون قيود حجم
+      const buffer = await file.arrayBuffer();
+      const fileSizeMB = file.size / (1024 * 1024);
+      console.log(`📊 حجم الملف: ${fileSizeMB.toFixed(2)} MB`);
+
+      try {
+        const item = await prisma.portfolioItem.create({
+          data: { 
+            userId: Number(userId), 
+            type,
+            title: title || null,
+            mediaData: Buffer.from(buffer),
+            mediaUrl: null
+          },
+        });
+        console.log('✅ تم حفظ العمل بنجاح:', item.id);
+        return NextResponse.json(item, { status: 201 });
+      } catch (dbError) {
+        console.error('❌ خطأ في حفظ البيانات:', dbError);
+        return NextResponse.json({ 
+          message: 'خطأ في حفظ العمل في قاعدة البيانات.' 
+        }, { status: 500 });
+      }
+    }
+    
+    // معالجة JSON (للروابط أو base64 القديمة)
+    const body = await req.json();
+    const { userId, type, title, mediaData, mediaUrl } = body;
+
+    if (!userId || !type) {
       return NextResponse.json({ 
         message: 'المعلومات المطلوبة ناقصة' 
       }, { status: 400 });
     }
-
-    // قراءة الملف مباشرة بدون قيود حجم
-    const buffer = await file.arrayBuffer();
-    const fileSizeMB = file.size / (1024 * 1024);
-    console.log(`📊 حجم الملف: ${fileSizeMB.toFixed(2)} MB`);
 
     try {
       const item = await prisma.portfolioItem.create({
@@ -60,8 +93,8 @@ export async function POST(req: Request) {
           userId: Number(userId), 
           type,
           title: title || null,
-          mediaData: Buffer.from(buffer),
-          mediaUrl: null
+          mediaData: mediaData ? Buffer.from(mediaData, 'base64') : null,
+          mediaUrl: mediaUrl || null
         },
       });
       console.log('✅ تم حفظ العمل بنجاح:', item.id);
