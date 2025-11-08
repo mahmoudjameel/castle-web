@@ -3,12 +3,8 @@ import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
-export const config = {
-  api: {
-    bodyParser: false, // تعطيل bodyParser للسماح بحجم غير محدود
-    sizeLimit: '1000mb' // زيادة الحد الأقصى إلى 1000MB
-  }
-};
+// ملاحظة: export config لا يعمل في App Router
+// استخدم next.config.ts للإعدادات العامة و vercel.json لإعدادات Vercel
 
 // جلب كل الأعمال لمستخدم معين
 export async function GET(req: Request) {

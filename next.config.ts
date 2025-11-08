@@ -31,14 +31,9 @@ const nextConfig: NextConfig = {
   experimental: {
     optimizePackageImports: ['@mui/material', '@mui/icons-material', 'lucide-react'],
     serverActions: {
-      bodySizeLimit: '1000mb' // زيادة الحد الأقصى لـ 1000MB
+      bodySizeLimit: '100mb' // الحد الأقصى لـ Server Actions
     },
     serverComponentsExternalPackages: [],
-  },
-  // إعدادات API routes بدون قيود
-  api: {
-    bodyParser: false, // تعطيل التحليل التلقائي للسماح بحجم غير محدود
-    responseLimit: false, // تعطيل حدود الاستجابة
   },
   // إعدادات خارجية للخادم
   serverExternalPackages: ['sharp'],
